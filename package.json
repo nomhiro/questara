@@ -1,0 +1,19 @@
+{
+  "name": "cert-study-agent",
+  "version": "1.0.0",
+  "description": "Microsoft/GitHub認定資格学習AIエージェント",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js",
+    "dev": "node --watch app.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "ejs": "^3.1.10",
+    "@github/copilot-sdk": "latest",
+    "node-html-parser": "^6.1.13"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}

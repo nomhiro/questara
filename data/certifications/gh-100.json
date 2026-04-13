@@ -1,0 +1,337 @@
+{
+  "id": "gh-100",
+  "name": "GitHub Administration (GH-100)",
+  "studyGuideUrl": "https://learn.microsoft.com/ja-jp/credentials/certifications/resources/study-guides/gh-100",
+  "courseUrl": "https://learn.microsoft.com/ja-jp/training/courses/gh-100t00",
+  "domains": [
+    {
+      "id": "domain-1",
+      "name": "Domain 1: Support GitHub Enterprise for users and key stakeholders",
+      "weight": 15,
+      "generatedAt": null,
+      "questions": [
+        {
+          "id": "gh-100-d1-001",
+          "question": "GitHub Enterprise の管理者が対応できる問題と GitHub Support が必要な問題を区別する際、次のうち管理者が自分で解決できる問題はどれですか？",
+          "options": {
+            "A": "GitHub.com のインフラ障害",
+            "B": "組織内のブランチ保護ルールの設定ミス",
+            "C": "GitHub Enterprise Server のライセンス認証の問題",
+            "D": "GitHub のデータセンターへのネットワーク障害"
+          },
+          "correctAnswer": "B",
+          "explanation": "ブランチ保護ルールの設定は管理者がリポジトリ設定から直接変更できます。インフラ障害・ライセンス認証・データセンター障害は GitHub Support が対応する領域です。",
+          "tags": ["enterprise", "support", "admin"]
+        },
+        {
+          "id": "gh-100-d1-002",
+          "question": "GitHub Marketplace から Azure Pipelines GitHub App をインストールしてデプロイを自動化したい。GitHub App と GitHub Actions の主な違いとして正しいのはどれですか？",
+          "options": {
+            "A": "GitHub App はリポジトリレベルの権限のみを持ち、Actions は組織レベルの権限を持つ",
+            "B": "GitHub App は OAuth を使わず Installation Token で認証し、Actions はリポジトリ内のワークフローとして動作する",
+            "C": "GitHub App は無料で、Actions は有料である",
+            "D": "GitHub App はパブリックリポジトリのみ対応し、Actions はプライベートリポジトリのみ対応する"
+          },
+          "correctAnswer": "B",
+          "explanation": "GitHub App は Installation Token を使用して認証し、細粒度の権限モデルを持ちます。GitHub Actions はリポジトリ内のワークフローファイル(.yml)として動作するCI/CDツールです。",
+          "tags": ["github-app", "actions", "marketplace"]
+        },
+        {
+          "id": "gh-100-d1-003",
+          "question": "GitHub API を使用して監査ログをクエリし、外部ストレージに保存したい。この用途に最も適した方法はどれですか？",
+          "options": {
+            "A": "GitHub UI の Settings > Audit Log ページを定期的に手動でエクスポートする",
+            "B": "GitHub REST API または GraphQL API を使って監査ログを取得し、スクリプトで自動保存する",
+            "C": "GitHub Marketplace の有料アプリのみが監査ログにアクセスできる",
+            "D": "監査ログは GitHub Support にリクエストしないと取得できない"
+          },
+          "correctAnswer": "B",
+          "explanation": "GitHub は REST API と GraphQL API の両方で監査ログへのアクセスを提供しています。スクリプトを使って自動的にクエリ・保存することが推奨される方法です。",
+          "tags": ["api", "audit-log", "enterprise"]
+        }
+      ]
+    },
+    {
+      "id": "domain-2",
+      "name": "Domain 2: Manage user identities and GitHub authentication",
+      "weight": 20,
+      "generatedAt": null,
+      "questions": [
+        {
+          "id": "gh-100-d2-001",
+          "question": "SAML SSO を単一の組織に対してのみ有効化した場合と、エンタープライズアカウント全体に対して有効化した場合の違いとして正しいのはどれですか？",
+          "options": {
+            "A": "単一組織に有効化すると、その組織のメンバーのみが SAML 認証の対象となる",
+            "B": "エンタープライズ全体に有効化すると、既存の個人アクセストークンはすべて無効になる",
+            "C": "単一組織への SAML SSO は GitHub Enterprise Cloud でのみ利用可能",
+            "D": "エンタープライズ全体への SAML SSO 強制は、すべての組織で同一の IdP を使用しなければならない"
+          },
+          "correctAnswer": "A",
+          "explanation": "SAML SSO を単一組織に有効化した場合、その組織へのアクセスにのみ SAML 認証が要求されます。エンタープライズ全体への適用は全組織に影響します。",
+          "tags": ["saml", "sso", "authentication"]
+        },
+        {
+          "id": "gh-100-d2-002",
+          "question": "GitHub の SCIM (System for Cross-domain Identity Management) についての説明として正しいのはどれですか？",
+          "options": {
+            "A": "SCIM は GitHub Enterprise Server でのみサポートされている",
+            "B": "SCIM を使用するとアイデンティティプロバイダーから GitHub へのユーザープロビジョニングを自動化できる",
+            "C": "SCIM と Team synchronization は同一の機能であり、どちらか一方を選択して使用する",
+            "D": "SCIM はユーザーの認証のみを担当し、グループの同期には対応していない"
+          },
+          "correctAnswer": "B",
+          "explanation": "SCIM はアイデンティティプロバイダー (Azure AD, Okta 等) から GitHub へのユーザーの自動プロビジョニング・デプロビジョニングを実現します。Team synchronization はチームとの同期に特化した別機能です。",
+          "tags": ["scim", "provisioning", "identity"]
+        },
+        {
+          "id": "gh-100-d2-003",
+          "question": "組織のすべてのメンバーに2要素認証 (2FA) を要求する方法として正しいのはどれですか？",
+          "options": {
+            "A": "各メンバーに個別にメールを送って 2FA を設定するよう依頼する",
+            "B": "Organization Settings で 'Require two-factor authentication' を有効化する",
+            "C": "GitHub Enterprise Server の設定ファイルで 2FA を強制する",
+            "D": "SAML SSO を有効化すると自動的に 2FA が強制される"
+          },
+          "correctAnswer": "B",
+          "explanation": "組織設定の Security セクションから 'Require two-factor authentication for everyone in your organization' を有効化することで、2FA を持たないメンバーは組織から削除されます。",
+          "tags": ["2fa", "security", "organization"]
+        }
+      ]
+    },
+    {
+      "id": "domain-3",
+      "name": "Domain 3: Describe how GitHub is deployed, distributed, and licensed",
+      "weight": 5,
+      "generatedAt": null,
+      "questions": [
+        {
+          "id": "gh-100-d3-001",
+          "question": "GitHub Enterprise Cloud (GHEC) と GitHub Enterprise Server (GHES) の主な違いとして正しいのはどれですか？",
+          "options": {
+            "A": "GHEC はセルフホスト型で、GHES は GitHub が管理するクラウド型である",
+            "B": "GHEC は GitHub が管理するクラウドサービスで、GHES は顧客が自社インフラで運用するセルフホスト型である",
+            "C": "GHES は GitHub Actions をサポートしていない",
+            "D": "GHEC は GitHub Advanced Security を含まない"
+          },
+          "correctAnswer": "B",
+          "explanation": "GHEC は GitHub が管理するクラウド型サービスです。GHES は顧客自身のインフラ上に展開するセルフホスト型で、オンプレミスやプライベートクラウドに設置できます。",
+          "tags": ["ghec", "ghes", "deployment"]
+        },
+        {
+          "id": "gh-100-d3-002",
+          "question": "GitHub Actions の使用量に基づく課金について正しい説明はどれですか？",
+          "options": {
+            "A": "GitHub-hosted runner の使用はすべて無料である",
+            "B": "パブリックリポジトリでの GitHub Actions 使用は無料で、プライベートリポジトリでは分単位で課金される",
+            "C": "Self-hosted runner の使用は GitHub Actions の課金対象となる",
+            "D": "GitHub Actions は月額固定料金で使用量は関係ない"
+          },
+          "correctAnswer": "B",
+          "explanation": "パブリックリポジトリでは GitHub-hosted runner が無料で使用できます。プライベートリポジトリでは無料枠を超えると分単位で課金され、OS によって倍率が異なります。Self-hosted runner は課金されません。",
+          "tags": ["billing", "actions", "pricing"]
+        },
+        {
+          "id": "gh-100-d3-003",
+          "question": "GitHub AE (GitHub Actions Enterprise) の特徴として正しいのはどれですか？",
+          "options": {
+            "A": "GitHub AE は AWS 上にのみデプロイ可能なマネージドサービスである",
+            "B": "GitHub AE はセルフホストで、顧客のオンプレミスに展開する",
+            "C": "GitHub AE は GitHub が特定のクラウドリージョンに隔離された環境を提供するマネージドサービスである",
+            "D": "GitHub AE は GitHub Enterprise Server の別名である"
+          },
+          "correctAnswer": "C",
+          "explanation": "GitHub AE は GitHub がホストするマネージドサービスで、顧客専用に隔離されたクラウド環境を提供します。GHES のようなセルフホストとは異なります。",
+          "tags": ["ghae", "deployment", "managed"]
+        }
+      ]
+    },
+    {
+      "id": "domain-4",
+      "name": "Domain 4: Manage access and permissions based on membership",
+      "weight": 20,
+      "generatedAt": null,
+      "questions": [
+        {
+          "id": "gh-100-d4-001",
+          "question": "GitHub 組織において、外部コラボレーター (Outside Collaborator) と組織メンバーの違いとして正しいのはどれですか？",
+          "options": {
+            "A": "外部コラボレーターは組織の全リポジトリにアクセスできるが、組織メンバーは特定のリポジトリのみ",
+            "B": "組織メンバーは組織レベルの設定を変更できるが、外部コラボレーターは付与されたリポジトリへのアクセスのみ持つ",
+            "C": "外部コラボレーターはチームに追加できるが、組織メンバーはチームに追加できない",
+            "D": "外部コラボレーターと組織メンバーの権限は同一である"
+          },
+          "correctAnswer": "B",
+          "explanation": "組織メンバーは組織設定へのアクセスや内部リポジトリの閲覧など組織レベルの権限を持ちます。外部コラボレーターは特定のリポジトリにのみアクセス権を付与された非メンバーです。",
+          "tags": ["permissions", "membership", "collaborator"]
+        },
+        {
+          "id": "gh-100-d4-002",
+          "question": "リポジトリへの最小権限の原則を実装する場合、外部委託業者がコードレビューのみを行う必要があるとき、付与すべき適切なリポジトリロールはどれですか？",
+          "options": {
+            "A": "Admin",
+            "B": "Write",
+            "C": "Read",
+            "D": "Triage"
+          },
+          "correctAnswer": "C",
+          "explanation": "コードレビューのみを行う場合は Read 権限で十分です。Read 権限でもプルリクエストのコメントや承認は可能です。Write は不要なコードプッシュ権限を与えてしまいます。",
+          "tags": ["permissions", "least-privilege", "repository"]
+        },
+        {
+          "id": "gh-100-d4-003",
+          "question": "複数の組織を持つエンタープライズアカウントで、組織横断的なポリシーを管理する方法として正しいのはどれですか？",
+          "options": {
+            "A": "各組織の管理者が個別にポリシーを設定し、エンタープライズレベルでは管理できない",
+            "B": "エンタープライズ設定でポリシーを設定すると、配下のすべての組織に適用される",
+            "C": "エンタープライズポリシーは GitHub Advanced Security が必要",
+            "D": "組織横断的なポリシーは GitHub API のみで設定可能"
+          },
+          "correctAnswer": "B",
+          "explanation": "エンタープライズアカウントの Settings > Policies でポリシーを設定すると、配下のすべての組織に適用されます。組織管理者がポリシーをオーバーライドできないよう強制することも可能です。",
+          "tags": ["enterprise", "policies", "organization"]
+        }
+      ]
+    },
+    {
+      "id": "domain-5",
+      "name": "Domain 5: Enable secure software development and ensure compliance",
+      "weight": 15,
+      "generatedAt": null,
+      "questions": [
+        {
+          "id": "gh-100-d5-001",
+          "question": "GitHub リポジトリに機密情報 (APIキー等) が誤ってコミットされてしまった場合、完全に削除するための正しいアプローチはどれですか？",
+          "options": {
+            "A": "問題のあるファイルを削除する新しいコミットを作成して push する",
+            "B": "GitHub の Settings からファイルを削除する",
+            "C": "git filter-branch または BFG Repo-Cleaner を使ってコミット履歴から削除し、GitHub Support に連絡して server 側のキャッシュも削除してもらう",
+            "D": "リポジトリをアーカイブすれば機密情報にアクセスできなくなる"
+          },
+          "correctAnswer": "C",
+          "explanation": "単純に削除コミットを追加しても履歴には残ります。git filter-branch や BFG で履歴を書き換えたうえで、GitHub Support にキャッシュ削除を依頼する必要があります。また、漏洩した認証情報はすぐにローテーションすべきです。",
+          "tags": ["security", "sensitive-data", "git-history"]
+        },
+        {
+          "id": "gh-100-d5-002",
+          "question": "Dependabot についての説明として正しいのはどれですか？",
+          "options": {
+            "A": "Dependabot は GitHub Actions のワークフローのみを監視する",
+            "B": "Dependabot は脆弱性のある依存パッケージを検出し、自動的にプルリクエストを作成してアップデートを提案する",
+            "C": "Dependabot を有効化するには GitHub Advanced Security のライセンスが必要",
+            "D": "Dependabot はプライベートリポジトリでは利用できない"
+          },
+          "correctAnswer": "B",
+          "explanation": "Dependabot は依存パッケージのセキュリティアドバイザリを監視し、脆弱性が検出された場合やバージョンアップが利用可能な場合にプルリクエストを自動作成します。パブリック・プライベートリポジトリの両方で利用可能です。",
+          "tags": ["dependabot", "security", "dependencies"]
+        },
+        {
+          "id": "gh-100-d5-003",
+          "question": "CodeQL を使った自動コードスキャンについて正しい説明はどれですか？",
+          "options": {
+            "A": "CodeQL はリポジトリの依存パッケージの脆弱性をスキャンする",
+            "B": "CodeQL はコードをデータベースとして解析し、セキュリティ脆弱性のパターンをクエリで検出する",
+            "C": "CodeQL は Python と JavaScript のみをサポートしている",
+            "D": "CodeQL のスキャンは手動でのみ実行可能"
+          },
+          "correctAnswer": "B",
+          "explanation": "CodeQL はソースコードをデータベースに変換し、SQL に似たクエリ言語でセキュリティ脆弱性のパターンを検索します。多数の言語をサポートしており、GitHub Actions で自動実行できます。",
+          "tags": ["codeql", "code-scanning", "security"]
+        }
+      ]
+    },
+    {
+      "id": "domain-6",
+      "name": "Domain 6: Manage GitHub Actions",
+      "weight": 20,
+      "generatedAt": null,
+      "questions": [
+        {
+          "id": "gh-100-d6-001",
+          "question": "エンタープライズで GitHub Actions を管理する際、組織のポリシーでアクションの使用を制御したい。どの設定が適切ですか？",
+          "options": {
+            "A": "各リポジトリの Actions 設定で個別に制御する必要がある",
+            "B": "Organization Settings > Actions > General で、使用を許可するアクションの範囲 (全て許可、選択したアクションのみ、無効) を設定できる",
+            "C": "GitHub Actions の使用制限はエンタープライズレベルでのみ設定可能",
+            "D": "アクションの使用制限はブランチ保護ルールで設定する"
+          },
+          "correctAnswer": "B",
+          "explanation": "Organization Settings の Actions > General で、GitHub が作成したアクションのみ許可、特定のアクションを許可リストに追加、またはすべて無効化するなどの組織レベルのポリシーを設定できます。",
+          "tags": ["actions", "policy", "organization"]
+        },
+        {
+          "id": "gh-100-d6-002",
+          "question": "セルフホストランナーをパブリックリポジトリで有効化する場合のリスクとして正しいのはどれですか？",
+          "options": {
+            "A": "パブリックリポジトリではセルフホストランナーは使用できない",
+            "B": "悪意のあるプルリクエストが fork から送られ、セルフホストランナー上で任意のコードが実行される可能性がある",
+            "C": "セルフホストランナーはプライベートリポジトリより遅くなる",
+            "D": "パブリックリポジトリのセルフホストランナーは追加コストが発生する"
+          },
+          "correctAnswer": "B",
+          "explanation": "パブリックリポジトリに fork からプルリクエストが送られた場合、悪意あるワークフローがセルフホストランナー上で実行される可能性があります。セルフホストランナーはプライベートリポジトリや信頼された組織内での使用が推奨されます。",
+          "tags": ["self-hosted-runner", "security", "public-repo"]
+        },
+        {
+          "id": "gh-100-d6-003",
+          "question": "GitHub Actions で使用する暗号化シークレットのスコープについて正しい説明はどれですか？",
+          "options": {
+            "A": "シークレットはリポジトリレベルでのみ設定できる",
+            "B": "シークレットはリポジトリ・組織・エンタープライズの各レベルで設定でき、下位のレベルが優先される",
+            "C": "組織レベルのシークレットはすべてのリポジトリで自動的に使用可能",
+            "D": "エンタープライズレベルのシークレットは GitHub Advanced Security が必要"
+          },
+          "correctAnswer": "B",
+          "explanation": "シークレットはリポジトリ・組織・エンタープライズの3レベルで設定できます。組織レベルのシークレットは選択したリポジトリにのみ共有できます。同名のシークレットが複数レベルに存在する場合、リポジトリレベルが最優先されます。",
+          "tags": ["secrets", "actions", "scope"]
+        }
+      ]
+    },
+    {
+      "id": "domain-7",
+      "name": "Domain 7: Manage GitHub Packages",
+      "weight": 5,
+      "generatedAt": null,
+      "questions": [
+        {
+          "id": "gh-100-d7-001",
+          "question": "GitHub Packages がサポートするパッケージレジストリとして正しいものはどれですか？",
+          "options": {
+            "A": "npm, Maven, NuGet, Docker, RubyGems のみ",
+            "B": "npm, Maven, NuGet, Docker (Container Registry), RubyGems, Gradle",
+            "C": "npm と Docker のみ",
+            "D": "GitHub Packages は汎用ファイルストレージのみで特定のパッケージマネージャーには対応していない"
+          },
+          "correctAnswer": "B",
+          "explanation": "GitHub Packages は npm, Maven, NuGet, Docker (GitHub Container Registry), RubyGems, Gradle など複数のパッケージエコシステムをサポートしています。",
+          "tags": ["packages", "registry", "ecosystem"]
+        },
+        {
+          "id": "gh-100-d7-002",
+          "question": "GitHub Packages と GitHub Releases の使い分けとして正しいのはどれですか？",
+          "options": {
+            "A": "GitHub Packages はソースコードのアーカイブに使用し、Releases はバイナリの配布に使用する",
+            "B": "GitHub Packages はパッケージマネージャーで管理するライブラリやコンテナイメージの配布に使用し、Releases はソフトウェアの特定バージョンのスナップショットとリリースノートの管理に使用する",
+            "C": "両者は同一の機能であり、どちらを使っても同じ",
+            "D": "GitHub Releases は GitHub Actions からのみ作成できる"
+          },
+          "correctAnswer": "B",
+          "explanation": "GitHub Packages はパッケージマネージャー (npm, Maven 等) を通じてインストールできる形式でライブラリを配布するためのものです。Releases はソフトウェアの特定バージョンをタグと共にリリースノートやバイナリ添付ファイルで公開するための機能です。",
+          "tags": ["packages", "releases", "distribution"]
+        },
+        {
+          "id": "gh-100-d7-003",
+          "question": "GitHub Packages を GitHub Actions ワークフローから使用する際の認証方法として正しいのはどれですか？",
+          "options": {
+            "A": "個人アクセストークン (PAT) を必ずハードコードする必要がある",
+            "B": "GITHUB_TOKEN シークレットを使用してワークフロー内から GitHub Packages に認証できる",
+            "C": "GitHub Packages へのアクセスは GitHub Actions からは不可能",
+            "D": "OAuth App を作成して認証トークンを取得する必要がある"
+          },
+          "correctAnswer": "B",
+          "explanation": "GitHub Actions は自動的に生成される GITHUB_TOKEN を提供します。このトークンを使って同じリポジトリの GitHub Packages に認証・アクセスできます。PAT のハードコードは避けるべきです。",
+          "tags": ["packages", "github-token", "authentication"]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %></title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 min-h-screen">
+  <nav class="bg-gray-900 text-white px-6 py-3 flex items-center gap-4">
+    <a href="/" class="text-lg font-bold tracking-tight">📚 資格学習エージェント</a>
+    <span class="text-gray-400">/</span>
+    <span class="text-sm"><%= cert.name %></span>
+  </nav>
+  <main class="max-w-4xl mx-auto px-4 py-8">
+
+    <h1 class="text-2xl font-bold mb-2"><%= cert.name %></h1>
+    <p class="text-sm text-gray-500 mb-8"><%= totalQuestions %> 問 &nbsp;·&nbsp; <%= domains.length %> ドメイン</p>
+
+    <!-- クイズ開始ボタン -->
+    <div class="flex flex-wrap gap-3 mb-10">
+      <form method="POST" action="/quiz/start">
+        <input type="hidden" name="certId" value="<%= cert.id %>">
+        <input type="hidden" name="mode" value="all">
+        <button class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-2 rounded-lg transition-colors">
+          🎯 全問クイズを開始
+        </button>
+      </form>
+      <% if (wrongCount > 0) { %>
+        <form method="POST" action="/quiz/start">
+          <input type="hidden" name="certId" value="<%= cert.id %>">
+          <input type="hidden" name="mode" value="wrong-only">
+          <button class="bg-red-500 hover:bg-red-600 text-white font-semibold px-6 py-2 rounded-lg transition-colors">
+            ❌ 間違えた問題のみ (<%= wrongCount %> 問)
+          </button>
+        </form>
+      <% } %>
+    </div>
+
+    <!-- ドメイン別正答率 -->
+    <h2 class="text-xl font-bold mb-4">ドメイン別正答率</h2>
+    <div class="space-y-4">
+      <% for (const domain of domains) { %>
+        <div class="bg-white rounded-xl border border-gray-200 p-5">
+          <div class="flex items-center justify-between mb-3">
+            <div class="flex-1 min-w-0">
+              <h3 class="font-semibold text-gray-800 truncate"><%= domain.name %></h3>
+              <p class="text-xs text-gray-400 mt-0.5">
+                <%= domain.questionCount %> 問
+                &nbsp;·&nbsp; 試験ウェイト <%= domain.weight %>%
+                <% if (domain.generatedAt) { %>
+                  &nbsp;·&nbsp; 最終生成: <%= new Date(domain.generatedAt).toLocaleDateString('ja-JP') %>
+                <% } %>
+              </p>
+            </div>
+            <div class="ml-4 text-right flex-shrink-0">
+              <% if (domain.stats.total > 0) { %>
+                <span class="text-2xl font-bold <%= domain.stats.rate >= 70 ? 'text-green-600' : 'text-red-500' %>">
+                  <%= domain.stats.rate %>%
+                </span>
+                <p class="text-xs text-gray-400"><%= domain.stats.correct %>/<%= domain.stats.total %> 問正解</p>
+              <% } else { %>
+                <span class="text-gray-300 text-sm">未挑戦</span>
+              <% } %>
+            </div>
+          </div>
+
+          <!-- 正答率バー -->
+          <% if (domain.stats.total > 0) { %>
+            <div class="w-full bg-gray-100 rounded-full h-2 mb-3">
+              <div class="h-2 rounded-full <%= domain.stats.rate >= 70 ? 'bg-green-500' : 'text-red-400 bg-red-400' %>"
+                   style="width: <%= domain.stats.rate %>%"></div>
+            </div>
+          <% } %>
+
+          <!-- ドメイン操作ボタン -->
+          <div class="flex flex-wrap gap-2">
+            <form method="POST" action="/quiz/start">
+              <input type="hidden" name="certId" value="<%= cert.id %>">
+              <input type="hidden" name="mode" value="domain">
+              <input type="hidden" name="domainId" value="<%= domain.id %>">
+              <button class="text-xs bg-blue-50 hover:bg-blue-100 text-blue-700 px-3 py-1.5 rounded-lg transition-colors">
+                このドメインで練習
+              </button>
+            </form>
+            <a href="/certifications/<%= cert.id %>/domains/<%= domain.id %>"
+               class="text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1.5 rounded-lg transition-colors">
+              問題を管理・再生成
+            </a>
+          </div>
+        </div>
+      <% } %>
+    </div>
+
+  </main>
+</body>
+</html>

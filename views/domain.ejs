@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %></title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 min-h-screen">
+  <nav class="bg-gray-900 text-white px-6 py-3 flex items-center gap-4 text-sm">
+    <a href="/" class="font-bold">📚</a>
+    <span class="text-gray-400">/</span>
+    <a href="/certifications/<%= cert.id %>" class="text-gray-300 hover:text-white"><%= cert.name %></a>
+    <span class="text-gray-400">/</span>
+    <span class="text-gray-200 truncate max-w-xs"><%= domain.name %></span>
+  </nav>
+  <main class="max-w-4xl mx-auto px-4 py-8">
+
+    <div class="flex flex-wrap items-start justify-between gap-4 mb-6">
+      <div>
+        <h1 class="text-xl font-bold text-gray-800 mb-1"><%= domain.name %></h1>
+        <p class="text-sm text-gray-500">
+          <%= domain.questions.length %> 問 &nbsp;·&nbsp; 試験ウェイト <%= domain.weight %>%
+          <% if (domain.generatedAt) { %>
+            &nbsp;·&nbsp; 最終生成: <%= new Date(domain.generatedAt).toLocaleString('ja-JP') %>
+          <% } else { %>
+            &nbsp;·&nbsp; <span class="text-amber-500">未生成 (シードデータ)</span>
+          <% } %>
+        </p>
+      </div>
+      <div class="flex gap-2">
+        <form method="POST" action="/quiz/start">
+          <input type="hidden" name="certId" value="<%= cert.id %>">
+          <input type="hidden" name="mode" value="domain">
+          <input type="hidden" name="domainId" value="<%= domain.id %>">
+          <button class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-4 py-2 rounded-lg">
+            このドメインで練習
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- 正答率 -->
+    <% if (stats.total > 0) { %>
+      <div class="bg-white border border-gray-200 rounded-xl p-4 mb-6">
+        <div class="flex items-center gap-4">
+          <div class="text-3xl font-bold <%= stats.rate >= 70 ? 'text-green-600' : 'text-red-500' %>">
+            <%= stats.rate %>%
+          </div>
+          <div>
+            <div class="text-sm font-medium text-gray-700">累積正答率</div>
+            <div class="text-xs text-gray-400"><%= stats.correct %> / <%= stats.total %> 問正解</div>
+          </div>
+          <div class="flex-1">
+            <div class="w-full bg-gray-100 rounded-full h-3">
+              <div class="h-3 rounded-full <%= stats.rate >= 70 ? 'bg-green-500' : 'bg-red-400' %>"
+                   style="width: <%= stats.rate %>%"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    <% } %>
+
+    <!-- 問題再生成 -->
+    <div class="bg-amber-50 border border-amber-200 rounded-xl p-5 mb-8">
+      <h2 class="font-semibold text-amber-800 mb-2">🤖 AI による問題再生成</h2>
+      <p class="text-sm text-amber-700 mb-4">
+        学習ガイドのテキストを取得し、GitHub Copilot がこのドメインに特化した新しい問題を生成します。
+        現在の <%= domain.questions.length %> 問は置き換えられます。
+      </p>
+      <button id="generateBtn"
+              onclick="startGeneration('<%= cert.id %>', '<%= domain.id %>')"
+              class="bg-amber-500 hover:bg-amber-600 text-white font-semibold px-5 py-2 rounded-lg text-sm transition-colors">
+        問題を再生成する
+      </button>
+      <div id="generateProgress" class="hidden mt-4 space-y-2">
+        <div class="flex items-center gap-2 text-sm text-amber-700">
+          <svg class="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 22 6.477 22 12h-4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+          <span id="progressMsg">処理中...</span>
+        </div>
+      </div>
+      <div id="generateResult" class="hidden mt-3 p-3 rounded-lg text-sm"></div>
+    </div>
+
+    <!-- 現在の問題一覧 -->
+    <h2 class="font-bold text-lg mb-4">現在の問題一覧 (<%= domain.questions.length %> 問)</h2>
+    <div class="space-y-3">
+      <% for (let i = 0; i < domain.questions.length; i++) { %>
+        <% const q = domain.questions[i]; %>
+        <details class="bg-white border border-gray-200 rounded-xl">
+          <summary class="px-5 py-3 cursor-pointer text-sm font-medium text-gray-700 hover:bg-gray-50 rounded-xl">
+            Q<%= i + 1 %>. <%= q.question.substring(0, 80) %><%= q.question.length > 80 ? '...' : '' %>
+          </summary>
+          <div class="px-5 pb-4 pt-2 space-y-2 text-sm">
+            <% for (const [key, val] of Object.entries(q.options)) { %>
+              <div class="flex gap-2 <%= key === q.correctAnswer ? 'text-green-700 font-medium' : 'text-gray-600' %>">
+                <span class="font-bold"><%= key %>.</span>
+                <span><%= val %> <%= key === q.correctAnswer ? '✓' : '' %></span>
+              </div>
+            <% } %>
+            <div class="mt-3 pt-3 border-t border-gray-100 text-gray-500">
+              <span class="font-medium text-gray-600">解説:</span> <%= q.explanation %>
+            </div>
+          </div>
+        </details>
+      <% } %>
+    </div>
+
+  </main>
+
+  <script>
+    async function startGeneration(certId, domainId) {
+      const btn = document.getElementById('generateBtn');
+      const progress = document.getElementById('generateProgress');
+      const progressMsg = document.getElementById('progressMsg');
+      const result = document.getElementById('generateResult');
+
+      btn.disabled = true;
+      btn.textContent = '生成中...';
+      progress.classList.remove('hidden');
+      result.classList.add('hidden');
+
+      try {
+        const res = await fetch(`/api/certifications/${certId}/domains/${domainId}/generate`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+        });
+
+        if (!res.ok || !res.body) throw new Error('リクエストに失敗しました');
+
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = '';
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          buffer += decoder.decode(value, { stream: true });
+
+          const lines = buffer.split('\n');
+          buffer = lines.pop();
+
+          let eventType = null;
+          for (const line of lines) {
+            if (line.startsWith('event: ')) {
+              eventType = line.slice(7).trim();
+            } else if (line.startsWith('data: ')) {
+              try {
+                const data = JSON.parse(line.slice(6));
+                if (eventType === 'progress') {
+                  progressMsg.textContent = data.message;
+                } else if (eventType === 'done') {
+                  progress.classList.add('hidden');
+                  result.classList.remove('hidden');
+                  result.className = 'mt-3 p-3 rounded-lg text-sm bg-green-50 text-green-700 border border-green-200';
+                  result.textContent = `✅ ${data.message} ページを再読み込みして確認してください。`;
+                  btn.textContent = '再読み込み';
+                  btn.disabled = false;
+                  btn.onclick = () => location.reload();
+                  return;
+                } else if (eventType === 'error') {
+                  throw new Error(data.message);
+                }
+              } catch (e) {
+                // JSON parse error - ignore
+              }
+            }
+          }
+        }
+      } catch (err) {
+        progress.classList.add('hidden');
+        result.classList.remove('hidden');
+        result.className = 'mt-3 p-3 rounded-lg text-sm bg-red-50 text-red-700 border border-red-200';
+        result.textContent = `❌ エラー: ${err.message}`;
+        btn.disabled = false;
+        btn.textContent = '問題を再生成する';
+      }
+    }
+  </script>
+</body>
+</html>

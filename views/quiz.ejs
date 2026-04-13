@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %></title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 min-h-screen">
+  <nav class="bg-gray-900 text-white px-6 py-3 flex items-center gap-2 text-sm">
+    <a href="/" class="font-bold">📚</a>
+    <span class="text-gray-400">/</span>
+    <span class="text-gray-300">クイズ</span>
+  </nav>
+  <main class="max-w-3xl mx-auto px-4 py-8">
+
+    <!-- 進捗バー -->
+    <div class="mb-6">
+      <div class="flex justify-between text-sm text-gray-500 mb-1">
+        <span>問題 <%= currentIdx + 1 %> / <%= total %></span>
+        <span><%= question.domainName %></span>
+      </div>
+      <div class="w-full bg-gray-200 rounded-full h-2">
+        <div class="bg-blue-500 h-2 rounded-full transition-all"
+             style="width: <%= Math.round(((currentIdx) / total) * 100) %>%"></div>
+      </div>
+    </div>
+
+    <!-- 問題カード -->
+    <div class="bg-white rounded-2xl border border-gray-200 p-8 shadow-sm">
+      <p class="text-lg font-medium text-gray-800 mb-6 leading-relaxed"><%= question.question %></p>
+
+      <!-- 選択肢フォーム -->
+      <form id="answerForm" method="POST" action="/quiz/<%= session.id %>/answer">
+        <input type="hidden" name="questionId" value="<%= question.id %>">
+        <input type="hidden" name="domainId" value="<%= question.domainId %>">
+        <input type="hidden" name="questionIds" value="<%= questionIds %>">
+        <input type="hidden" name="certId" value="<%= certId %>">
+        <input type="hidden" name="currentIdx" value="<%= currentIdx %>">
+        <input type="hidden" name="isCorrect" id="isCorrectInput" value="">
+        <input type="hidden" name="selectedAnswer" id="selectedAnswerInput" value="">
+
+        <div class="space-y-3" id="optionsContainer">
+          <% for (const [key, val] of Object.entries(question.options)) { %>
+            <button type="button"
+                    data-key="<%= key %>"
+                    onclick="selectAnswer('<%= key %>', '<%= question.correctAnswer %>')"
+                    class="option-btn w-full text-left border-2 border-gray-200 rounded-xl px-5 py-3.5 text-sm text-gray-700 hover:border-blue-400 hover:bg-blue-50 transition-all font-medium">
+              <span class="font-bold text-gray-500 mr-2"><%= key %>.</span><%= val %>
+            </button>
+          <% } %>
+        </div>
+      </form>
+
+      <!-- 解説 (回答後に表示) -->
+      <div id="explanationBox" class="hidden mt-6 pt-6 border-t border-gray-100">
+        <div id="resultBadge" class="text-lg font-bold mb-2"></div>
+        <p class="text-sm text-gray-600 leading-relaxed"><%= question.explanation %></p>
+        <div class="mt-4">
+          <button onclick="document.getElementById('answerForm').submit()"
+                  class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-2 rounded-lg transition-colors text-sm">
+            次の問題 →
+          </button>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <script>
+    let answered = false;
+
+    function selectAnswer(key, correctAnswer) {
+      if (answered) return;
+      answered = true;
+
+      const isCorrect = key === correctAnswer;
+      document.getElementById('isCorrectInput').value = isCorrect;
+      document.getElementById('selectedAnswerInput').value = key;
+
+      // 選択肢の色を更新
+      document.querySelectorAll('.option-btn').forEach(btn => {
+        const btnKey = btn.dataset.key;
+        btn.disabled = true;
+        if (btnKey === correctAnswer) {
+          btn.className = btn.className.replace('border-gray-200', 'border-green-500')
+            .replace('hover:border-blue-400 hover:bg-blue-50', '')
+            + ' bg-green-50 text-green-800';
+        } else if (btnKey === key && !isCorrect) {
+          btn.className = btn.className.replace('border-gray-200', 'border-red-400')
+            .replace('hover:border-blue-400 hover:bg-blue-50', '')
+            + ' bg-red-50 text-red-700';
+        }
+      });
+
+      // 解説表示
+      const badge = document.getElementById('resultBadge');
+      badge.textContent = isCorrect ? '✅ 正解！' : `❌ 不正解 (正解: ${correctAnswer})`;
+      badge.className = isCorrect ? 'text-lg font-bold mb-2 text-green-600' : 'text-lg font-bold mb-2 text-red-600';
+      document.getElementById('explanationBox').classList.remove('hidden');
+    }
+  </script>
+</body>
+</html>

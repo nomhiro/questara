@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %></title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 min-h-screen">
+  <nav class="bg-gray-900 text-white px-6 py-3 flex items-center gap-4">
+    <a href="/" class="text-lg font-bold tracking-tight">📚 資格学習エージェント</a>
+  </nav>
+  <main class="max-w-4xl mx-auto px-4 py-8">
+
+    <h1 class="text-2xl font-bold mb-6">学習する資格を選んでください</h1>
+
+    <% if (certs.length === 0) { %>
+      <div class="text-gray-500">資格データがありません。<code>data/certifications/</code> に JSON ファイルを追加してください。</div>
+    <% } %>
+
+    <div class="grid gap-4">
+      <% for (const cert of certs) { %>
+        <a href="/certifications/<%= cert.id %>"
+           class="block bg-white rounded-xl border border-gray-200 p-6 hover:shadow-md transition-shadow">
+          <div class="flex items-start justify-between">
+            <div>
+              <h2 class="text-xl font-semibold text-gray-800"><%= cert.name %></h2>
+              <p class="text-sm text-gray-500 mt-1">
+                <%= cert.domainCount %> ドメイン &nbsp;·&nbsp; <%= cert.questionCount %> 問
+              </p>
+            </div>
+            <span class="text-gray-400 text-2xl">→</span>
+          </div>
+        </a>
+      <% } %>
+    </div>
+
+  </main>
+</body>
+</html>
