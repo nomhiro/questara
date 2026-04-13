@@ -1,32 +1,79 @@
 'use strict';
 
 const { parse } = require('node-html-parser');
+const { Client } = require('@modelcontextprotocol/sdk/client/index.js');
+const { StreamableHTTPClientTransport } = require('@modelcontextprotocol/sdk/client/streamableHttp.js');
 const { CopilotClient, approveAll } = require('@github/copilot-sdk');
 
+const MICROSOFT_LEARN_MCP_URL = 'https://learn.microsoft.com/api/mcp';
+
 /**
- * 学習ガイドURLから特定ドメインのテキストを抽出する
+ * Microsoft Learn MCP で学習ガイドページを Markdown 取得する
+ * 失敗時は null を返す (フォールバック用)
  */
-async function fetchDomainContent(studyGuideUrl, domainName) {
+async function fetchViaLearnMcp(url) {
+  const client = new Client({ name: 'cert-study-agent', version: '1.0.0' });
+  const transport = new StreamableHTTPClientTransport(new URL(MICROSOFT_LEARN_MCP_URL));
+  try {
+    await client.connect(transport);
+    const result = await client.callTool({
+      name: 'microsoft_docs_fetch',
+      arguments: { url },
+    });
+    // content は { type: 'text', text: '...' }[] 形式
+    const text = result?.content?.map((c) => c.text).join('\n') || '';
+    return text.trim() || null;
+  } catch (err) {
+    console.warn('[LearnMCP] fetch failed, falling back to HTML scraping:', err.message);
+    return null;
+  } finally {
+    await client.close().catch(() => {});
+  }
+}
+
+/**
+ * HTML スクレイピングによるフォールバック
+ */
+async function fetchViaHtmlScraping(studyGuideUrl, domainName) {
   const res = await fetch(studyGuideUrl);
   if (!res.ok) throw new Error(`学習ガイドの取得に失敗しました: ${res.status}`);
   const html = await res.text();
   const root = parse(html);
 
-  // メインコンテンツ領域を取得
   const mainContent = root.querySelector('main') || root.querySelector('.content') || root;
   const text = mainContent.structuredText || mainContent.text;
 
-  // ドメイン名でセクションを抽出 (前後2000文字を抜粋)
   const domainKeyword = domainName.replace(/Domain \d+: /i, '').trim().substring(0, 30);
   const idx = text.indexOf(domainKeyword);
-  if (idx === -1) {
-    // キーワードが見つからない場合は全文の最初3000文字を返す
-    return text.substring(0, 3000);
-  }
+  if (idx === -1) return text.substring(0, 3000);
 
   const start = Math.max(0, idx - 100);
   const end = Math.min(text.length, idx + 2500);
   return text.substring(start, end);
+}
+
+/**
+ * 学習ガイドURLからドメインのテキストを取得する
+ * 優先順位: Microsoft Learn MCP → HTML スクレイピング
+ */
+async function fetchDomainContent(studyGuideUrl, domainName) {
+  // MCP で全ページを Markdown として取得
+  const mcpText = await fetchViaLearnMcp(studyGuideUrl);
+  if (mcpText) {
+    // ドメインキーワードでセクションを抽出
+    const domainKeyword = domainName.replace(/Domain \d+: /i, '').trim().substring(0, 30);
+    const idx = mcpText.indexOf(domainKeyword);
+    if (idx !== -1) {
+      const start = Math.max(0, idx - 100);
+      const end = Math.min(mcpText.length, idx + 3000);
+      return mcpText.substring(start, end);
+    }
+    // キーワードが見つからなければ全文の最初4000文字
+    return mcpText.substring(0, 4000);
+  }
+
+  // フォールバック: HTML スクレイピング
+  return fetchViaHtmlScraping(studyGuideUrl, domainName);
 }
 
 /**
@@ -59,9 +106,10 @@ async function generateQuestions({ certId, domain, docText, onProgress }) {
 
 function buildPrompt(domain, docText) {
   return `あなたはMicrosoft/GitHub認定資格試験の問題作成専門家です。
-以下の学習ガイドのテキストに基づいて、「${domain.name}」ドメインの4択試験問題を5問作成してください。
+以下は Microsoft Learn の公式学習ガイドから取得した「${domain.name}」ドメインのテキストです。
+このテキストに基づいて、実際の試験を想定した4択試験問題を5問作成してください。
 
-## 学習ガイドのテキスト
+## Microsoft Learn 学習ガイド (${domain.name})
 ${docText}
 
 ## 出力形式
@@ -82,7 +130,7 @@ ${docText}
 ]
 
 ## 注意事項
-- 問題は実際の試験を想定した実践的な内容にしてください
+- 学習ガイドに記載されたトピックとスキルを正確に反映した問題にしてください
 - 解説は学習に役立つ詳細な内容にしてください
 - 正解は A〜D の中からランダムに分散させてください
 - 必ず valid な JSON のみを返してください`;

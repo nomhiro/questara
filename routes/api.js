@@ -26,7 +26,7 @@ router.post('/certifications/:certId/domains/:domainId/generate', async (req, re
   };
 
   try {
-    send('progress', { message: `学習ガイドを取得中...` });
+    send('progress', { message: `Microsoft Learn MCP でドキュメントを取得中...` });
     const docText = await generationService.fetchDomainContent(cert.studyGuideUrl, domain.name);
 
     send('progress', { message: 'GitHub Copilot に問題生成を依頼中...' });

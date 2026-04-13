@@ -8,9 +8,10 @@
     "dev": "node --watch app.js"
   },
   "dependencies": {
-    "express": "^4.19.2",
-    "ejs": "^3.1.10",
     "@github/copilot-sdk": "latest",
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "ejs": "^3.1.10",
+    "express": "^4.19.2",
     "node-html-parser": "^6.1.13"
   },
   "engines": {
