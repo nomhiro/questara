@@ -1,0 +1,373 @@
+{
+  "id": "gh-200",
+  "name": "GitHub Actions (GH-200)",
+  "studyGuideUrl": "https://learn.microsoft.com/ja-jp/credentials/certifications/resources/study-guides/gh-200",
+  "courseUrl": "https://learn.microsoft.com/ja-jp/training/courses/gh-200t00",
+  "domains": [
+    {
+      "id": "domain-1",
+      "name": "Domain 1: ワークフローの作成と管理",
+      "weight": 22,
+      "generatedAt": null,
+      "questions": [
+        {
+          "id": "gh-200-d1-001",
+          "question": "`workflow_dispatch` トリガーで入力パラメータを定義する際、入力の型として指定できないものはどれですか？",
+          "options": {
+            "A": "string",
+            "B": "boolean",
+            "C": "number",
+            "D": "choice"
+          },
+          "correctAnswer": "C",
+          "explanation": "`workflow_dispatch` の入力型として使えるのは `string`、`boolean`、`choice`、`environment` です。`number` 型は存在しません。数値が必要な場合は `string` 型で受け取り、ステップ内で変換します。",
+          "tags": ["workflow_dispatch", "inputs", "triggers"]
+        },
+        {
+          "id": "gh-200-d1-002",
+          "question": "マトリックス戦略で `fail-fast: true`（デフォルト）を設定した場合の動作として正しいのはどれですか？",
+          "options": {
+            "A": "すべてのマトリックスジョブが失敗した場合のみワークフローをキャンセルする",
+            "B": "1つのマトリックスジョブが失敗したとき、残りの実行中・待機中のジョブをキャンセルする",
+            "C": "失敗したジョブのみ自動的に再実行する",
+            "D": "マトリックスジョブはすべて独立して実行され、互いに影響しない"
+          },
+          "correctAnswer": "B",
+          "explanation": "`fail-fast: true` は1つのマトリックスジョブが失敗すると、GitHub Actions がまだ実行中または待機中の残りのジョブをすべてキャンセルします。これはリソースの節約に有効ですが、全バリアントの結果を見たい場合は `fail-fast: false` に設定します。",
+          "tags": ["matrix", "strategy", "fail-fast"]
+        },
+        {
+          "id": "gh-200-d1-003",
+          "question": "サービスコンテナーを使用してワークフロー内でPostgreSQLデータベースを起動したい。ジョブのステップからデータベースに接続する際、ホスト名として使用すべき値はどれですか？",
+          "options": {
+            "A": "localhost",
+            "B": "127.0.0.1",
+            "C": "services.postgres",
+            "D": "サービスコンテナーのラベル名（例: postgres）"
+          },
+          "correctAnswer": "D",
+          "explanation": "コンテナーランナー上では、サービスコンテナーにはジョブの `services:` ブロックで定義したラベル名（例: `postgres`）でアクセスします。ただし、ジョブがコンテナー内で動作する場合はラベル名、ランナーホスト上で動作する場合は `localhost` を使います。GitHub のドキュメントでは「ジョブがコンテナーで実行される場合はサービスのラベル名を使用する」と規定されています。",
+          "tags": ["service-containers", "networking", "postgres"]
+        },
+        {
+          "id": "gh-200-d1-004",
+          "question": "同一ワークフローファイル内で同じ `steps` ブロックを複数のジョブで再利用するために YAML の機能を活用したい。正しいアプローチはどれですか？",
+          "options": {
+            "A": "YAML アンカー（`&`）とエイリアス（`*`）を使ってマッピングを定義し参照する",
+            "B": "`uses:` キーワードで同ファイル内の別ジョブを参照する",
+            "C": "`workflow_call` トリガーで同ファイルを再帰呼び出しする",
+            "D": "`extends:` キーワードで親ジョブを継承する"
+          },
+          "correctAnswer": "A",
+          "explanation": "YAML アンカー（`&name`）でマッピングやシーケンスに名前を付け、エイリアス（`*name`）で参照することで同一ファイル内の繰り返しを排除できます。`<<:` マージキーと組み合わせることでマッピングの内容を展開できます。`uses:` は別ファイルの再利用可能なワークフローや外部アクションの参照に使います。",
+          "tags": ["yaml", "anchors", "aliases", "reuse"]
+        },
+        {
+          "id": "gh-200-d1-005",
+          "question": "`GITHUB_OUTPUT` 環境ファイルを使ってステップの出力値を後続ステップで参照する場合、正しい記述はどれですか？",
+          "options": {
+            "A": "`echo \"MY_VAR=value\" >> $GITHUB_ENV` と記述し、`$MY_VAR` で参照する",
+            "B": "`echo \"my-output=value\" >> $GITHUB_OUTPUT` と記述し、`${{ steps.<step-id>.outputs.my-output }}` で参照する",
+            "C": "`::set-output name=my-output::value` と記述し、`${{ steps.<step-id>.outputs.my-output }}` で参照する",
+            "D": "`echo \"MY_VAR=value\" >> $GITHUB_OUTPUT` と記述し、`${{ env.MY_VAR }}` で参照する"
+          },
+          "correctAnswer": "B",
+          "explanation": "`GITHUB_OUTPUT` はステップ間で出力値を渡すための環境ファイルです。`echo \"key=value\" >> $GITHUB_OUTPUT` で書き込み、後続ステップでは `${{ steps.<step-id>.outputs.key }}` で参照します。なお、`::set-output` コマンド（選択肢C）は非推奨です。`GITHUB_ENV` は環境変数の設定に使い、`${{ env.VAR }}` で参照します。",
+          "tags": ["outputs", "GITHUB_OUTPUT", "step-communication"]
+        }
+      ]
+    },
+    {
+      "id": "domain-2",
+      "name": "Domain 2: ワークフローの利用とトラブルシューティング",
+      "weight": 17,
+      "generatedAt": null,
+      "questions": [
+        {
+          "id": "gh-200-d2-001",
+          "question": "ワークフロー実行が失敗した原因を調査する際、最初に確認すべき情報として最も適切なのはどれですか？",
+          "options": {
+            "A": "リポジトリの Settings → Actions → General ページ",
+            "B": "失敗したジョブのステップログと実行サマリー",
+            "C": "リポジトリのコミット履歴",
+            "D": "GitHub Status ページ（githubstatus.com）"
+          },
+          "correctAnswer": "B",
+          "explanation": "ワークフロー失敗の診断では、まず Actions タブで該当実行を開き、失敗したジョブのステップログを確認します。エラーメッセージ、終了コード、アノテーションが表示され、根本原因の特定に役立ちます。GitHub Status はインフラ障害の確認に使いますが、設定ミスやコードの問題はログで特定します。",
+          "tags": ["troubleshooting", "logs", "debugging"]
+        },
+        {
+          "id": "gh-200-d2-002",
+          "question": "スターターワークフロー（Starter workflow）と再利用可能なワークフロー（Reusable workflow）の最も重要な違いはどれですか？",
+          "options": {
+            "A": "スターターワークフローはパブリックリポジトリのみ、再利用可能なワークフローはプライベートリポジトリのみ使用できる",
+            "B": "スターターワークフローは新規ワークフロー作成時のテンプレートコピーであり、再利用可能なワークフローは `workflow_call` で呼び出される中央管理された定義である",
+            "C": "スターターワークフローは組織管理者のみ作成でき、再利用可能なワークフローは誰でも作成できる",
+            "D": "スターターワークフローは自動実行され、再利用可能なワークフローは手動実行のみ"
+          },
+          "correctAnswer": "B",
+          "explanation": "スターターワークフローは `.github/workflow-templates/` に配置し、新しいワークフロー作成時に独立したコピーとしてスキャフォールディングされます（コピー後は独立して編集可能）。再利用可能なワークフローは `workflow_call` トリガーで定義し、呼び出し元は常に中央の最新バージョンを実行します。",
+          "tags": ["starter-workflow", "reusable-workflow", "templates"]
+        },
+        {
+          "id": "gh-200-d2-003",
+          "question": "マトリックスワークフローで `os: [ubuntu-latest, windows-latest]` と `node: [18, 20]` を組み合わせた場合、生成されるジョブ数はいくつですか？",
+          "options": {
+            "A": "2",
+            "B": "3",
+            "C": "4",
+            "D": "6"
+          },
+          "correctAnswer": "C",
+          "explanation": "マトリックスはデカルト積で展開されます。2つのOS × 2つのNode.jsバージョン = 4ジョブ（ubuntu/18, ubuntu/20, windows/18, windows/20）が生成されます。`exclude` で特定の組み合わせを除外したり、`include` で追加の組み合わせを加えることができます。",
+          "tags": ["matrix", "cartesian-product", "jobs"]
+        },
+        {
+          "id": "gh-200-d2-004",
+          "question": "REST API を使ってワークフロー実行のログをプログラムで取得する場合、正しいエンドポイントはどれですか？",
+          "options": {
+            "A": "GET /repos/{owner}/{repo}/actions/workflows/{workflow_id}/logs",
+            "B": "GET /repos/{owner}/{repo}/actions/runs/{run_id}/logs",
+            "C": "GET /repos/{owner}/{repo}/actions/jobs/{job_id}/logs",
+            "D": "GET /repos/{owner}/{repo}/actions/runs/{run_id}/artifacts"
+          },
+          "correctAnswer": "B",
+          "explanation": "ワークフロー実行のログアーカイブ（zip）は `GET /repos/{owner}/{repo}/actions/runs/{run_id}/logs` で取得できます。個別ジョブのログは `GET /repos/{owner}/{repo}/actions/jobs/{job_id}/logs`、成果物一覧は `/runs/{run_id}/artifacts` です。",
+          "tags": ["REST-API", "logs", "workflow-runs"]
+        },
+        {
+          "id": "gh-200-d2-005",
+          "question": "ワークフローの「無効化（Disable）」と「削除（Delete）」の違いとして正しいのはどれですか？",
+          "options": {
+            "A": "無効化するとワークフローファイルが削除され、削除すると実行履歴が消える",
+            "B": "無効化は一時的にトリガーを停止するだけでファイルは残り、削除はファイル自体をリポジトリから除去する",
+            "C": "無効化と削除は同じ操作で、どちらも元に戻せない",
+            "D": "無効化はリポジトリ管理者のみ、削除は誰でも実行できる"
+          },
+          "correctAnswer": "B",
+          "explanation": "ワークフローの無効化（UI または API）は `.github/workflows/` のファイルを保持したまま、新しいトリガーによる実行を停止します。再有効化すれば元通りになります。削除はワークフローファイルをリポジトリから除去します。過去の実行履歴は両操作後も保持されます。",
+          "tags": ["disable", "delete", "workflow-management"]
+        }
+      ]
+    },
+    {
+      "id": "domain-3",
+      "name": "Domain 3: アクションの作成と管理",
+      "weight": 17,
+      "generatedAt": null,
+      "questions": [
+        {
+          "id": "gh-200-d3-001",
+          "question": "JavaScript アクション、Docker コンテナーアクション、複合アクションの違いとして正しいのはどれですか？",
+          "options": {
+            "A": "JavaScript アクションはすべてのランナーOSで動作し、Docker アクションは Linux ランナーのみ対応、複合アクションは複数のステップをまとめる",
+            "B": "JavaScript アクションは Node.js 不要、Docker アクションは任意言語で書けるが遅い、複合アクションは他のアクションを呼べない",
+            "C": "Docker アクションはパブリックリポジトリのみ、JavaScript アクションはプライベートリポジトリのみ使用できる",
+            "D": "複合アクションは `action.yml` が不要で、Docker・JavaScript アクションは必須"
+          },
+          "correctAnswer": "A",
+          "explanation": "JavaScript アクションは Node.js ランタイムで動作し、すべてのOS（Linux/macOS/Windows）のランナーで実行できます。Docker コンテナーアクションは任意の言語・環境を使えますが Linux ランナー専用です。複合アクション（composite）は複数の `run` ステップや `uses` ステップを一つのアクションとしてまとめ、OSを選びません。",
+          "tags": ["action-types", "javascript", "docker", "composite"]
+        },
+        {
+          "id": "gh-200-d3-002",
+          "question": "カスタムアクションの `action.yml`（メタデータファイル）で必須のキーはどれですか？",
+          "options": {
+            "A": "`name` と `description` と `runs`",
+            "B": "`name` と `inputs` と `outputs`",
+            "C": "`name` と `author` と `runs`",
+            "D": "`description` と `runs` と `branding`"
+          },
+          "correctAnswer": "A",
+          "explanation": "`action.yml` で必須のキーは `name`（アクション名）、`description`（説明）、`runs`（実行方法の定義）の3つです。`inputs`、`outputs`、`author`、`branding` はオプションです。`runs` にはアクションの種類（`node20`、`docker`、`composite` など）を指定します。",
+          "tags": ["action.yml", "metadata", "required-fields"]
+        },
+        {
+          "id": "gh-200-d3-003",
+          "question": "アクション内でワークフローコマンドを使ってデバッグメッセージをログに出力するための正しい構文はどれですか？",
+          "options": {
+            "A": "`echo \"::debug::メッセージ\"`",
+            "B": "`echo \"[debug] メッセージ\"`",
+            "C": "`echo \"##[debug]メッセージ\"`",
+            "D": "`console.debug(\"メッセージ\")`"
+          },
+          "correctAnswer": "A",
+          "explanation": "GitHub Actions のワークフローコマンドは `::command::value` の形式です。デバッグメッセージは `echo \"::debug::メッセージ\"` で出力します。デバッグログはリポジトリの Secrets に `ACTIONS_STEP_DEBUG=true` を設定したときのみ表示されます。`##[debug]` は Azure DevOps の旧形式です。",
+          "tags": ["workflow-commands", "debug", "logging"]
+        },
+        {
+          "id": "gh-200-d3-004",
+          "question": "作成したアクションを GitHub Marketplace に公開する際の要件として正しくないものはどれですか？",
+          "options": {
+            "A": "アクションはパブリックリポジトリに配置する必要がある",
+            "B": "`action.yml` に `name`、`description`、`branding`（アイコンと色）が必要",
+            "C": "リポジトリのルートに `action.yml` を配置する必要がある",
+            "D": "Marketplace 公開には GitHub Enterprise Cloud のサブスクリプションが必要"
+          },
+          "correctAnswer": "D",
+          "explanation": "GitHub Marketplace へのアクション公開に Enterprise Cloud サブスクリプションは不要です。必要な要件は：①パブリックリポジトリであること、②リポジトリルートに `action.yml`（または `action.yaml`）があること、③ `name`・`description` が記載されていること、④GitHub 利用規約への同意です。`branding` はオプションですが Marketplace での表示品質が向上します。",
+          "tags": ["marketplace", "publishing", "requirements"]
+        },
+        {
+          "id": "gh-200-d3-005",
+          "question": "アクションのバージョン管理のベストプラクティスとして推奨される戦略はどれですか？",
+          "options": {
+            "A": "常に `@main` ブランチを参照させることで最新版が自動適用される",
+            "B": "リリースごとにセマンティックバージョンのタグ（例: `v1.2.3`）と `v1` などのメジャーバージョンタグを付けて管理する",
+            "C": "バージョンタグは使わず、常にコミット SHA を直接指定させる",
+            "D": "リリースのたびにアクションの `id` を変更してバージョンを区別する"
+          },
+          "correctAnswer": "B",
+          "explanation": "推奨パターンはセマンティックバージョニング（SemVer）を使い、パッチリリースごとに `v1.2.3` タグを付け、さらに `v1` タグをその最新パッチに追従させます。利用者は `uses: owner/action@v1` と書けば自動的に最新の `v1.x.x` を使えます。`@main` は予期せぬ破壊的変更が入るリスクがあります。セキュリティ上は完全なコミット SHA へのピン留めも推奨されます。",
+          "tags": ["versioning", "semver", "release-strategy"]
+        }
+      ]
+    },
+    {
+      "id": "domain-4",
+      "name": "Domain 4: エンタープライズ向けの GitHub Actions の管理",
+      "weight": 22,
+      "generatedAt": null,
+      "questions": [
+        {
+          "id": "gh-200-d4-001",
+          "question": "組織レベルでシークレットを定義した場合、そのシークレットへのアクセスをリポジトリ単位で制限するにはどうすればよいですか？",
+          "options": {
+            "A": "シークレット名にリポジトリ名をプレフィックスとして付ける",
+            "B": "組織シークレット作成時に「Selected repositories」を選択して対象リポジトリを指定する",
+            "C": "組織シークレットは常に全リポジトリから参照でき、制限はできない",
+            "D": "シークレットを Environment に紐付けてリポジトリ別にスコープを設定する"
+          },
+          "correctAnswer": "B",
+          "explanation": "組織シークレットの作成時または編集時に、アクセスポリシーとして「All repositories」「Private repositories」「Selected repositories」から選択できます。「Selected repositories」を選択すると、アクセスを許可するリポジトリを個別に指定できます。Environment シークレットはリポジトリ内の特定環境へのスコープに使います。",
+          "tags": ["secrets", "organization", "access-control"]
+        },
+        {
+          "id": "gh-200-d4-002",
+          "question": "GitHub ホストランナーとセルフホストランナーの特徴の比較として正しいのはどれですか？",
+          "options": {
+            "A": "セルフホストランナーはパブリックリポジトリでも安全に使用でき、GitHub ホストランナーよりコストが低い",
+            "B": "GitHub ホストランナーは毎回クリーンな環境で実行され、セルフホストランナーは永続的な環境でカスタマイズが可能",
+            "C": "セルフホストランナーは GitHub Actions 専用ハードウェアが必要で、GitHub ホストランナーは仮想マシンで動作する",
+            "D": "GitHub ホストランナーは無制限に使用でき、セルフホストランナーはジョブ数に上限がある"
+          },
+          "correctAnswer": "B",
+          "explanation": "GitHub ホストランナーは毎回新しいクリーンなVMで実行されるため、環境の汚染がありません（ただし毎回セットアップが必要）。セルフホストランナーは自社インフラ上に構築でき、カスタムツールや特定ハードウェア要件に対応できますが、セキュリティ管理が必要です。パブリックリポジトリへのセルフホストランナー利用は悪意あるコードのリスクがあるため注意が必要です。",
+          "tags": ["runners", "self-hosted", "github-hosted"]
+        },
+        {
+          "id": "gh-200-d4-003",
+          "question": "ランナーグループ（Runner groups）の主な用途として最も適切なのはどれですか？",
+          "options": {
+            "A": "同時実行数を制限してコスト管理を行う",
+            "B": "セルフホストランナーへのアクセスを組織・リポジトリ単位で制御する",
+            "C": "ランナーのOSバージョンを統一管理する",
+            "D": "GitHub ホストランナーのリージョンを指定する"
+          },
+          "correctAnswer": "B",
+          "explanation": "ランナーグループはセルフホストランナーのアクセス制御に使用します。企業や組織レベルでグループを作成し、特定のリポジトリやワークフローからのみ使用できるよう制限できます。これにより、本番環境用ランナーへのアクセスを限定するなどのセキュリティ分離が実現できます。",
+          "tags": ["runner-groups", "access-control", "self-hosted"]
+        },
+        {
+          "id": "gh-200-d4-004",
+          "question": "再利用可能なワークフロー（Reusable workflow）を別リポジトリから呼び出す場合、呼び出し元ワークフローでのシークレットの渡し方として正しいのはどれですか？",
+          "options": {
+            "A": "呼び出し先と呼び出し元が同じ組織であれば、シークレットは自動的に引き継がれる",
+            "B": "`secrets: inherit` を指定するか、`with:` ブロックで個別にシークレットをマッピングして渡す",
+            "C": "再利用可能なワークフローにシークレットを渡すことはセキュリティ上禁止されている",
+            "D": "`env:` ブロックで環境変数として変換して渡す必要がある"
+          },
+          "correctAnswer": "B",
+          "explanation": "再利用可能なワークフローにシークレットを渡す方法は2つあります。①`secrets: inherit` で呼び出し元のシークレットをすべて継承する、②呼び出し先ワークフローの `on.workflow_call.secrets` で宣言したシークレットを `secrets:` ブロックで個別マッピングして渡す。同一企業内でも自動引き継ぎはされません。",
+          "tags": ["reusable-workflow", "secrets", "workflow_call"]
+        },
+        {
+          "id": "gh-200-d4-005",
+          "question": "組織の Actions ポリシーで「Allow select actions and reusable workflows」を設定する主な目的はどれですか？",
+          "options": {
+            "A": "GitHub ホストランナーの使用コストを削減する",
+            "B": "承認されたアクションのみ組織のワークフローで使用できるようにしてセキュリティリスクを低減する",
+            "C": "再利用可能なワークフローのバージョン管理を自動化する",
+            "D": "セルフホストランナーでのみアクションを実行できるよう制限する"
+          },
+          "correctAnswer": "B",
+          "explanation": "「Allow select actions」ポリシーにより、GitHub 自身のアクション、Marketplace で確認済みのアクション、または許可リストに含まれるアクションのみを組織のワークフローで使用可能にできます。これにより悪意のあるサードパーティアクションの使用リスクを軽減し、サプライチェーンセキュリティを強化します。",
+          "tags": ["policy", "organization", "actions-permissions"]
+        }
+      ]
+    },
+    {
+      "id": "domain-5",
+      "name": "Domain 5: 自動化のセキュリティ保護と最適化",
+      "weight": 12,
+      "generatedAt": null,
+      "questions": [
+        {
+          "id": "gh-200-d5-001",
+          "question": "`GITHUB_TOKEN` の特徴として正しいのはどれですか？",
+          "options": {
+            "A": "GITHUB_TOKEN はワークフロー実行ごとに自動生成される一時的なトークンで、ジョブ完了後に無効化される",
+            "B": "GITHUB_TOKEN はリポジトリオーナーが手動で生成し、有効期限なしで使用できる",
+            "C": "GITHUB_TOKEN はすべてのリポジトリへの読み書き権限をデフォルトで持つ",
+            "D": "GITHUB_TOKEN は PAT（Personal Access Token）と同じ権限スコープを持つ"
+          },
+          "correctAnswer": "A",
+          "explanation": "`GITHUB_TOKEN` はワークフロー実行開始時に GitHub Actions が自動生成するエフェメラル（一時的）なトークンです。対象リポジトリのみにスコープが限定され、ジョブ完了後（またはタイムアウト後）に自動失効します。デフォルトのアクセス許可は組織/リポジトリの設定で「read-only」または「read-write」から選択でき、ワークフロー内で `permissions:` キーを使って細粒度に制御できます。",
+          "tags": ["GITHUB_TOKEN", "security", "permissions"]
+        },
+        {
+          "id": "gh-200-d5-002",
+          "question": "OIDC（OpenID Connect）を使ってクラウドプロバイダーと連携する主なメリットはどれですか？",
+          "options": {
+            "A": "ワークフローの実行速度が向上する",
+            "B": "GitHub Secrets に有効期限の長いクラウド認証情報を保存する必要がなくなる",
+            "C": "GitHub ホストランナーをプライベートネットワーク内に配置できる",
+            "D": "複数クラウドプロバイダーへの同時デプロイが可能になる"
+          },
+          "correctAnswer": "B",
+          "explanation": "GitHub Actions の OIDC サポートにより、AWS・Azure・GCP などのクラウドプロバイダーとフェデレーション認証ができます。ワークフロー実行時に GitHub が OIDC トークン（短命なJWT）を発行し、クラウド側で検証して一時的な認証情報と交換します。これにより Secrets に保存する長期クラウドクレデンシャル（アクセスキー等）が不要になり、セキュリティリスクが大幅に低下します。",
+          "tags": ["OIDC", "security", "cloud-federation"]
+        },
+        {
+          "id": "gh-200-d5-003",
+          "question": "スクリプトインジェクション攻撃を防ぐために最も推奨される対策はどれですか？",
+          "options": {
+            "A": "`run:` ブロック内で `${{ github.event.pull_request.title }}` などのユーザー入力値を直接展開する",
+            "B": "ユーザー入力値を環境変数に格納してから `$ENV_VAR` としてシェルで参照する",
+            "C": "すべてのワークフローをプライベートリポジトリに限定する",
+            "D": "`GITHUB_TOKEN` の書き込み権限を有効にする"
+          },
+          "correctAnswer": "B",
+          "explanation": "`${{ github.event.issue.title }}` などの式を `run:` 内で直接展開すると、悪意のあるユーザーが issue タイトルにシェルコマンドを埋め込むことでインジェクション攻撃が可能です。対策として、入力値を一度環境変数（`env:` ブロック）に代入し、`run:` 内では `$MY_INPUT` などのシェル変数として参照します。こうするとシェルのコマンド解釈前にエスケープ処理が行われます。",
+          "tags": ["script-injection", "security", "best-practices"]
+        },
+        {
+          "id": "gh-200-d5-004",
+          "question": "サードパーティアクションを完全なコミット SHA（例: `uses: actions/checkout@a81bbbf`）にピン留めする理由として最も適切なのはどれですか？",
+          "options": {
+            "A": "ダウンロード速度が向上するため",
+            "B": "タグは上書き可能であるため、SHA ピン留めにより意図しないコード変更（サプライチェーン攻撃）を防ぐ",
+            "C": "GitHub Marketplace に公開されたアクションはタグ参照が禁止されているため",
+            "D": "コミット SHA の方がセマンティックバージョンより人間に読みやすいため"
+          },
+          "correctAnswer": "B",
+          "explanation": "Git タグは mutable（上書き可能）なため、攻撃者がアクションのリポジトリを侵害してタグを悪意のあるコミットに差し替えるサプライチェーン攻撃が可能です。完全なコミット SHA はイミュータブル（不変）なため、SHA ピン留めにより参照するコードが変わらないことを保証できます。これは特に企業環境で重要なセキュリティプラクティスです。",
+          "tags": ["SHA-pinning", "supply-chain", "security"]
+        },
+        {
+          "id": "gh-200-d5-005",
+          "question": "ワークフローのパフォーマンスを最適化するためにキャッシュを使用する場合、`actions/cache` の `key` パラメータの設計として最も効率的なのはどれですか？",
+          "options": {
+            "A": "毎回ユニークなキーを生成して常に新しいキャッシュを作成する",
+            "B": "依存関係ファイル（package-lock.json など）のハッシュをキーに含め、ファイル変更時のみキャッシュを更新する",
+            "C": "キャッシュキーは固定文字列にして常に同じキャッシュを再利用する",
+            "D": "OSと日付をキーにして毎日新しいキャッシュを作成する"
+          },
+          "correctAnswer": "B",
+          "explanation": "最適なキャッシュキーのパターンは `${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}` のように、OSとロックファイルのハッシュを組み合わせます。ロックファイルが変わった（依存関係が更新された）ときのみ新しいキャッシュが作成され、変わらなければ既存のキャッシュが再利用されます。毎回ユニークなキーでは常にキャッシュミスし、固定キーでは依存関係更新後も古いキャッシュが使われ続けます。",
+          "tags": ["cache", "performance", "optimization"]
+        }
+      ]
+    }
+  ]
+}

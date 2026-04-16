@@ -3,7 +3,7 @@
 const { parse } = require('node-html-parser');
 const { Client } = require('@modelcontextprotocol/sdk/client/index.js');
 const { StreamableHTTPClientTransport } = require('@modelcontextprotocol/sdk/client/streamableHttp.js');
-const { CopilotClient, approveAll } = require('@github/copilot-sdk');
+const OpenAI = require('openai');
 
 const MICROSOFT_LEARN_MCP_URL = 'https://learn.microsoft.com/api/mcp';
 
@@ -20,7 +20,6 @@ async function fetchViaLearnMcp(url) {
       name: 'microsoft_docs_fetch',
       arguments: { url },
     });
-    // content は { type: 'text', text: '...' }[] 形式
     const text = result?.content?.map((c) => c.text).join('\n') || '';
     return text.trim() || null;
   } catch (err) {
@@ -53,96 +52,132 @@ async function fetchViaHtmlScraping(studyGuideUrl, domainName) {
 }
 
 /**
- * 学習ガイドURLからドメインのテキストを取得する
+ * URL からドメイン関連テキストを取得する共通関数
  * 優先順位: Microsoft Learn MCP → HTML スクレイピング
  */
-async function fetchDomainContent(studyGuideUrl, domainName) {
-  // MCP で全ページを Markdown として取得
-  const mcpText = await fetchViaLearnMcp(studyGuideUrl);
+async function fetchContentForDomain(url, domainName, maxChars = 4000) {
+  if (!url) return '';
+
+  const mcpText = await fetchViaLearnMcp(url);
   if (mcpText) {
-    // ドメインキーワードでセクションを抽出
-    const domainKeyword = domainName.replace(/Domain \d+: /i, '').trim().substring(0, 30);
+    const domainKeyword = domainName.replace(/Domain \d+:\s*/i, '').trim().substring(0, 40);
     const idx = mcpText.indexOf(domainKeyword);
     if (idx !== -1) {
-      const start = Math.max(0, idx - 100);
-      const end = Math.min(mcpText.length, idx + 3000);
+      const start = Math.max(0, idx - 200);
+      const end = Math.min(mcpText.length, idx + maxChars);
       return mcpText.substring(start, end);
     }
-    // キーワードが見つからなければ全文の最初4000文字
-    return mcpText.substring(0, 4000);
+    return mcpText.substring(0, maxChars);
   }
 
-  // フォールバック: HTML スクレイピング
-  return fetchViaHtmlScraping(studyGuideUrl, domainName);
+  return fetchViaHtmlScraping(url, domainName);
+}
+
+async function fetchDomainContent(studyGuideUrl, domainName) {
+  return fetchContentForDomain(studyGuideUrl, domainName, 4000);
+}
+
+async function fetchCourseContent(courseUrl, domainName) {
+  return fetchContentForDomain(courseUrl, domainName, 4000);
 }
 
 /**
- * GitHub Copilot SDK を使って問題を生成する
+ * OpenAI 互換 API を使って問題を生成する
+ * llmConfig: { endpointUrl, apiKey, modelName }
  */
-async function generateQuestions({ certId, domain, docText, onProgress }) {
-  const client = new CopilotClient({ autoStart: true });
+async function generateQuestions({ cert, certId, domain, llmConfig, onProgress }) {
+  onProgress?.('学習ガイドとコースコンテンツを取得中...');
+  const [guideText, courseText] = await Promise.all([
+    fetchDomainContent(cert.studyGuideUrl, domain.name),
+    fetchCourseContent(cert.courseUrl, domain.name),
+  ]);
 
-  const prompt = buildPrompt(domain, docText);
+  const prompt = buildPrompt(domain, guideText, courseText);
 
-  let session;
-  try {
-    session = await client.createSession({
-      onPermissionRequest: approveAll,
-      workspacePath: process.cwd(),
-    });
+  const openai = new OpenAI({
+    baseURL: llmConfig.endpointUrl,
+    apiKey: llmConfig.apiKey,
+  });
 
-    onProgress?.('Copilot セッション開始...');
+  onProgress?.('LLM に問題生成をリクエスト中...');
 
-    const result = await session.sendAndWait({ prompt }, 120_000);
-    const text = result?.data?.message || result?.message || '';
-    onProgress?.('レスポンスを解析中...');
+  const response = await openai.chat.completions.create({
+    model: llmConfig.modelName,
+    messages: [{ role: 'user', content: prompt }],
+    temperature: 0.7,
+  });
 
-    return parseQuestionsFromResponse(text, certId, domain.id);
-  } finally {
-    session?.destroy();
-    client.stop().catch(() => {});
-  }
+  onProgress?.('レスポンスを解析中...');
+  const text = response.choices[0]?.message?.content || '';
+  return parseQuestionsFromResponse(text, certId, domain.id);
 }
 
-function buildPrompt(domain, docText) {
-  return `あなたはMicrosoft/GitHub認定資格試験の問題作成専門家です。
-以下は Microsoft Learn の公式学習ガイドから取得した「${domain.name}」ドメインのテキストです。
-このテキストに基づいて、実際の試験を想定した4択試験問題を5問作成してください。
+/**
+ * 高品質な問題生成プロンプトを構築する
+ */
+function buildPrompt(domain, guideText, courseText) {
+  const contextSection = buildContextSection(guideText, courseText);
 
-## Microsoft Learn 学習ガイド (${domain.name})
-${docText}
+  return `あなたはMicrosoft/GitHub認定資格試験の問題作成専門家です。
+以下の参考資料に基づいて、「${domain.name}」ドメインの4択試験問題を10問作成してください。
+
+${contextSection}
+
+## 問題品質の基準
+- **難易度分布**: 基礎理解 4問・応用/シナリオ 4問・分析/判断 2問
+- **問題形式**: 実務シナリオを含む実践的な問題を優先する
+- **誤答肢**: 正解に近い紛らわしい選択肢を用意し、なぜ誤りかを解説に含める
+- **正解分散**: A・B・C・D を均等に分散させる
+- **日本語**: 問題文・選択肢・解説はすべて日本語で記述する
+
+## few-shot 例（この品質・形式に合わせて作成してください）
+{
+  "question": "GitHub Enterprise の管理者が、組織内の全リポジトリに対してブランチ保護ルールを一括で強制適用したい。最も適切な手順はどれですか？",
+  "options": {
+    "A": "各リポジトリの Settings > Branches から個別に設定する",
+    "B": "Organization の Settings > Repository defaults でデフォルトブランチ保護を設定する",
+    "C": "Enterprise の Settings > Policies でブランチ保護ポリシーを必須化する",
+    "D": "GitHub Actions ワークフローでブランチ保護を自動設定するスクリプトを実行する"
+  },
+  "correctAnswer": "C",
+  "explanation": "Enterprise レベルのポリシーは配下の全 Organization・リポジトリに強制適用できます。B は Organization 単位の設定であり Enterprise 全体には適用されません。A は個別設定のため管理コストが高く、D は標準機能ではありません。",
+  "difficulty": "applied",
+  "tags": ["enterprise", "branch-protection", "policy"]
+}
 
 ## 出力形式
-以下の JSON 配列のみを返してください（説明文やコードブロックは不要）:
+JSON 配列のみを返してください（説明文・コードブロック記号は不要）:
 [
   {
     "question": "問題文（日本語）",
-    "options": {
-      "A": "選択肢A",
-      "B": "選択肢B",
-      "C": "選択肢C",
-      "D": "選択肢D"
-    },
+    "options": { "A": "...", "B": "...", "C": "...", "D": "..." },
     "correctAnswer": "A",
-    "explanation": "正解の解説（なぜその答えが正解なのか、他の選択肢がなぜ間違いかを含む）",
+    "explanation": "解説（正解理由 + 各誤答がなぜ誤りかを含む）",
+    "difficulty": "basic | applied | analytical",
     "tags": ["タグ1", "タグ2"]
   }
-]
-
-## 注意事項
-- 学習ガイドに記載されたトピックとスキルを正確に反映した問題にしてください
-- 解説は学習に役立つ詳細な内容にしてください
-- 正解は A〜D の中からランダムに分散させてください
-- 必ず valid な JSON のみを返してください`;
+]`;
 }
 
-/**
- * Copilot のレスポンスから問題 JSON を抽出する
- */
+function buildContextSection(guideText, courseText) {
+  const parts = [];
+
+  if (guideText) {
+    parts.push(`## 学習ガイド（試験出題範囲）\n${guideText}`);
+  }
+
+  if (courseText) {
+    parts.push(`## コースコンテンツ（学習モジュール）\n${courseText}`);
+  }
+
+  return parts.length > 0
+    ? parts.join('\n\n')
+    : '## 参考資料\n（コンテンツの取得に失敗しました。一般的な知識から問題を作成してください）';
+}
+
 function parseQuestionsFromResponse(text, certId, domainId) {
-  // JSON 配列部分を抽出
   const jsonMatch = text.match(/\[[\s\S]*\]/);
-  if (!jsonMatch) throw new Error('Copilot のレスポンスから JSON を抽出できませんでした');
+  if (!jsonMatch) throw new Error('LLM のレスポンスから JSON を抽出できませんでした');
 
   let questions;
   try {
@@ -155,15 +190,15 @@ function parseQuestionsFromResponse(text, certId, domainId) {
     throw new Error('問題の配列が空です');
   }
 
-  // ID を付与して正規化
   return questions.map((q, i) => ({
     id: `${certId}-${domainId}-${String(i + 1).padStart(3, '0')}-gen`,
     question: q.question || '',
     options: q.options || {},
     correctAnswer: q.correctAnswer || 'A',
     explanation: q.explanation || '',
+    difficulty: q.difficulty || 'basic',
     tags: Array.isArray(q.tags) ? q.tags : [],
   }));
 }
 
-module.exports = { fetchDomainContent, generateQuestions };
+module.exports = { fetchDomainContent, fetchCourseContent, generateQuestions };

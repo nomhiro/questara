@@ -1,78 +1,72 @@
 'use strict';
 
-const fs = require('fs');
-const path = require('path');
+const { getDb } = require('./dbService');
 
-const PROGRESS_FILE = path.join(__dirname, '..', 'data', 'progress.json');
-
-function readProgress() {
-  const raw = fs.readFileSync(PROGRESS_FILE, 'utf-8');
-  return JSON.parse(raw);
-}
-
-function writeProgress(data) {
-  fs.writeFileSync(PROGRESS_FILE, JSON.stringify(data, null, 2), 'utf-8');
-}
-
-function createSession({ certificationId, domainFilter = null, mode = 'all' }) {
-  const data = readProgress();
-  const session = {
-    id: crypto.randomUUID(),
-    certificationId,
-    domainFilter,
-    mode,
-    startedAt: new Date().toISOString(),
-    completedAt: null,
-    answers: [],
-  };
-  data.sessions.push(session);
-  writeProgress(data);
-  return session;
+function createSession({ userId, certificationId, domainFilter = null, mode = 'all' }) {
+  const db = getDb();
+  const id = crypto.randomUUID();
+  db.prepare(`
+    INSERT INTO quiz_sessions (id, user_id, certification_id, mode, domain_filter, started_at)
+    VALUES (?, ?, ?, ?, ?, datetime('now'))
+  `).run(id, userId, certificationId, mode, domainFilter);
+  return { id, userId, certificationId, domainFilter, mode, answers: [] };
 }
 
 function recordAnswer({ sessionId, questionId, domainId, selectedAnswer, isCorrect }) {
-  const data = readProgress();
-  const session = data.sessions.find((s) => s.id === sessionId);
-  if (!session) throw new Error(`Session not found: ${sessionId}`);
-  session.answers.push({
-    questionId,
-    domainId,
-    selectedAnswer,
-    isCorrect,
-    answeredAt: new Date().toISOString(),
-  });
-  writeProgress(data);
+  const db = getDb();
+  db.prepare(`
+    INSERT INTO session_answers (session_id, question_id, domain_id, selected_answer, is_correct)
+    VALUES (?, ?, ?, ?, ?)
+  `).run(sessionId, questionId, domainId, selectedAnswer, isCorrect ? 1 : 0);
 }
 
 function completeSession(sessionId) {
-  const data = readProgress();
-  const session = data.sessions.find((s) => s.id === sessionId);
-  if (!session) throw new Error(`Session not found: ${sessionId}`);
-  session.completedAt = new Date().toISOString();
-  writeProgress(data);
-  return session;
+  const db = getDb();
+  db.prepare(`UPDATE quiz_sessions SET completed_at = datetime('now') WHERE id = ?`).run(sessionId);
+  return getSession(sessionId);
 }
 
 function getSession(sessionId) {
-  const { sessions } = readProgress();
-  return sessions.find((s) => s.id === sessionId) || null;
+  const db = getDb();
+  const session = db.prepare('SELECT * FROM quiz_sessions WHERE id = ?').get(sessionId);
+  if (!session) return null;
+  const answers = db.prepare('SELECT * FROM session_answers WHERE session_id = ? ORDER BY id').all(sessionId);
+  return {
+    id: session.id,
+    userId: session.user_id,
+    certificationId: session.certification_id,
+    domainFilter: session.domain_filter,
+    mode: session.mode,
+    startedAt: session.started_at,
+    completedAt: session.completed_at,
+    answers: answers.map((a) => ({
+      questionId: a.question_id,
+      domainId: a.domain_id,
+      selectedAnswer: a.selected_answer,
+      isCorrect: a.is_correct === 1,
+      answeredAt: a.answered_at,
+    })),
+  };
 }
 
 /**
- * 資格ごとのドメイン別累積正答率を計算する
- * @returns {{ [domainId]: { correct: number, total: number, rate: number } }}
+ * 資格ごとのドメイン別累積正答率を計算する（ユーザー別）
  */
-function calcDomainStats(certificationId) {
-  const { sessions } = readProgress();
+function calcDomainStats(certificationId, userId) {
+  const db = getDb();
+  const rows = db.prepare(`
+    SELECT sa.domain_id, sa.is_correct
+    FROM session_answers sa
+    JOIN quiz_sessions qs ON sa.session_id = qs.id
+    WHERE qs.certification_id = ? AND qs.user_id = ?
+  `).all(certificationId, userId);
+
   const stats = {};
-  for (const session of sessions) {
-    if (session.certificationId !== certificationId) continue;
-    for (const answer of session.answers) {
-      const d = answer.domainId;
-      if (!stats[d]) stats[d] = { correct: 0, total: 0 };
-      stats[d].total += 1;
-      if (answer.isCorrect) stats[d].correct += 1;
-    }
+  for (const row of rows) {
+    const d = row.domain_id;
+    if (!stats[d]) stats[d] = { correct: 0, total: 0 };
+    stats[d].total += 1;
+    if (row.is_correct) stats[d].correct += 1;
   }
   for (const d of Object.keys(stats)) {
     const { correct, total } = stats[d];
@@ -82,20 +76,23 @@ function calcDomainStats(certificationId) {
 }
 
 /**
- * 間違えた問題IDリストを返す
+ * 間違えた問題IDリストを返す（ユーザー別、一度でも正解した問題は除外）
  */
-function getWrongQuestionIds(certificationId) {
-  const { sessions } = readProgress();
+function getWrongQuestionIds(certificationId, userId) {
+  const db = getDb();
+  const rows = db.prepare(`
+    SELECT sa.question_id, sa.is_correct
+    FROM session_answers sa
+    JOIN quiz_sessions qs ON sa.session_id = qs.id
+    WHERE qs.certification_id = ? AND qs.user_id = ?
+  `).all(certificationId, userId);
+
   const wrongSet = new Set();
   const correctSet = new Set();
-  for (const session of sessions) {
-    if (session.certificationId !== certificationId) continue;
-    for (const answer of session.answers) {
-      if (answer.isCorrect) correctSet.add(answer.questionId);
-      else wrongSet.add(answer.questionId);
-    }
+  for (const row of rows) {
+    if (row.is_correct) correctSet.add(row.question_id);
+    else wrongSet.add(row.question_id);
   }
-  // 一度でも正解した問題は除外
   return [...wrongSet].filter((id) => !correctSet.has(id));
 }
 
@@ -126,3 +123,4 @@ module.exports = {
   getWrongQuestionIds,
   calcSessionDomainScores,
 };
+

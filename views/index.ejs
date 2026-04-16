@@ -7,12 +7,37 @@
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-gray-50 min-h-screen">
-  <nav class="bg-gray-900 text-white px-6 py-3 flex items-center gap-4">
+  <nav class="bg-gray-900 text-white px-6 py-3 flex items-center justify-between">
     <a href="/" class="text-lg font-bold tracking-tight">📚 資格学習エージェント</a>
+    <div class="flex items-center gap-4 text-sm">
+      <a href="/settings" class="text-gray-400 hover:text-white transition">⚙ API 設定</a>
+      <span class="text-gray-400"><%= userEmail %></span>
+      <form method="POST" action="/auth/logout" class="inline">
+        <button type="submit" class="text-gray-400 hover:text-white transition">ログアウト</button>
+      </form>
+    </div>
   </nav>
   <main class="max-w-4xl mx-auto px-4 py-8">
 
-    <h1 class="text-2xl font-bold mb-6">学習する資格を選んでください</h1>
+    <div class="flex items-center justify-between mb-6">
+      <h1 class="text-2xl font-bold">学習する資格を選んでください</h1>
+      <details class="relative">
+        <summary class="cursor-pointer text-sm text-indigo-600 hover:text-indigo-800 font-medium select-none">
+          ＋ 新しい資格を追加
+        </summary>
+        <div class="absolute right-0 mt-2 w-96 bg-white border border-gray-200 rounded-xl shadow-lg p-4 z-10 text-sm">
+          <p class="font-semibold text-gray-800 mb-2">資格 JSON を追加する方法</p>
+          <ol class="list-decimal list-inside space-y-1 text-gray-600">
+            <li>ターミナルで以下のコマンドを実行:</li>
+          </ol>
+          <pre class="mt-2 bg-gray-100 rounded p-2 text-xs overflow-x-auto">node scripts/add-cert.js &lt;id&gt; \
+  "&lt;学習ガイドURL&gt;" \
+  "&lt;コースURL&gt;"</pre>
+          <p class="mt-2 text-gray-500">例: <code class="text-xs bg-gray-100 px-1 rounded">node scripts/add-cert.js ai-102 "https://learn.microsoft.com/.../ai-102" "https://learn.microsoft.com/.../ai-102t00"</code></p>
+          <p class="mt-2 text-gray-400 text-xs">JSON 作成後にページをリロードすると一覧に表示されます。</p>
+        </div>
+      </details>
+    </div>
 
     <% if (certs.length === 0) { %>
       <div class="text-gray-500">資格データがありません。<code>data/certifications/</code> に JSON ファイルを追加してください。</div>

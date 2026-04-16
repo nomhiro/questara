@@ -21,7 +21,11 @@
           },
           "correctAnswer": "B",
           "explanation": "ブランチ保護ルールの設定は管理者がリポジトリ設定から直接変更できます。インフラ障害・ライセンス認証・データセンター障害は GitHub Support が対応する領域です。",
-          "tags": ["enterprise", "support", "admin"]
+          "tags": [
+            "enterprise",
+            "support",
+            "admin"
+          ]
         },
         {
           "id": "gh-100-d1-002",
@@ -34,7 +38,11 @@
           },
           "correctAnswer": "B",
           "explanation": "GitHub App は Installation Token を使用して認証し、細粒度の権限モデルを持ちます。GitHub Actions はリポジトリ内のワークフローファイル(.yml)として動作するCI/CDツールです。",
-          "tags": ["github-app", "actions", "marketplace"]
+          "tags": [
+            "github-app",
+            "actions",
+            "marketplace"
+          ]
         },
         {
           "id": "gh-100-d1-003",
@@ -47,7 +55,11 @@
           },
           "correctAnswer": "B",
           "explanation": "GitHub は REST API と GraphQL API の両方で監査ログへのアクセスを提供しています。スクリプトを使って自動的にクエリ・保存することが推奨される方法です。",
-          "tags": ["api", "audit-log", "enterprise"]
+          "tags": [
+            "api",
+            "audit-log",
+            "enterprise"
+          ]
         }
       ]
     },
@@ -55,46 +67,189 @@
       "id": "domain-2",
       "name": "Domain 2: Manage user identities and GitHub authentication",
       "weight": 20,
-      "generatedAt": null,
+      "generatedAt": "2026-04-13T06:43:13.265Z",
       "questions": [
         {
-          "id": "gh-100-d2-001",
-          "question": "SAML SSO を単一の組織に対してのみ有効化した場合と、エンタープライズアカウント全体に対して有効化した場合の違いとして正しいのはどれですか？",
+          "id": "gh-100-domain-2-001-gen",
+          "question": "GitHub Enterprise Cloud において、GitHub が公式にサポートしている SCIM プロバイダーの組み合わせとして正しいものはどれですか？",
           "options": {
-            "A": "単一組織に有効化すると、その組織のメンバーのみが SAML 認証の対象となる",
-            "B": "エンタープライズ全体に有効化すると、既存の個人アクセストークンはすべて無効になる",
-            "C": "単一組織への SAML SSO は GitHub Enterprise Cloud でのみ利用可能",
-            "D": "エンタープライズ全体への SAML SSO 強制は、すべての組織で同一の IdP を使用しなければならない"
+            "A": "GitLab, Okta, Azure AD",
+            "B": "Azure AD, Okta, 独自実装（self-created）",
+            "C": "Azure AD, Google Workspace, Okta",
+            "D": "Okta, Ping Identity, Azure AD"
+          },
+          "correctAnswer": "B",
+          "explanation": "GitHub が公式にサポートする SCIM プロバイダーは Azure AD（Microsoft Entra ID）、Okta、および独自実装（self-created）の3種類です。A の GitLab は IdP ではなく Git ホスティングサービスです。C の Google Workspace は SAML SSO に対応していますが、GitHub の SCIM プロバイダーとして公式サポートはされていません。D の Ping Identity も SCIM 連携はできますが、公式サポート対象外です。",
+          "difficulty": "basic",
+          "tags": [
+            "SCIM",
+            "identity-provider",
+            "provisioning"
+          ]
+        },
+        {
+          "id": "gh-100-domain-2-002-gen",
+          "question": "GitHub Organization の管理者が 2FA（二要素認証）を組織メンバー全員に必須化しました。2FA を設定していないメンバーに対して GitHub が自動的に行う動作として正しいものはどれですか？",
+          "options": {
+            "A": "該当メンバーは組織から自動的に削除され、外部コラボレーターとしてのアクセスも失う",
+            "B": "該当メンバーのリポジトリ権限が読み取り専用に自動的に制限される",
+            "C": "GitHub が該当メンバーに 30 日間の猶予期間を自動付与し、期限内に設定するよう求める",
+            "D": "Organization オーナーに通知が送られ、オーナーが手動で対応するまでメンバーは保留状態になる"
           },
           "correctAnswer": "A",
-          "explanation": "SAML SSO を単一組織に有効化した場合、その組織へのアクセスにのみ SAML 認証が要求されます。エンタープライズ全体への適用は全組織に影響します。",
-          "tags": ["saml", "sso", "authentication"]
+          "explanation": "2FA 必須化を有効にすると、2FA を設定していないメンバーおよび外部コラボレーターは組織から即座に削除されます。管理者はあらかじめ通知してから有効化することが推奨されますが、猶予期間は自動付与されません（B・C は誤り）。D のように保留状態にはならず、削除という強制的な措置が取られます。削除されたメンバーは後から 2FA 設定後に再招待が必要です。",
+          "difficulty": "basic",
+          "tags": [
+            "2FA",
+            "organization",
+            "security"
+          ]
         },
         {
-          "id": "gh-100-d2-002",
-          "question": "GitHub の SCIM (System for Cross-domain Identity Management) についての説明として正しいのはどれですか？",
+          "id": "gh-100-domain-2-003-gen",
+          "question": "GitHub Enterprise Cloud の管理者が、傘下にある複数の Organization すべてに SAML SSO を有効化・強制適用したい場合、最も適切な手順はどれですか？",
           "options": {
-            "A": "SCIM は GitHub Enterprise Server でのみサポートされている",
-            "B": "SCIM を使用するとアイデンティティプロバイダーから GitHub へのユーザープロビジョニングを自動化できる",
-            "C": "SCIM と Team synchronization は同一の機能であり、どちらか一方を選択して使用する",
-            "D": "SCIM はユーザーの認証のみを担当し、グループの同期には対応していない"
+            "A": "各 Organization のオーナーに依頼し、それぞれの Organization Settings から SAML SSO を個別に設定・強制する",
+            "B": "GitHub API を使ったスクリプトを作成し、全 Organization に SAML 設定をプログラムで適用する",
+            "C": "Enterprise アカウントの Settings > Authentication security で SAML SSO を設定し、全 Organization への強制適用を有効にする",
+            "D": "GitHub Support に連絡して、Enterprise 全体への SAML SSO 適用を代行依頼する"
           },
-          "correctAnswer": "B",
-          "explanation": "SCIM はアイデンティティプロバイダー (Azure AD, Okta 等) から GitHub へのユーザーの自動プロビジョニング・デプロビジョニングを実現します。Team synchronization はチームとの同期に特化した別機能です。",
-          "tags": ["scim", "provisioning", "identity"]
+          "correctAnswer": "C",
+          "explanation": "Enterprise アカウントの Settings > Authentication security から SAML SSO を設定することで、Enterprise 配下の全 Organization に一括で SAML SSO を有効化・強制できます。A の個別設定は管理コストが高く、Organization 数が増えると運用が困難になります。B のスクリプトは標準機能で提供されている設定を迂回する非推奨アプローチです。D のように GitHub Support が代行する機能は存在しません。",
+          "difficulty": "basic",
+          "tags": [
+            "SAML-SSO",
+            "enterprise",
+            "authentication"
+          ]
         },
         {
-          "id": "gh-100-d2-003",
-          "question": "組織のすべてのメンバーに2要素認証 (2FA) を要求する方法として正しいのはどれですか？",
+          "id": "gh-100-domain-2-004-gen",
+          "question": "Team Synchronization の説明として最も正確なものはどれですか？",
           "options": {
-            "A": "各メンバーに個別にメールを送って 2FA を設定するよう依頼する",
-            "B": "Organization Settings で 'Require two-factor authentication' を有効化する",
-            "C": "GitHub Enterprise Server の設定ファイルで 2FA を強制する",
-            "D": "SAML SSO を有効化すると自動的に 2FA が強制される"
+            "A": "SCIM プロトコルを使用して GitHub Organization にユーザーを自動プロビジョニングする機能",
+            "B": "複数の GitHub Organization にまたがるチームのリポジトリ権限を一元管理する機能",
+            "C": "GitHub Actions ワークフローのテンプレートを Organization 内の全チームで共有する機能",
+            "D": "IdP（アイデンティティプロバイダー）上のグループと GitHub チームのメンバーシップを自動的に同期する機能"
+          },
+          "correctAnswer": "D",
+          "explanation": "Team Synchronization は、Azure AD や Okta などの IdP 上のグループと GitHub の Team を連携させ、IdP グループのメンバー変更を GitHub Team に自動反映する機能です。A は SCIM の説明であり、Team Synchronization とは別の機能です。B はリポジトリ権限の一元管理を指しており、Team Sync の目的とは異なります。C は Reusable Workflows などの機能の説明であり、Team Synchronization とは無関係です。",
+          "difficulty": "basic",
+          "tags": [
+            "team-synchronization",
+            "IdP",
+            "organization"
+          ]
+        },
+        {
+          "id": "gh-100-domain-2-005-gen",
+          "question": "ある企業の GitHub Enterprise Cloud には 8 つの Organization があります。セキュリティ審査の結果、「全 Organization で SAML SSO を強制し、SSO 未認証ユーザーのリソースアクセスをブロックする」という要件が出されました。管理者として最も効率的な対応はどれですか？",
+          "options": {
+            "A": "各 Organization の Settings > Security で SAML SSO を設定し、'Require SAML SSO' を 8 つの Organization それぞれで有効にする",
+            "B": "Enterprise Settings > Authentication security で SAML SSO を設定し、'Require SAML authentication' を有効にして全 Organization に適用する",
+            "C": "Organization ごとに SAML IdP メタデータを手動でインポートし、Organization オーナーが個別に強制設定を行う",
+            "D": "Enterprise レベルの GitHub Actions ワークフローで SAML 認証チェックを自動実行するスクリプトを各 Organization に配布する"
           },
           "correctAnswer": "B",
-          "explanation": "組織設定の Security セクションから 'Require two-factor authentication for everyone in your organization' を有効化することで、2FA を持たないメンバーは組織から削除されます。",
-          "tags": ["2fa", "security", "organization"]
+          "explanation": "Enterprise Settings の Authentication security から SAML SSO を設定・強制することで、配下の全 Organization に一括適用できます。これが最も効率的で、かつ GitHub が推奨する標準的な方法です。A・C はいずれも Organization ごとの個別設定であり、Organization 数が多い場合は管理コストが高く、設定漏れのリスクもあります。D は SAML 認証を GitHub Actions で代替しようとする非標準アプローチであり、適切ではありません。",
+          "difficulty": "applied",
+          "tags": [
+            "SAML-SSO",
+            "enterprise",
+            "enforcement"
+          ]
+        },
+        {
+          "id": "gh-100-domain-2-006-gen",
+          "question": "SCIM プロトコルを使って GitHub Enterprise Cloud のユーザーアカウントを管理する場合の動作として、最も正確な説明はどれですか？",
+          "options": {
+            "A": "IdP が SCIM API エンドポイントに HTTP リクエストを送信することで、GitHub のユーザーアカウントの作成・更新・一時停止が自動的に行われる",
+            "B": "GitHub が IdP に対して定期的にポーリングを行い、ユーザー情報の差分を検知してアカウントを同期する",
+            "C": "SCIM は SAML SSO と同一のプロトコルであり、認証とプロビジョニングを一つの仕組みで処理する",
+            "D": "SCIM はグループとチームの同期のみを担い、個別ユーザーのプロビジョニングは別途管理者が手動で行う"
+          },
+          "correctAnswer": "A",
+          "explanation": "SCIM（System for Cross-domain Identity Management）では、IdP が GitHub の SCIM API エンドポイントに HTTP リクエスト（CREATE/UPDATE/DELETE）を送ることでユーザーライフサイクルを自動管理します。B は逆方向であり、GitHub がポーリングするモデルは SCIM では採用されていません。C は誤りで、SAML は認証（Authentication）、SCIM はプロビジョニングを担う独立したプロトコルです。D も誤りで、SCIM は個別ユーザーのプロビジョニング・デプロビジョニングもサポートします。",
+          "difficulty": "applied",
+          "tags": [
+            "SCIM",
+            "provisioning",
+            "protocol"
+          ]
+        },
+        {
+          "id": "gh-100-domain-2-007-gen",
+          "question": "Team Synchronization を有効にしている GitHub Organization で、ある開発者が IdP（Azure AD）上のグループから削除されました。GitHub 上で自動的に発生する動作として正しいものはどれですか？",
+          "options": {
+            "A": "その開発者の GitHub アカウントが即座に削除され、全リポジトリへのアクセスが失われる",
+            "B": "その開発者は Organization から完全に削除され、外部コラボレーターとして再登録される",
+            "C": "Team Synchronization により、その開発者は対応する GitHub チームから自動的に削除される",
+            "D": "その開発者の SAML 認証セッションが失効し、次回ログイン時に再認証が求められるが、チームメンバーシップは維持される"
+          },
+          "correctAnswer": "C",
+          "explanation": "Team Synchronization は IdP グループのメンバーシップ変更を GitHub Team に反映します。IdP グループからユーザーが削除されると、対応する GitHub チームからも自動的に削除されます。ただし GitHub アカウントや Organization メンバーシップ自体は削除されません（A・B は誤り）。完全なデプロビジョニング（Organization からの削除・アカウント無効化）には SCIM が必要です。D の説明は SAML セッション管理の話であり、Team Sync の動作とは異なります。",
+          "difficulty": "applied",
+          "tags": [
+            "team-synchronization",
+            "IdP",
+            "membership"
+          ]
+        },
+        {
+          "id": "gh-100-domain-2-008-gen",
+          "question": "IT 管理者が「IdP のユーザー追加・削除が自動的に GitHub Organization へのプロビジョニングに反映される」「IdP のグループ変更が GitHub のチームメンバーシップにも自動反映される」という 2 つの要件を持っています。Team Synchronization と SCIM の役割分担として正しいものはどれですか？",
+          "options": {
+            "A": "両方とも同一の機能を持つため、どちらか一方を選択すれば両方の要件を満たせる",
+            "B": "SCIM が GitHub チームのメンバーシップ同期を担い、Team Synchronization が Organization へのユーザープロビジョニングを担う",
+            "C": "Team Synchronization は GitHub Enterprise Server 専用、SCIM は GitHub Enterprise Cloud 専用の機能である",
+            "D": "SCIM が Organization へのユーザーのプロビジョニング・デプロビジョニングを担い、Team Synchronization が IdP グループと GitHub チームのメンバーシップ同期を担う"
+          },
+          "correctAnswer": "D",
+          "explanation": "SCIM と Team Synchronization は補完的な別機能です。SCIM は Organization へのユーザー追加（プロビジョニング）・削除（デプロビジョニング）を自動化します。Team Synchronization は IdP グループと GitHub Team のメンバーシップを同期します。両方の要件を満たすには両方の機能を組み合わせて使用します。A は誤りで、それぞれ異なる役割を持ちます。B は役割が逆になっており誤りです。C も誤りで、いずれも GitHub Enterprise Cloud で利用可能です。",
+          "difficulty": "applied",
+          "tags": [
+            "SCIM",
+            "team-synchronization",
+            "contrast"
+          ]
+        },
+        {
+          "id": "gh-100-domain-2-009-gen",
+          "question": "ある企業が GitHub Enterprise Cloud を導入しようとしています。要件は「既存の Azure AD ユーザーディレクトリをそのまま活用したい」「退職者のアクセスを IdP 側の操作だけで即座に失効させたい」「GitHub アカウントの作成を自動化したい」の 3 点です。最適な構成はどれですか？",
+          "options": {
+            "A": "Okta を IdP として導入し、SAML SSO と SCIM を組み合わせて構成する",
+            "B": "Azure AD を IdP として使用し、SAML SSO と SCIM を組み合わせて構成する",
+            "C": "Google Workspace を IdP として使用し、SAML SSO のみで対応する（プロビジョニングは手動）",
+            "D": "GitHub の組み込み認証を継続使用し、退職時は管理者が GitHub アカウントを手動で無効化する"
+          },
+          "correctAnswer": "B",
+          "explanation": "既存の Azure AD を活用するという要件があるため、Azure AD を IdP として選択するのが最適です。SAML SSO により Azure AD でのアカウント無効化が即座に GitHub アクセスの失効につながり、SCIM によりユーザーの自動プロビジョニング・デプロビジョニングが実現できます。A の Okta も技術的に実現可能ですが、Azure AD を既に使用しているなら追加コストと移行作業が発生するため最適ではありません。C は自動プロビジョニング要件を満たせません。D は退職者対応が手動となり、セキュリティリスクが残ります。",
+          "difficulty": "analytical",
+          "tags": [
+            "Azure-AD",
+            "SAML-SSO",
+            "SCIM",
+            "identity-provider"
+          ]
+        },
+        {
+          "id": "gh-100-domain-2-010-gen",
+          "question": "GitHub Enterprise Cloud 管理者が Enterprise レベルで SAML SSO の強制適用を有効にしました。この変更による影響として最も正確に記述しているものはどれですか？",
+          "options": {
+            "A": "Enterprise 配下の全 Organization のリソースにアクセスするには SAML SSO 認証が必須となり、SAML セッションを持たないメンバーは Organization のリソースにアクセスできなくなる",
+            "B": "強制適用により全メンバーの GitHub パスワードが自動で無効化され、IdP 経由のログインのみが可能になる",
+            "C": "Enterprise レベルの SAML 強制は GitHub.com 全体に影響し、Enterprise 外のパブリックリポジトリへのアクセスも制限される",
+            "D": "SAML SSO を強制すると GitHub Actions の実行にも SAML 認証が必要となり、既存の自動化ワークフローが停止する"
+          },
+          "correctAnswer": "A",
+          "explanation": "Enterprise レベルで SAML SSO を強制すると、配下の全 Organization のリソースへのアクセスに有効な SAML セッションが必要となります。SAML 認証をしていないユーザーは Organization のプライベートリソースにアクセスできなくなります。B は誤りで、GitHub パスワードが自動無効化されることはなく、GitHub.com へのログインは引き続き可能です。C も誤りで、SAML 強制は当該 Enterprise の Organization リソースにのみ適用され、Enterprise 外のパブリックリポジトリには影響しません。D も誤りで、GitHub Actions は Personal Access Token や GitHub Apps の認証で動作するため、SAML SSO 強制の直接的な影響を受けません。",
+          "difficulty": "analytical",
+          "tags": [
+            "SAML-SSO",
+            "enterprise",
+            "enforcement",
+            "impact"
+          ]
         }
       ]
     },
@@ -115,7 +270,11 @@
           },
           "correctAnswer": "B",
           "explanation": "GHEC は GitHub が管理するクラウド型サービスです。GHES は顧客自身のインフラ上に展開するセルフホスト型で、オンプレミスやプライベートクラウドに設置できます。",
-          "tags": ["ghec", "ghes", "deployment"]
+          "tags": [
+            "ghec",
+            "ghes",
+            "deployment"
+          ]
         },
         {
           "id": "gh-100-d3-002",
@@ -128,7 +287,11 @@
           },
           "correctAnswer": "B",
           "explanation": "パブリックリポジトリでは GitHub-hosted runner が無料で使用できます。プライベートリポジトリでは無料枠を超えると分単位で課金され、OS によって倍率が異なります。Self-hosted runner は課金されません。",
-          "tags": ["billing", "actions", "pricing"]
+          "tags": [
+            "billing",
+            "actions",
+            "pricing"
+          ]
         },
         {
           "id": "gh-100-d3-003",
@@ -141,7 +304,11 @@
           },
           "correctAnswer": "C",
           "explanation": "GitHub AE は GitHub がホストするマネージドサービスで、顧客専用に隔離されたクラウド環境を提供します。GHES のようなセルフホストとは異なります。",
-          "tags": ["ghae", "deployment", "managed"]
+          "tags": [
+            "ghae",
+            "deployment",
+            "managed"
+          ]
         }
       ]
     },
@@ -162,7 +329,11 @@
           },
           "correctAnswer": "B",
           "explanation": "組織メンバーは組織設定へのアクセスや内部リポジトリの閲覧など組織レベルの権限を持ちます。外部コラボレーターは特定のリポジトリにのみアクセス権を付与された非メンバーです。",
-          "tags": ["permissions", "membership", "collaborator"]
+          "tags": [
+            "permissions",
+            "membership",
+            "collaborator"
+          ]
         },
         {
           "id": "gh-100-d4-002",
@@ -175,7 +346,11 @@
           },
           "correctAnswer": "C",
           "explanation": "コードレビューのみを行う場合は Read 権限で十分です。Read 権限でもプルリクエストのコメントや承認は可能です。Write は不要なコードプッシュ権限を与えてしまいます。",
-          "tags": ["permissions", "least-privilege", "repository"]
+          "tags": [
+            "permissions",
+            "least-privilege",
+            "repository"
+          ]
         },
         {
           "id": "gh-100-d4-003",
@@ -188,7 +363,11 @@
           },
           "correctAnswer": "B",
           "explanation": "エンタープライズアカウントの Settings > Policies でポリシーを設定すると、配下のすべての組織に適用されます。組織管理者がポリシーをオーバーライドできないよう強制することも可能です。",
-          "tags": ["enterprise", "policies", "organization"]
+          "tags": [
+            "enterprise",
+            "policies",
+            "organization"
+          ]
         }
       ]
     },
@@ -196,46 +375,197 @@
       "id": "domain-5",
       "name": "Domain 5: Enable secure software development and ensure compliance",
       "weight": 15,
-      "generatedAt": null,
+      "generatedAt": "2026-04-13T08:27:48.752Z",
       "questions": [
         {
-          "id": "gh-100-d5-001",
-          "question": "GitHub リポジトリに機密情報 (APIキー等) が誤ってコミットされてしまった場合、完全に削除するための正しいアプローチはどれですか？",
+          "id": "gh-100-domain-5-001-gen",
+          "question": "GitHubのシークレットスキャンニングが有効化されているリポジトリで、APIキーが誤ってコミットされた場合、GitHubはデフォルトでどのような動作をしますか？",
           "options": {
-            "A": "問題のあるファイルを削除する新しいコミットを作成して push する",
-            "B": "GitHub の Settings からファイルを削除する",
-            "C": "git filter-branch または BFG Repo-Cleaner を使ってコミット履歴から削除し、GitHub Support に連絡して server 側のキャッシュも削除してもらう",
-            "D": "リポジトリをアーカイブすれば機密情報にアクセスできなくなる"
+            "A": "該当コミットを自動的にリバートしてプッシュを拒否する",
+            "B": "検出されたシークレットのパートナープロバイダーに通知し、リポジトリオーナーにアラートを送信する",
+            "C": "リポジトリを自動的にプライベートに変更する",
+            "D": "該当ファイルを自動削除してコミット履歴を書き換える"
+          },
+          "correctAnswer": "B",
+          "explanation": "シークレットスキャンニングはパートナープロバイダー（AWSやStripeなど）と連携しており、検出時にプロバイダーへの通知とリポジトリオーナーへのアラート送信が行われます。Aのプッシュ拒否は「プッシュ保護」機能を別途有効化した場合の動作です。Cの自動プライベート化やDのコミット履歴書き換えはGitHubの自動動作には含まれません。",
+          "difficulty": "basic",
+          "tags": [
+            "secret-scanning",
+            "security",
+            "alerts"
+          ]
+        },
+        {
+          "id": "gh-100-domain-5-002-gen",
+          "question": "Gitリポジトリの履歴に含まれる機密情報（パスワード、APIキー等）を削除する際、`git filter-branch`の代替として推奨される、より高速で安全なサードパーティツールはどれですか？",
+          "options": {
+            "A": "BFG Repo-Cleaner",
+            "B": "git rebase --interactive",
+            "C": "git cherry-pick",
+            "D": "GitHub CLI（gh）"
+          },
+          "correctAnswer": "A",
+          "explanation": "BFG Repo-Cleanerは`git filter-branch`の代替として広く推奨されるツールで、大規模なリポジトリでも高速に動作し、機密データの削除に特化した機能を持ちます。Bのインタラクティブリベースは少数のコミット編集には使えますが、大量の履歴から特定データを除去するには不向きです。Cのcherry-pickはコミットのコピーに使うコマンドであり、Dのgh CLIには履歴クリーニング機能はありません。",
+          "difficulty": "basic",
+          "tags": [
+            "sensitive-data",
+            "filter-branch",
+            "BFG",
+            "git-history"
+          ]
+        },
+        {
+          "id": "gh-100-domain-5-003-gen",
+          "question": "Dependabotの「セキュリティアップデート」と「バージョンアップデート」の違いについて、最も正確に説明しているのはどれですか？",
+          "options": {
+            "A": "セキュリティアップデートはメジャーバージョンのみ対応し、バージョンアップデートはマイナーバージョンのみ対応する",
+            "B": "セキュリティアップデートはすべて自動マージされるが、バージョンアップデートはレビューが必要である",
+            "C": "セキュリティアップデートは既知の脆弱性を持つ依存関係を修正するPRを自動作成し、バージョンアップデートは依存関係を最新バージョンに保つPRを定期的に作成する",
+            "D": "セキュリティアップデートはGitHub Actionsでのみ動作し、バージョンアップデートはすべてのワークフローで動作する"
           },
           "correctAnswer": "C",
-          "explanation": "単純に削除コミットを追加しても履歴には残ります。git filter-branch や BFG で履歴を書き換えたうえで、GitHub Support にキャッシュ削除を依頼する必要があります。また、漏洩した認証情報はすぐにローテーションすべきです。",
-          "tags": ["security", "sensitive-data", "git-history"]
+          "explanation": "Dependabotのセキュリティアップデートは、GitHub Advisory Databaseと連携して脆弱性のある依存関係を検出し修正PRを作成します。バージョンアップデートはスケジュール設定に基づき、依存関係を最新に保つPRを作成します。A・Bはどちらも誤った説明です。Dについて、両機能ともGitHub Actionsに限定されるものではありません。",
+          "difficulty": "basic",
+          "tags": [
+            "dependabot",
+            "security-updates",
+            "version-updates",
+            "dependencies"
+          ]
         },
         {
-          "id": "gh-100-d5-002",
-          "question": "Dependabot についての説明として正しいのはどれですか？",
+          "id": "gh-100-domain-5-004-gen",
+          "question": "GitHub の監査ログ（Audit Log）の主な用途として最も適切なものはどれですか？",
           "options": {
-            "A": "Dependabot は GitHub Actions のワークフローのみを監視する",
-            "B": "Dependabot は脆弱性のある依存パッケージを検出し、自動的にプルリクエストを作成してアップデートを提案する",
-            "C": "Dependabot を有効化するには GitHub Advanced Security のライセンスが必要",
-            "D": "Dependabot はプライベートリポジトリでは利用できない"
+            "A": "リポジトリのコードカバレッジを測定してレポートを生成する",
+            "B": "GitHub Actionsワークフローの実行時間を最適化する",
+            "C": "依存関係の脆弱性スキャンを自動化する",
+            "D": "組織内で誰がいつどのアクションを実行したかを追跡し、コンプライアンス要件や不正アクセスの調査に対応する"
           },
-          "correctAnswer": "B",
-          "explanation": "Dependabot は依存パッケージのセキュリティアドバイザリを監視し、脆弱性が検出された場合やバージョンアップが利用可能な場合にプルリクエストを自動作成します。パブリック・プライベートリポジトリの両方で利用可能です。",
-          "tags": ["dependabot", "security", "dependencies"]
+          "correctAnswer": "D",
+          "explanation": "監査ログは、組織またはエンタープライズ内のイベント（メンバー追加・削除、リポジトリ設定変更、アクセストークンの使用など）を記録し、セキュリティインシデント調査やコンプライアンス報告に活用します。A・B・Cはそれぞれコードカバレッジ、パフォーマンス最適化、脆弱性スキャンに関する説明であり、監査ログの用途とは異なります。",
+          "difficulty": "basic",
+          "tags": [
+            "audit-log",
+            "compliance",
+            "security"
+          ]
         },
         {
-          "id": "gh-100-d5-003",
-          "question": "CodeQL を使った自動コードスキャンについて正しい説明はどれですか？",
+          "id": "gh-100-domain-5-005-gen",
+          "question": "セキュリティ担当者が、すでにGitHubの公開リポジトリにプッシュされてしまった機密情報（クレデンシャル）を、Git履歴ごと完全に削除したい。BFGや`git filter-branch`でローカルの履歴を書き換えた後、残すべき追加対応として正しいのはどれですか？",
           "options": {
-            "A": "CodeQL はリポジトリの依存パッケージの脆弱性をスキャンする",
-            "B": "CodeQL はコードをデータベースとして解析し、セキュリティ脆弱性のパターンをクエリで検出する",
-            "C": "CodeQL は Python と JavaScript のみをサポートしている",
-            "D": "CodeQL のスキャンは手動でのみ実行可能"
+            "A": "GitHubサポートに連絡してキャッシュされたビューやプルリクエストのデータ削除を依頼し、漏洩したクレデンシャルをすべて無効化・ローテーションする",
+            "B": "リポジトリをアーカイブ設定にして新たなアクセスを防ぐ",
+            "C": "Organization のメンバー全員に新しいSSHキーの再登録を依頼する",
+            "D": "リポジトリをフォークしている全ユーザーに対してPull Requestを送りブランチの削除を依頼する"
+          },
+          "correctAnswer": "A",
+          "explanation": "ローカルで履歴を書き換えてforce pushしただけではGitHub側にキャッシュされたデータ（プルリクエスト、Issue等）が残る可能性があります。GitHubサポートへの削除依頼が必要です。また機密情報が漏洩した以上、該当クレデンシャルの無効化・ローテーションは最優先事項です。Bのアーカイブは既存データを保持するだけで削除になりません。CのSSHキー再登録は今回の機密情報漏洩とは直接関係がなく、Dはフォーク先の削除をコントロールする手段として不適切です。",
+          "difficulty": "applied",
+          "tags": [
+            "sensitive-data",
+            "github-support",
+            "incident-response",
+            "credentials"
+          ]
+        },
+        {
+          "id": "gh-100-domain-5-006-gen",
+          "question": "ある企業がすべてのリポジトリに対して自動コードスキャンを導入し、セキュリティ脆弱性（SQLインジェクション、XSSなど）をプルリクエスト時に検出したい。GitHubが提供する標準機能として最も適切なアプローチはどれですか？",
+          "options": {
+            "A": "Dependabotアラートを有効にしてプルリクエストのチェックとして実行する",
+            "B": "シークレットスキャンニングのプッシュ保護を有効化し、コードパターンを定義する",
+            "C": "CodeQLによるコードスキャンをGitHub Actionsワークフローとして設定し、プルリクエストトリガーで実行する",
+            "D": "ブランチ保護ルールの「Require status checks」のみ設定する"
+          },
+          "correctAnswer": "C",
+          "explanation": "CodeQLはGitHubが提供する静的解析エンジンで、SQLインジェクションやXSSなどの脆弱性パターンを検出できます。GitHub Actionsのワークフローとして設定し、pull_requestトリガーで実行することでPR時の自動スキャンが実現できます。AのDependabotは依存関係の脆弱性検出であり、コード自体の分析は行いません。BのシークレットスキャンニングはAPIキー等の機密文字列検出が目的です。Dのステータスチェックはスキャンツールの連携設定ではありません。",
+          "difficulty": "applied",
+          "tags": [
+            "code-scanning",
+            "CodeQL",
+            "github-actions",
+            "security"
+          ]
+        },
+        {
+          "id": "gh-100-domain-5-007-gen",
+          "question": "CI/CDパイプラインからGitHub APIを呼び出す自動化処理を実装する際、個人アクセストークン（PAT）とGitHub Appを比較した場合、GitHub Appを選択すべき主な理由はどれですか？",
+          "options": {
+            "A": "GitHub AppはREST APIのみサポートし、GraphQL APIは使用できないため管理が容易",
+            "B": "GitHub Appはインストールトークンを短期間（最大1時間）で発行でき、特定リポジトリへの最小権限設定が可能で、個人ユーザーアカウントに依存しない",
+            "C": "PATはOrganizationリポジトリへのアクセスが一切できないためGitHub Appが唯一の選択肢",
+            "D": "GitHub AppはGitHub Actionsのシークレット設定なしに自動的に認証情報を提供する"
           },
           "correctAnswer": "B",
-          "explanation": "CodeQL はソースコードをデータベースに変換し、SQL に似たクエリ言語でセキュリティ脆弱性のパターンを検索します。多数の言語をサポートしており、GitHub Actions で自動実行できます。",
-          "tags": ["codeql", "code-scanning", "security"]
+          "explanation": "GitHub Appはインストールトークン（有効期限1時間）を使用するため漏洩リスクが低く、リポジトリ単位・権限単位での細かいスコープ設定が可能です。また特定ユーザーアカウントに紐づかないため、アカウント削除によるアクセス喪失リスクがありません。AはGitHub AppがGraphQL APIも利用可能なため誤りです。CのPATはOrganizationリポジトリにもアクセス可能です。DのGitHub Appも適切なシークレット管理が必要です。",
+          "difficulty": "applied",
+          "tags": [
+            "github-apps",
+            "PAT",
+            "access-tokens",
+            "authentication",
+            "machine-account"
+          ]
+        },
+        {
+          "id": "gh-100-domain-5-008-gen",
+          "question": "GitHub Enterprise の管理者が、配下のすべての Organization において、Organization オーナーが GitHub Apps の承認を独自に行えないように制限したい。適切な設定箇所はどこですか？",
+          "options": {
+            "A": "各 Organization の Settings > Developer settings > GitHub Apps",
+            "B": "各リポジトリの Settings > Integrations",
+            "C": "Enterprise の Settings > Authentication security で SSO を強制する",
+            "D": "Enterprise の Settings > Policies > GitHub Apps ポリシーで、Organization オーナーによるアプリ承認を制限するポリシーを設定する"
+          },
+          "correctAnswer": "D",
+          "explanation": "EnterpriseレベルのPoliciesでは、配下の全OrganizationのGitHub Apps・OAuth Appsに関する承認権限をEnterpriseオーナーに集約することができます。Aは個別Organization設定であり全体への強制はできません。Bはリポジトリ単位の設定です。CのSSO強制は認証方式の設定であり、アプリ承認権限の制御とは別の設定です。",
+          "difficulty": "applied",
+          "tags": [
+            "enterprise-policy",
+            "github-apps",
+            "oauth-apps",
+            "security-policy"
+          ]
+        },
+        {
+          "id": "gh-100-domain-5-009-gen",
+          "question": "セキュリティ監査の過程で、3週間前に退職した従業員のPersonal Access Token（PAT）が本番環境のCI/CDパイプラインで使用されていたことが判明した。監査ログ（REST API）を使用してこの問題を調査する場合、まず確認すべき情報として最も重要なのはどれですか？",
+          "options": {
+            "A": "そのPATを使用したすべてのAPIリクエストの日時・操作内容・対象リソースを確認し、不正操作の有無を特定する",
+            "B": "PATが登録されていたGitHub Actionsシークレットの暗号化アルゴリズムを確認する",
+            "C": "退職した従業員がフォークしたリポジトリの一覧を取得する",
+            "D": "OrganizationのSSOセッション履歴を確認してログイン回数を集計する"
+          },
+          "correctAnswer": "A",
+          "explanation": "インシデント対応において最優先事項は被害範囲の特定です。監査ログAPIで該当PATが行ったすべての操作（リポジトリへの読み書き、設定変更、シークレットアクセス等）を時系列で調査し、不正な操作が実行されていないかを確認します。B・C・Dもセキュリティ対応として有用な調査項目ですが、まず影響範囲の特定が優先されます。PATはその後即座に無効化する必要があります。",
+          "difficulty": "analytical",
+          "tags": [
+            "audit-log",
+            "PAT",
+            "incident-response",
+            "compliance"
+          ]
+        },
+        {
+          "id": "gh-100-domain-5-010-gen",
+          "question": "ある Organization で dependency graph、Dependabot アラート、コードスキャン（CodeQL）がすべて有効化されている。セキュリティエンジニアが新たに発見された Log4Shell（Log4j の重大脆弱性）への対応優先度を判断したい。これらの機能を組み合わせて最も効果的な対応フローはどれですか？",
+          "options": {
+            "A": "コードスキャンのアラートを確認してLog4jを直接使用しているコードを特定し、Dependabotアラートは無視する",
+            "B": "Dependabot アラートで Log4j の脆弱バージョンを利用しているリポジトリを一覧化し、dependency graph で直接・推移的依存関係の深さを確認した上で、コードスキャン結果も併せてリスク評価し、修正PRを優先度順に対応する",
+            "C": "dependency graph だけを確認して影響リポジトリを特定し、手動でバージョンを更新する",
+            "D": "すべてのリポジトリを一時的にプライベートに変更してから対応を開始する"
+          },
+          "correctAnswer": "B",
+          "explanation": "効果的なセキュリティ対応には複数機能の組み合わせが重要です。Dependabotアラートで影響リポジトリを素早く一覧化し、dependency graphで直接依存か推移的依存（transitive dependency）かを把握して対応の複雑さを評価します。さらにCodeQLの結果で実際に脆弱なコードパスが呼び出されているかを確認することでリスクの優先度付けが可能です。Aはコードスキャンのみでは推移的依存関係の把握に限界があります。Cは手動対応のみでDependabotの自動PR生成の恩恵を受けられません。Dはリポジトリをプライベート化しても脆弱性自体は解消されません。",
+          "difficulty": "analytical",
+          "tags": [
+            "dependabot",
+            "dependency-graph",
+            "code-scanning",
+            "vulnerability-response",
+            "log4j"
+          ]
         }
       ]
     },
@@ -256,7 +586,11 @@
           },
           "correctAnswer": "B",
           "explanation": "Organization Settings の Actions > General で、GitHub が作成したアクションのみ許可、特定のアクションを許可リストに追加、またはすべて無効化するなどの組織レベルのポリシーを設定できます。",
-          "tags": ["actions", "policy", "organization"]
+          "tags": [
+            "actions",
+            "policy",
+            "organization"
+          ]
         },
         {
           "id": "gh-100-d6-002",
@@ -269,7 +603,11 @@
           },
           "correctAnswer": "B",
           "explanation": "パブリックリポジトリに fork からプルリクエストが送られた場合、悪意あるワークフローがセルフホストランナー上で実行される可能性があります。セルフホストランナーはプライベートリポジトリや信頼された組織内での使用が推奨されます。",
-          "tags": ["self-hosted-runner", "security", "public-repo"]
+          "tags": [
+            "self-hosted-runner",
+            "security",
+            "public-repo"
+          ]
         },
         {
           "id": "gh-100-d6-003",
@@ -282,7 +620,11 @@
           },
           "correctAnswer": "B",
           "explanation": "シークレットはリポジトリ・組織・エンタープライズの3レベルで設定できます。組織レベルのシークレットは選択したリポジトリにのみ共有できます。同名のシークレットが複数レベルに存在する場合、リポジトリレベルが最優先されます。",
-          "tags": ["secrets", "actions", "scope"]
+          "tags": [
+            "secrets",
+            "actions",
+            "scope"
+          ]
         }
       ]
     },
@@ -303,7 +645,11 @@
           },
           "correctAnswer": "B",
           "explanation": "GitHub Packages は npm, Maven, NuGet, Docker (GitHub Container Registry), RubyGems, Gradle など複数のパッケージエコシステムをサポートしています。",
-          "tags": ["packages", "registry", "ecosystem"]
+          "tags": [
+            "packages",
+            "registry",
+            "ecosystem"
+          ]
         },
         {
           "id": "gh-100-d7-002",
@@ -316,7 +662,11 @@
           },
           "correctAnswer": "B",
           "explanation": "GitHub Packages はパッケージマネージャー (npm, Maven 等) を通じてインストールできる形式でライブラリを配布するためのものです。Releases はソフトウェアの特定バージョンをタグと共にリリースノートやバイナリ添付ファイルで公開するための機能です。",
-          "tags": ["packages", "releases", "distribution"]
+          "tags": [
+            "packages",
+            "releases",
+            "distribution"
+          ]
         },
         {
           "id": "gh-100-d7-003",
@@ -329,7 +679,11 @@
           },
           "correctAnswer": "B",
           "explanation": "GitHub Actions は自動的に生成される GITHUB_TOKEN を提供します。このトークンを使って同じリポジトリの GitHub Packages に認証・アクセスできます。PAT のハードコードは避けるべきです。",
-          "tags": ["packages", "github-token", "authentication"]
+          "tags": [
+            "packages",
+            "github-token",
+            "authentication"
+          ]
         }
       ]
     }

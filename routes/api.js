@@ -4,9 +4,11 @@ const express = require('express');
 const router = express.Router();
 const generationService = require('../services/generationService');
 const questionService = require('../services/questionService');
+const userService = require('../services/userService');
+const { requireAuth } = require('../middleware/auth');
 
 // SSE: ドメインの問題を再生成
-router.post('/certifications/:certId/domains/:domainId/generate', async (req, res) => {
+router.post('/certifications/:certId/domains/:domainId/generate', requireAuth, async (req, res) => {
   const { certId, domainId } = req.params;
 
   const cert = questionService.readCertification(certId);
@@ -14,6 +16,12 @@ router.post('/certifications/:certId/domains/:domainId/generate', async (req, re
 
   const domain = cert.domains.find((d) => d.id === domainId);
   if (!domain) return res.status(404).json({ error: 'ドメインが見つかりません' });
+
+  // ユーザーの LLM 設定を取得
+  const llmConfig = userService.getLlmConfig(req.session.userId);
+  if (!llmConfig) {
+    return res.status(400).json({ error: 'LLM API キーが設定されていません。設定画面で登録してください。' });
+  }
 
   // SSE レスポンスを開始
   res.setHeader('Content-Type', 'text/event-stream');
@@ -26,14 +34,12 @@ router.post('/certifications/:certId/domains/:domainId/generate', async (req, re
   };
 
   try {
-    send('progress', { message: `Microsoft Learn MCP でドキュメントを取得中...` });
-    const docText = await generationService.fetchDomainContent(cert.studyGuideUrl, domain.name);
-
-    send('progress', { message: 'GitHub Copilot に問題生成を依頼中...' });
+    send('progress', { message: '学習ガイドとコースコンテンツを取得中...' });
     const questions = await generationService.generateQuestions({
+      cert,
       certId,
       domain,
-      docText,
+      llmConfig,
       onProgress: (msg) => send('progress', { message: msg }),
     });
 

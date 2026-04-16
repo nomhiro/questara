@@ -7,12 +7,17 @@
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-gray-50 min-h-screen">
-  <nav class="bg-gray-900 text-white px-6 py-3 flex items-center gap-4 text-sm">
-    <a href="/" class="font-bold">📚</a>
-    <span class="text-gray-400">/</span>
-    <a href="/certifications/<%= cert.id %>" class="text-gray-300 hover:text-white"><%= cert.name %></a>
-    <span class="text-gray-400">/</span>
-    <span class="text-gray-200 truncate max-w-xs"><%= domain.name %></span>
+  <nav class="bg-gray-900 text-white px-6 py-3 flex items-center justify-between text-sm">
+    <div class="flex items-center gap-2">
+      <a href="/" class="font-bold">📚</a>
+      <span class="text-gray-400">/</span>
+      <a href="/certifications/<%= cert.id %>" class="text-gray-300 hover:text-white"><%= cert.name %></a>
+      <span class="text-gray-400">/</span>
+      <span class="text-gray-200 truncate max-w-xs"><%= domain.name %></span>
+    </div>
+    <form method="POST" action="/auth/logout" class="inline">
+      <button type="submit" class="text-gray-400 hover:text-white transition">ログアウト</button>
+    </form>
   </nav>
   <main class="max-w-4xl mx-auto px-4 py-8">
 

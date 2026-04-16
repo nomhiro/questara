@@ -4,10 +4,12 @@ const express = require('express');
 const router = express.Router();
 const questionService = require('../services/questionService');
 const progressService = require('../services/progressService');
+const { requireAuth } = require('../middleware/auth');
 
 // クイズ開始
-router.post('/start', (req, res) => {
+router.post('/start', requireAuth, (req, res) => {
   const { certId, mode, domainId } = req.body;
+  const userId = req.session.userId;
   const cert = questionService.readCertification(certId);
   if (!cert) return res.status(404).render('error', { title: '404', message: '資格が見つかりません' });
 
@@ -15,7 +17,7 @@ router.post('/start', (req, res) => {
   let domainFilter = null;
 
   if (mode === 'wrong-only') {
-    const wrongIds = progressService.getWrongQuestionIds(certId);
+    const wrongIds = progressService.getWrongQuestionIds(certId, userId);
     if (wrongIds.length === 0) {
       return res.redirect(`/certifications/${certId}?info=no-wrong`);
     }
@@ -34,15 +36,14 @@ router.post('/start', (req, res) => {
   // 問題をシャッフル
   questions.sort(() => Math.random() - 0.5);
 
-  const session = progressService.createSession({ certificationId: certId, domainFilter, mode });
+  const session = progressService.createSession({ userId, certificationId: certId, domainFilter, mode });
 
-  // セッションデータをクライアントに渡すためにクエリパラメータを使用
   const questionIds = questions.map((q) => q.id).join(',');
   res.redirect(`/quiz/${session.id}?questions=${encodeURIComponent(questionIds)}&certId=${certId}&idx=0`);
 });
 
 // 問題表示
-router.get('/:sessionId', (req, res) => {
+router.get('/:sessionId', requireAuth, (req, res) => {
   const { sessionId } = req.params;
   const { questions: questionIdsStr, certId, idx } = req.query;
 
@@ -57,7 +58,6 @@ router.get('/:sessionId', (req, res) => {
   const currentIdx = parseInt(idx, 10) || 0;
 
   if (currentIdx >= questionIds.length) {
-    // 全問完了
     progressService.completeSession(sessionId);
     return res.redirect(`/quiz/${sessionId}/result?certId=${certId}`);
   }
@@ -82,7 +82,7 @@ router.get('/:sessionId', (req, res) => {
 });
 
 // 回答送信
-router.post('/:sessionId/answer', (req, res) => {
+router.post('/:sessionId/answer', requireAuth, (req, res) => {
   const { sessionId } = req.params;
   const { questionId, domainId, selectedAnswer, isCorrect, questionIds, certId, currentIdx } = req.body;
 
@@ -101,7 +101,7 @@ router.post('/:sessionId/answer', (req, res) => {
 });
 
 // 結果画面
-router.get('/:sessionId/result', (req, res) => {
+router.get('/:sessionId/result', requireAuth, (req, res) => {
   const { sessionId } = req.params;
   const { certId } = req.query;
 
@@ -114,7 +114,6 @@ router.get('/:sessionId/result', (req, res) => {
   const correct = session.answers.filter((a) => a.isCorrect).length;
   const overallRate = total > 0 ? Math.round((correct / total) * 100) : 0;
 
-  // ドメイン名を付加
   const domainsWithScores = cert
     ? cert.domains
         .filter((d) => domainScores[d.id])
@@ -124,7 +123,6 @@ router.get('/:sessionId/result', (req, res) => {
         }))
     : [];
 
-  // 弱点ドメイン (正答率 < 70%)
   const weakDomains = domainsWithScores.filter((d) => d.score.rate !== null && d.score.rate < 70);
 
   res.render('result', {
@@ -141,7 +139,7 @@ router.get('/:sessionId/result', (req, res) => {
 });
 
 // 復習画面
-router.get('/:sessionId/review', (req, res) => {
+router.get('/:sessionId/review', requireAuth, (req, res) => {
   const { sessionId } = req.params;
   const { certId } = req.query;
 
