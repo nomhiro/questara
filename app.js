@@ -14,6 +14,12 @@ if (!process.env.ENCRYPTION_KEY || process.env.ENCRYPTION_KEY.length !== 64) {
   console.error('❌ ENCRYPTION_KEY 環境変数が未設定または不正です（64文字の hex 文字列が必要）');
   process.exit(1);
 }
+if (!process.env.GITHUB_CLIENT_ID || !process.env.GITHUB_CLIENT_SECRET) {
+  console.error('❌ GITHUB_CLIENT_ID / GITHUB_CLIENT_SECRET 環境変数が設定されていません');
+  console.error('   https://github.com/settings/developers で OAuth App を作成してください');
+  console.error('   Callback URL: http://localhost:3000/auth/github/callback');
+  process.exit(1);
+}
 
 const indexRouter = require('./routes/index');
 const quizRouter = require('./routes/quiz');

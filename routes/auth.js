@@ -95,19 +95,19 @@ router.get('/github/callback', async (req, res) => {
 
 router.get('/login', (req, res) => {
   if (req.session.userId) return res.redirect('/');
-  res.render('login', { title: 'ログイン', error: null, githubEnabled: !!process.env.GITHUB_CLIENT_ID });
+  res.render('login', { title: 'ログイン', error: null });
 });
 
 router.post('/login', (req, res) => {
   const { email, password } = req.body;
 
   if (!email || !password) {
-    return res.render('login', { title: 'ログイン', error: 'メールアドレスとパスワードを入力してください', githubEnabled: !!process.env.GITHUB_CLIENT_ID });
+    return res.render('login', { title: 'ログイン', error: 'メールアドレスとパスワードを入力してください' });
   }
 
   const user = userService.verifyUser(email, password);
   if (!user) {
-    return res.render('login', { title: 'ログイン', error: 'メールアドレスまたはパスワードが正しくありません', githubEnabled: !!process.env.GITHUB_CLIENT_ID });
+    return res.render('login', { title: 'ログイン', error: 'メールアドレスまたはパスワードが正しくありません' });
   }
 
   req.session.userId = user.id;
@@ -115,35 +115,10 @@ router.post('/login', (req, res) => {
   res.redirect('/');
 });
 
+// /register は GitHub OAuth にリダイレクト
 router.get('/register', (req, res) => {
   if (req.session.userId) return res.redirect('/');
-  res.render('register', { title: 'アカウント登録', error: null, githubEnabled: !!process.env.GITHUB_CLIENT_ID });
-});
-
-router.post('/register', (req, res) => {
-  const { email, password, passwordConfirm } = req.body;
-
-  if (!email || !password) {
-    return res.render('register', { title: 'アカウント登録', error: 'メールアドレスとパスワードを入力してください', githubEnabled: !!process.env.GITHUB_CLIENT_ID });
-  }
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-    return res.render('register', { title: 'アカウント登録', error: '有効なメールアドレスを入力してください', githubEnabled: !!process.env.GITHUB_CLIENT_ID });
-  }
-  if (password.length < 8) {
-    return res.render('register', { title: 'アカウント登録', error: 'パスワードは8文字以上で入力してください', githubEnabled: !!process.env.GITHUB_CLIENT_ID });
-  }
-  if (password !== passwordConfirm) {
-    return res.render('register', { title: 'アカウント登録', error: 'パスワードが一致しません', githubEnabled: !!process.env.GITHUB_CLIENT_ID });
-  }
-
-  try {
-    const user = userService.createUser(email, password);
-    req.session.userId = user.id;
-    req.session.userEmail = user.email;
-    res.redirect('/settings?welcome=1');
-  } catch (err) {
-    res.render('register', { title: 'アカウント登録', error: err.message, githubEnabled: !!process.env.GITHUB_CLIENT_ID });
-  }
+  res.redirect('/auth/github');
 });
 
 router.post('/logout', (req, res) => {
