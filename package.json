@@ -4,8 +4,9 @@
   "description": "Microsoft/GitHub認定資格学習AIエージェント",
   "main": "app.js",
   "scripts": {
-    "start": "node app.js",
-    "dev": "node --watch app.js"
+    "start": "node --env-file=.env app.js",
+    "dev": "node --env-file=.env --watch app.js",
+    "setup": "node -e \"const c=require('crypto');const fs=require('fs');if(fs.existsSync('.env')){console.log('.env already exists');process.exit(0)}const t=fs.readFileSync('.env.example','utf8').replace('your-super-secret-session-key-here-change-me',c.randomBytes(32).toString('hex')).replace('0000000000000000000000000000000000000000000000000000000000000000',c.randomBytes(32).toString('hex'));fs.writeFileSync('.env',t);console.log('✅ .env created');\"" 
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.29.0",
