@@ -71,6 +71,28 @@ function initSchema(db) {
   ]) {
     try { db.exec(sql); } catch (_) { /* already exists */ }
   }
+
+  // password_hash の NOT NULL 制約を除去（古いスキーマからの移行）
+  const passwordHashCol = db.prepare("PRAGMA table_info(users)").all()
+    .find(col => col.name === 'password_hash');
+  if (passwordHashCol && passwordHashCol.notnull === 1) {
+    db.exec(`
+      BEGIN;
+      CREATE TABLE users_new (
+        id          TEXT PRIMARY KEY,
+        email       TEXT UNIQUE,
+        password_hash TEXT,
+        github_id   TEXT UNIQUE,
+        github_login TEXT,
+        created_at  TEXT NOT NULL DEFAULT (datetime('now'))
+      );
+      INSERT INTO users_new SELECT id, email, password_hash, github_id, github_login, created_at FROM users;
+      DROP TABLE users;
+      ALTER TABLE users_new RENAME TO users;
+      COMMIT;
+    `);
+    console.log('✅ users テーブルの password_hash NOT NULL 制約を除去しました');
+  }
 }
 
 module.exports = { getDb };
