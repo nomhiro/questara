@@ -26,7 +26,6 @@ const quizRouter = require('./routes/quiz');
 const domainsRouter = require('./routes/domains');
 const apiRouter = require('./routes/api');
 const authRouter = require('./routes/auth');
-const settingsRouter = require('./routes/settings');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -57,7 +56,6 @@ app.use((req, res, next) => {
 });
 
 app.use('/auth', authRouter);
-app.use('/settings', settingsRouter);
 app.use('/', indexRouter);
 app.use('/quiz', quizRouter);
 app.use('/certifications', domainsRouter);
