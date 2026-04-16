@@ -48,6 +48,37 @@ function createUser(email, password) {
   return { id, email };
 }
 
+/**
+ * GitHub OAuth でのユーザー作成または更新
+ * 既存ユーザーなら github_id/login を更新して返す
+ */
+function upsertGithubUser({ githubId, githubLogin, email }) {
+  const db = getDb();
+
+  // 既存の GitHub ユーザー
+  const existing = db.prepare('SELECT id, email, github_login FROM users WHERE github_id = ?').get(String(githubId));
+  if (existing) {
+    db.prepare('UPDATE users SET github_login = ? WHERE id = ?').run(githubLogin, existing.id);
+    return { id: existing.id, email: existing.email || email, githubLogin };
+  }
+
+  // メールが既存ユーザーと一致する場合は紐付け
+  if (email) {
+    const byEmail = db.prepare('SELECT id FROM users WHERE email = ?').get(email);
+    if (byEmail) {
+      db.prepare('UPDATE users SET github_id = ?, github_login = ? WHERE id = ?').run(String(githubId), githubLogin, byEmail.id);
+      return { id: byEmail.id, email, githubLogin };
+    }
+  }
+
+  // 新規作成
+  const id = crypto.randomUUID();
+  db.prepare('INSERT INTO users (id, email, github_id, github_login) VALUES (?, ?, ?, ?)').run(
+    id, email || null, String(githubId), githubLogin
+  );
+  return { id, email: email || null, githubLogin };
+}
+
 function verifyUser(email, password) {
   const db = getDb();
   const user = db.prepare('SELECT id, email, password_hash FROM users WHERE email = ?').get(email);
@@ -95,6 +126,7 @@ function hasLlmConfig(userId) {
 
 module.exports = {
   createUser,
+  upsertGithubUser,
   verifyUser,
   getUserById,
   saveLlmConfig,

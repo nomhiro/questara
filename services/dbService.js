@@ -21,8 +21,10 @@ function initSchema(db) {
   db.exec(`
     CREATE TABLE IF NOT EXISTS users (
       id          TEXT PRIMARY KEY,
-      email       TEXT UNIQUE NOT NULL,
-      password_hash TEXT NOT NULL,
+      email       TEXT UNIQUE,
+      password_hash TEXT,
+      github_id   TEXT UNIQUE,
+      github_login TEXT,
       created_at  TEXT NOT NULL DEFAULT (datetime('now'))
     );
 
@@ -56,7 +58,19 @@ function initSchema(db) {
 
     CREATE INDEX IF NOT EXISTS idx_quiz_sessions_user_id ON quiz_sessions(user_id);
     CREATE INDEX IF NOT EXISTS idx_session_answers_session_id ON session_answers(session_id);
+
+    -- 既存 DB への移行: カラムが存在しない場合のみ追加
+    CREATE TEMPORARY TABLE IF NOT EXISTS _migration_guard (x INTEGER);
   `);
+
+  // 既存テーブルへのカラム追加（ALTER TABLE は IF NOT EXISTS 非サポートのため try/catch）
+  for (const sql of [
+    "ALTER TABLE users ADD COLUMN github_id TEXT",
+    "ALTER TABLE users ADD COLUMN github_login TEXT",
+    "ALTER TABLE users DROP COLUMN email_not_null",
+  ]) {
+    try { db.exec(sql); } catch (_) { /* already exists */ }
+  }
 }
 
 module.exports = { getDb };
