@@ -1,7 +1,7 @@
 # サービス化設計: ユーザー登録 + LLM API キー管理
 
 **日付**: 2026-04-16  
-**ステータス**: 承認待ち
+**ステータス**: レビュー中
 
 ---
 
@@ -180,7 +180,7 @@ PORT=3000  # optional
 ```json
 "bcrypt": "^5.1.1",
 "better-sqlite3": "^9.x",
-"connect-sqlite3": "^0.9.x",
+"connect-sqlite3": "^0.9.15",
 "express-session": "^1.18.x",
 "openai": "^4.x"
 ```
@@ -216,7 +216,11 @@ data/app.db-wal
 
 ---
 
-## 未解決事項（実装時に決定）
+## 未解決事項
 
-- `connect-sqlite3` と `better-sqlite3-session-store` のどちらを使うか（APIの安定性で選択）
-- 暗号化キーが未設定の場合のエラーハンドリング（起動時チェック推奨）
+なし。すべての設計判断は本ドキュメントで確定済み。
+
+### 確定済み判断メモ
+- セッションストア: `connect-sqlite3`（実績が多くシンプル）
+- 暗号化キー未設定時: `app.js` 起動時に `process.exit(1)` でフェイルファスト
+- 暗号化フォーマット: `iv:authTag:ciphertext`（全て hex エンコード、`:` 区切り）
