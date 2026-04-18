@@ -16,10 +16,22 @@ router.get('/certifications/:certId', requireAuth, async (req, res) => {
   if (!cert) return res.status(404).render('error', { title: '404', message: '資格が見つかりません' });
   const domainStats = await progressService.calcDomainStats(cert.id, req.user.id);
   const wrongIds = await progressService.getWrongQuestionIds(cert.id, req.user.id);
+
+  const domains = cert.domains.map((d) => ({
+    id: d.id,
+    name: d.name,
+    weight: d.weight,
+    generatedAt: d.generatedAt,
+    questionCount: d.questions.length,
+    stats: domainStats[d.id] || { correct: 0, total: 0, rate: null },
+  }));
+  const totalQuestions = cert.domains.reduce((acc, d) => acc + d.questions.length, 0);
+
   res.render('certification', {
     title: cert.name,
     cert,
-    domainStats,
+    domains,
+    totalQuestions,
     wrongCount: wrongIds.length,
     info: req.query.info || null,
     userEmail: res.locals.userEmail,
