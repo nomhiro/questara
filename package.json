@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node --env-file=.env app.js",
     "dev": "node --env-file=.env --watch app.js",
-    "setup": "node -e \"const c=require('crypto');const fs=require('fs');if(fs.existsSync('.env')){console.log('.env already exists');process.exit(0)}const t=fs.readFileSync('.env.example','utf8').replace('your-super-secret-session-key-here-change-me',c.randomBytes(32).toString('hex')).replace('0000000000000000000000000000000000000000000000000000000000000000',c.randomBytes(32).toString('hex'));fs.writeFileSync('.env',t);console.log('✅ .env created');console.log('');console.log('⚠️  .env の GITHUB_CLIENT_ID と GITHUB_CLIENT_SECRET を設定してください');console.log('   https://github.com/settings/developers → OAuth Apps → New OAuth App');console.log('   Callback URL: http://localhost:3000/auth/github/callback');\"",
+    "setup": "node -e \"const c=require('crypto');const fs=require('fs');if(fs.existsSync('.env')){console.log('.env already exists');process.exit(0)}const t=fs.readFileSync('.env.example','utf8').replace('change-me-to-a-random-32-byte-hex-string',c.randomBytes(32).toString('hex')).replace('0000000000000000000000000000000000000000000000000000000000000000',c.randomBytes(32).toString('hex'));fs.writeFileSync('.env',t);console.log('✅ .env created');console.log('');console.log('⚠️  .env の GITHUB_CLIENT_ID と GITHUB_CLIENT_SECRET を設定してください');console.log('   https://github.com/settings/developers → OAuth Apps → New OAuth App');console.log('   Callback URL: http://localhost:3000/auth/github/callback');\"",
     "seed": "node --env-file=.env scripts/seed-certifications.js"
   },
   "dependencies": {
@@ -15,7 +15,6 @@
     "cookie-parser": "^1.4.7",
     "ejs": "^3.1.10",
     "express": "^4.19.2",
-    "express-session": "^1.19.0",
     "jsonwebtoken": "^9.0.3",
     "node-html-parser": "^6.1.13",
     "openai": "^6.34.0"
