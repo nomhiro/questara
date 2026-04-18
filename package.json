@@ -12,6 +12,7 @@
   "dependencies": {
     "@azure/cosmos": "^4.9.2",
     "@modelcontextprotocol/sdk": "^1.29.0",
+    "cookie-parser": "^1.4.7",
     "ejs": "^3.1.10",
     "express": "^4.19.2",
     "express-session": "^1.19.0",
