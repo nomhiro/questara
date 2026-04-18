@@ -7,21 +7,30 @@ const questionService = require('../services/questionService');
 const userService = require('../services/userService');
 const { requireAuth } = require('../middleware/auth');
 
+const GITHUB_MODELS_ENDPOINT = 'https://models.inference.ai.azure.com';
+const GITHUB_MODELS_DEFAULT_MODEL = 'gpt-4o-mini';
+
 // SSE: ドメインの問題を再生成
 router.post('/certifications/:certId/domains/:domainId/generate', requireAuth, async (req, res) => {
   const { certId, domainId } = req.params;
 
-  const cert = questionService.readCertification(certId);
+  const cert = await questionService.readCertification(certId);
   if (!cert) return res.status(404).json({ error: '資格が見つかりません' });
 
   const domain = cert.domains.find((d) => d.id === domainId);
   if (!domain) return res.status(404).json({ error: 'ドメインが見つかりません' });
 
-  // ユーザーの LLM 設定を取得
-  const llmConfig = userService.getLlmConfig(req.session.userId);
-  if (!llmConfig) {
-    return res.status(400).json({ error: 'LLM API キーが設定されていません。設定画面で登録してください。' });
+  // GitHub アクセストークンを取得
+  const accessToken = await userService.getGithubAccessToken(req.user.id);
+  if (!accessToken) {
+    return res.status(400).json({ error: 'GitHubトークンが見つかりません。再ログインしてください。' });
   }
+
+  const llmConfig = {
+    endpointUrl: GITHUB_MODELS_ENDPOINT,
+    apiKey: accessToken,
+    modelName: GITHUB_MODELS_DEFAULT_MODEL,
+  };
 
   // SSE レスポンスを開始
   res.setHeader('Content-Type', 'text/event-stream');
@@ -43,7 +52,7 @@ router.post('/certifications/:certId/domains/:domainId/generate', requireAuth, a
       onProgress: (msg) => send('progress', { message: msg }),
     });
 
-    questionService.replaceDomainQuestions(certId, domainId, questions);
+    await questionService.replaceDomainQuestions(certId, domainId, questions);
     send('done', { message: `${questions.length}問を生成しました`, count: questions.length });
   } catch (err) {
     console.error('Generation error:', err);
