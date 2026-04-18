@@ -6,33 +6,23 @@ const questionService = require('../services/questionService');
 const progressService = require('../services/progressService');
 const { requireAuth } = require('../middleware/auth');
 
-// ホーム: 資格一覧
-router.get('/', requireAuth, (req, res) => {
-  const certs = questionService.listCertifications();
-  res.render('index', { title: '資格取得学習エージェント', certs, userEmail: req.session.userEmail });
+router.get('/', requireAuth, async (req, res) => {
+  const certs = await questionService.listCertifications({ includePrivate: true, userId: req.user.id });
+  res.render('index', { title: '資格取得学習エージェント', certs, userEmail: res.locals.userEmail });
 });
 
-// 資格詳細: ドメイン別正答率
-router.get('/certifications/:certId', requireAuth, (req, res) => {
-  const cert = questionService.readCertification(req.params.certId);
+router.get('/certifications/:certId', requireAuth, async (req, res) => {
+  const cert = await questionService.readCertification(req.params.certId);
   if (!cert) return res.status(404).render('error', { title: '404', message: '資格が見つかりません' });
-
-  const domainStats = progressService.calcDomainStats(cert.id, req.session.userId);
-  const wrongIds = progressService.getWrongQuestionIds(cert.id, req.session.userId);
-
-  const domainsWithStats = cert.domains.map((d) => ({
-    ...d,
-    stats: domainStats[d.id] || { correct: 0, total: 0, rate: null },
-    questionCount: d.questions.length,
-  }));
-
+  const domainStats = await progressService.calcDomainStats(cert.id, req.user.id);
+  const wrongIds = await progressService.getWrongQuestionIds(cert.id, req.user.id);
   res.render('certification', {
     title: cert.name,
     cert,
-    domains: domainsWithStats,
+    domainStats,
     wrongCount: wrongIds.length,
-    totalQuestions: cert.domains.reduce((acc, d) => acc + d.questions.length, 0),
-    userEmail: req.session.userEmail,
+    info: req.query.info || null,
+    userEmail: res.locals.userEmail,
   });
 });
 
