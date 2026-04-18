@@ -1,13 +1,10 @@
 'use strict';
 
 const express = require('express');
+const crypto = require('crypto');
 const router = express.Router();
 const userService = require('../services/userService');
-
-const GITHUB_MODELS_ENDPOINT = 'https://models.inference.ai.azure.com';
-const GITHUB_MODELS_DEFAULT_MODEL = 'gpt-4o-mini';
-
-// ─── GitHub OAuth ────────────────────────────────────────
+const jwtService = require('../services/jwtService');
 
 router.get('/github', (req, res) => {
   const clientId = process.env.GITHUB_CLIENT_ID;
@@ -27,7 +24,6 @@ router.get('/github/callback', async (req, res) => {
   if (!code) return res.redirect('/auth/login');
 
   try {
-    // code → access token
     const tokenRes = await fetch('https://github.com/login/oauth/access_token', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
@@ -41,7 +37,6 @@ router.get('/github/callback', async (req, res) => {
     const accessToken = tokenData.access_token;
     if (!accessToken) throw new Error('GitHub からアクセストークンを取得できませんでした');
 
-    // ユーザー情報取得
     const [userRes, emailsRes] = await Promise.all([
       fetch('https://api.github.com/user', {
         headers: { Authorization: `Bearer ${accessToken}`, 'User-Agent': 'cert-study-agent' },
@@ -56,34 +51,21 @@ router.get('/github/callback', async (req, res) => {
       ? (emails.find((e) => e.primary && e.verified)?.email || emails[0]?.email)
       : null;
 
-    // ユーザー作成または更新
-    const user = userService.upsertGithubUser({
+    const user = await userService.upsertGithubUser({
       githubId: githubUser.id,
       githubLogin: githubUser.login,
       email: primaryEmail,
+      displayName: githubUser.name,
+      avatarUrl: githubUser.avatar_url,
+      accessToken,
     });
 
-    // GitHub Models を llm_config に自動設定（未設定のみ）
-    if (!userService.hasLlmConfig(user.id)) {
-      userService.saveLlmConfig(user.id, {
-        endpointUrl: GITHUB_MODELS_ENDPOINT,
-        apiKey: accessToken,
-        modelName: GITHUB_MODELS_DEFAULT_MODEL,
-      });
-    } else {
-      // 既存ユーザーのトークンを更新（有効期限のないトークンだが念のため）
-      const existing = userService.getLlmConfig(user.id);
-      if (existing && existing.endpointUrl === GITHUB_MODELS_ENDPOINT) {
-        userService.saveLlmConfig(user.id, {
-          endpointUrl: GITHUB_MODELS_ENDPOINT,
-          apiKey: accessToken,
-          modelName: existing.modelName,
-        });
-      }
-    }
-
-    req.session.userId = user.id;
-    req.session.userEmail = user.email || user.githubLogin;
+    const token = jwtService.sign({
+      userId: user.id,
+      email: user.email,
+      username: user.username,
+    });
+    res.cookie(jwtService.COOKIE_NAME, token, jwtService.getCookieOptions());
     res.redirect('/');
   } catch (err) {
     console.error('GitHub OAuth error:', err);
@@ -91,40 +73,14 @@ router.get('/github/callback', async (req, res) => {
   }
 });
 
-// ─── Email/Password ───────────────────────────────────────
-
 router.get('/login', (req, res) => {
-  if (req.session.userId) return res.redirect('/');
+  if (req.user) return res.redirect('/');
   res.render('login', { title: 'ログイン', error: null });
 });
 
-router.post('/login', (req, res) => {
-  const { email, password } = req.body;
-
-  if (!email || !password) {
-    return res.render('login', { title: 'ログイン', error: 'メールアドレスとパスワードを入力してください' });
-  }
-
-  const user = userService.verifyUser(email, password);
-  if (!user) {
-    return res.render('login', { title: 'ログイン', error: 'メールアドレスまたはパスワードが正しくありません' });
-  }
-
-  req.session.userId = user.id;
-  req.session.userEmail = user.email;
-  res.redirect('/');
-});
-
-// /register は GitHub OAuth にリダイレクト
-router.get('/register', (req, res) => {
-  if (req.session.userId) return res.redirect('/');
-  res.redirect('/auth/github');
-});
-
 router.post('/logout', (req, res) => {
-  req.session.destroy(() => {
-    res.redirect('/auth/login');
-  });
+  res.clearCookie(jwtService.COOKIE_NAME, jwtService.getCookieOptions());
+  res.redirect('/auth/login');
 });
 
 module.exports = router;
