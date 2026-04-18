@@ -21,6 +21,8 @@ if (!process.env.GITHUB_CLIENT_ID || !process.env.GITHUB_CLIENT_SECRET) {
   process.exit(1);
 }
 
+const cosmosService = require('./services/cosmosService');
+
 const indexRouter = require('./routes/index');
 const quizRouter = require('./routes/quiz');
 const domainsRouter = require('./routes/domains');
@@ -72,9 +74,18 @@ app.use((err, req, res, _next) => {
   res.status(500).render('error', { title: 'エラー', message: err.message });
 });
 
-app.listen(PORT, () => {
-  console.log(`🚀 Server running at http://localhost:${PORT}`);
-});
+(async () => {
+  try {
+    await cosmosService.init();
+    console.log('✅ Cosmos DB initialized');
+    app.listen(PORT, () => {
+      console.log(`🚀 Server running at http://localhost:${PORT}`);
+    });
+  } catch (err) {
+    console.error('❌ Cosmos DB init failed:', err);
+    process.exit(1);
+  }
+})();
 
 module.exports = app;
 
