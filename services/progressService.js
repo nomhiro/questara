@@ -20,14 +20,7 @@ async function createSession({ userId, certificationId, domainFilter = null, mod
 }
 
 async function getSession(sessionId, userId) {
-  if (!userId) {
-    // userIdが分からない場合は全パーティション検索（非効率、回避推奨）
-    const results = await cosmosService.query('sessions', {
-      query: 'SELECT * FROM c WHERE c.id = @id',
-      parameters: [{ name: '@id', value: sessionId }],
-    });
-    return results[0] || null;
-  }
+  if (!userId) throw new Error('getSession requires userId (partition key)');
   return cosmosService.read('sessions', sessionId, userId);
 }
 
