@@ -64,25 +64,31 @@
     }
 
     /* ======================================================
-       4. タグラインのタイプライター
+       4. タグラインのタイプライター（clip-path 方式）
     ====================================================== */
     .typewriter {
       display: inline-block;
-      overflow: hidden;
+      position: relative;
       white-space: nowrap;
-      border-right: 2px solid var(--gold);
-      width: 0;
-      animation:
-        typing 2.5s steps(13, end) 0.5s forwards,
-        caret  0.8s step-end     infinite;
+      clip-path: inset(0 100% 0 0);
+      animation: typing 2.8s steps(14, end) 0.4s forwards;
+    }
+    .typewriter::after {
+      content: '';
+      position: absolute;
+      right: -4px;
+      top: 10%;
+      bottom: 10%;
+      width: 2px;
+      background: var(--gold);
+      animation: caret 0.8s step-end infinite;
     }
     @keyframes typing {
-      from { width: 0; }
-      to   { width: 13ch; }
+      to { clip-path: inset(0 0 0 0); }
     }
     @keyframes caret {
-      0%, 100% { border-right-color: var(--gold); }
-      50%       { border-right-color: transparent; }
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0; }
     }
 
     /* ======================================================
@@ -100,7 +106,76 @@
     }
 
     /* ======================================================
-       6. Scroll フェードイン
+       6. 松明
+    ====================================================== */
+    .torch {
+      position: absolute;
+      top: -10px;
+      z-index: 1;
+      pointer-events: none;
+    }
+    .torch-left { left: 16px; }
+    .torch-right { right: 16px; }
+    .torch-flame {
+      transform-origin: 16px 35px;
+      animation: torch-flicker 0.3s ease-in-out infinite alternate;
+    }
+    @keyframes torch-flicker {
+      from { transform: scale(1) skewX(-2deg); filter: brightness(1); }
+      to { transform: scale(1.05, 1.1) skewX(2deg); filter: brightness(1.15); }
+    }
+
+    /* ======================================================
+       7. コウモリ
+    ====================================================== */
+    .bat {
+      position: absolute;
+      top: 30px;
+      z-index: 1;
+      pointer-events: none;
+      opacity: 0.85;
+    }
+    .bat-1 {
+      left: 15%;
+      animation: bat-fly-1 5s ease-in-out infinite alternate;
+    }
+    .bat-2 {
+      right: 15%;
+      animation: bat-fly-2 6s ease-in-out infinite alternate;
+    }
+    @keyframes bat-fly-1 {
+      0% { transform: translate(0, 0) scaleX(1); }
+      50% { transform: translate(40px, 15px) scaleX(-1); }
+      100% { transform: translate(10px, -10px) scaleX(1); }
+    }
+    @keyframes bat-fly-2 {
+      0% { transform: translate(0, 0) scaleX(1); }
+      50% { transform: translate(-30px, 20px) scaleX(-1); }
+      100% { transform: translate(-10px, -12px) scaleX(1); }
+    }
+
+    /* ======================================================
+       8. 剣士 & キャラクター対面構図
+    ====================================================== */
+    .knight-sword {
+      transform-origin: 45.5px 41px;
+      animation: sword-swing 2.5s ease-in-out infinite;
+    }
+    @keyframes sword-swing {
+      0%, 100% { transform: rotate(0deg); }
+      45% { transform: rotate(-45deg); }
+      55% { transform: rotate(-45deg); }
+    }
+    .character-pair {
+      display: flex;
+      justify-content: center;
+      gap: 40px;
+      align-items: flex-end;
+      margin: 24px 0 8px;
+    }
+
+    /* ======================================================
+       9. Scroll フェードイン
     ====================================================== */
     .reveal {
       opacity: 0;
@@ -147,25 +222,30 @@
        8. prefers-reduced-motion
     ====================================================== */
     @media (prefers-reduced-motion: reduce) {
+      .hero-fog,
       .flame-flicker,
       .title-glow,
       .slime,
       .typewriter,
       .reveal,
-      .magic-circle {
+      .magic-circle,
+      .torch-flame,
+      .bat,
+      .bat-1,
+      .bat-2,
+      .knight-sword {
         animation: none !important;
         transform: none !important;
         transition: none !important;
       }
       .typewriter {
-        width: auto !important;
-        border-right: none !important;
+        clip-path: none !important;
+      }
+      .typewriter::after {
+        display: none !important;
       }
       .reveal {
         opacity: 1 !important;
-      }
-      .hero-fog {
-        animation: none !important;
       }
     }
   </style>
@@ -192,6 +272,44 @@
     <section class="rpg-window is-open reveal" style="text-align:center; padding: 40px 24px; margin-bottom: 32px; position:relative; overflow:hidden;">
       <!-- 1. 背景の霧 -->
       <div class="hero-fog"></div>
+      <!-- 3-a. 松明2本 -->
+      <span class="torch torch-left" aria-hidden="true">
+        <svg viewBox="0 0 32 80" width="32" height="80">
+          <rect x="13" y="35" width="6" height="40" fill="#5b3a20" stroke="#2d1c0f" stroke-width="1"/>
+          <rect x="11" y="33" width="10" height="5" fill="#7a4e2b"/>
+          <g class="torch-flame">
+            <path d="M16 8 Q10 20 12 30 Q14 35 16 35 Q18 35 20 30 Q22 20 16 8 Z" fill="#ff9833"/>
+            <path d="M16 14 Q12 22 14 30 Q16 33 16 33 Q16 33 18 30 Q20 22 16 14 Z" fill="#ffde59"/>
+            <circle cx="16" cy="26" r="2" fill="#fff" opacity="0.8"/>
+          </g>
+        </svg>
+      </span>
+      <span class="torch torch-right" aria-hidden="true">
+        <svg viewBox="0 0 32 80" width="32" height="80">
+          <rect x="13" y="35" width="6" height="40" fill="#5b3a20" stroke="#2d1c0f" stroke-width="1"/>
+          <rect x="11" y="33" width="10" height="5" fill="#7a4e2b"/>
+          <g class="torch-flame">
+            <path d="M16 8 Q10 20 12 30 Q14 35 16 35 Q18 35 20 30 Q22 20 16 8 Z" fill="#ff9833"/>
+            <path d="M16 14 Q12 22 14 30 Q16 33 16 33 Q16 33 18 30 Q20 22 16 14 Z" fill="#ffde59"/>
+            <circle cx="16" cy="26" r="2" fill="#fff" opacity="0.8"/>
+          </g>
+        </svg>
+      </span>
+      <!-- 3-b. コウモリ2匹 -->
+      <span class="bat bat-1" aria-hidden="true">
+        <svg viewBox="0 0 32 20" width="32" height="20">
+          <path d="M16 10 L11 7 L4 10 L8 6 L2 4 L10 4 L16 8 L22 4 L30 4 L24 6 L28 10 L21 7 Z" fill="#1a1a2a"/>
+          <circle cx="15" cy="9" r="1" fill="#ff3355"/>
+          <circle cx="17" cy="9" r="1" fill="#ff3355"/>
+        </svg>
+      </span>
+      <span class="bat bat-2" aria-hidden="true">
+        <svg viewBox="0 0 32 20" width="32" height="20">
+          <path d="M16 10 L11 7 L4 10 L8 6 L2 4 L10 4 L16 8 L22 4 L30 4 L24 6 L28 10 L21 7 Z" fill="#1a1a2a"/>
+          <circle cx="15" cy="9" r="1" fill="#ff3355"/>
+          <circle cx="17" cy="9" r="1" fill="#ff3355"/>
+        </svg>
+      </span>
       <!-- コンテンツ（z-index:1 で霧の上） -->
       <div style="position:relative; z-index:1;">
         <!-- 2. タイトル ⚔ glow + flicker -->
@@ -208,7 +326,7 @@
           Microsoft / GitHub 認定資格の学習を、<br>
           みんなで冒険として楽しめる学習エージェント。
         </p>
-        <!-- 7. Hero CTA 魔法陣 -->
+        <!-- Hero CTA 魔法陣 -->
         <div class="magic-circle-wrap">
           <!-- 魔法陣 SVG (円 + 六芒星) -->
           <svg class="magic-circle" viewBox="0 0 240 240" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
@@ -230,25 +348,6 @@
               GitHubでログインして始める
             </a>
           <% } %>
-        </div>
-        <!-- 5. 足元スライム -->
-        <div style="margin-top: 24px;">
-          <span class="slime" aria-hidden="true">
-            <svg width="48" height="52" viewBox="0 0 48 52" xmlns="http://www.w3.org/2000/svg">
-              <!-- 水滴形ボディ -->
-              <path d="M24 4 C10 4 6 16 6 26 C6 38 14 48 24 48 C34 48 42 38 42 26 C42 16 38 4 24 4 Z" fill="#6ac47f" opacity="0.9"/>
-              <!-- 光沢 -->
-              <ellipse cx="17" cy="16" rx="5" ry="3" fill="white" opacity="0.35" transform="rotate(-20,17,16)"/>
-              <!-- 目 (左) -->
-              <circle cx="18" cy="26" r="3" fill="#1a2a1a"/>
-              <circle cx="19" cy="25" r="1" fill="white" opacity="0.7"/>
-              <!-- 目 (右) -->
-              <circle cx="30" cy="26" r="3" fill="#1a2a1a"/>
-              <circle cx="31" cy="25" r="1" fill="white" opacity="0.7"/>
-              <!-- 笑顔 -->
-              <path d="M18 33 Q24 39 30 33" stroke="#1a2a1a" stroke-width="1.8" fill="none" stroke-linecap="round"/>
-            </svg>
-          </span>
         </div>
       </div>
     </section>
@@ -308,7 +407,51 @@
     <!-- CTA 再掲 -->
     <section class="rpg-window is-open reveal" style="text-align:center; padding: 32px 24px; margin-bottom: 32px;">
       <h2 class="rpg-title" style="font-size: 20px; margin-bottom: 16px;">さあ、学びの冒険へ</h2>
-      <!-- 7. 末尾 CTA 魔法陣 -->
+      <!-- 3-c. スライム vs 剣士 対面構図 -->
+      <div class="character-pair">
+        <!-- スライム（新SVG） -->
+        <span class="slime" aria-hidden="true">
+          <svg viewBox="0 0 64 64" width="64" height="64">
+            <defs>
+              <radialGradient id="slimeBody" cx="50%" cy="30%" r="70%">
+                <stop offset="0%" stop-color="#b6ecc0" />
+                <stop offset="60%" stop-color="#4fa962" />
+                <stop offset="100%" stop-color="#245c32" />
+              </radialGradient>
+            </defs>
+            <ellipse cx="32" cy="60" rx="18" ry="2.5" fill="#000" opacity="0.25" />
+            <path d="M32 8 Q10 28 12 50 Q14 60 32 60 Q50 60 52 50 Q54 28 32 8 Z" fill="url(#slimeBody)" stroke="#1a4022" stroke-width="1.5" />
+            <ellipse cx="22" cy="22" rx="4.5" ry="7" fill="white" opacity="0.55" transform="rotate(-15 22 22)" />
+            <ellipse cx="24" cy="40" rx="4.5" ry="5.5" fill="white" />
+            <ellipse cx="40" cy="40" rx="4.5" ry="5.5" fill="white" />
+            <circle cx="25" cy="41" r="2.3" fill="#111" />
+            <circle cx="41" cy="41" r="2.3" fill="#111" />
+            <circle cx="25.8" cy="40" r="0.9" fill="white" />
+            <circle cx="41.8" cy="40" r="0.9" fill="white" />
+            <path d="M25 49 Q32 54 39 49" stroke="#111" stroke-width="1.8" fill="none" stroke-linecap="round" />
+          </svg>
+        </span>
+        <!-- 剣士 -->
+        <span class="hero-knight" aria-hidden="true">
+          <svg viewBox="0 0 64 72" width="64" height="72">
+            <rect x="24" y="8" width="16" height="14" fill="#d9b47a" stroke="#5a3e1f" stroke-width="1.2"/>
+            <rect x="22" y="4" width="20" height="6" fill="#b08e5a" stroke="#5a3e1f" stroke-width="1.2"/>
+            <rect x="28" y="14" width="3" height="4" fill="#2a2a3a"/>
+            <rect x="33" y="14" width="3" height="4" fill="#2a2a3a"/>
+            <rect x="20" y="24" width="24" height="24" fill="#4a6b9a" stroke="#1a2e52" stroke-width="1.2"/>
+            <rect x="24" y="30" width="4" height="4" fill="#c0c6e0"/>
+            <rect x="36" y="30" width="4" height="4" fill="#c0c6e0"/>
+            <rect x="22" y="48" width="8" height="18" fill="#355080" stroke="#1a2e52" stroke-width="1.2"/>
+            <rect x="34" y="48" width="8" height="18" fill="#355080" stroke="#1a2e52" stroke-width="1.2"/>
+            <g class="knight-sword">
+              <rect x="44" y="18" width="3" height="24" fill="#d9d9d9" stroke="#4a4a4a" stroke-width="0.8"/>
+              <rect x="41" y="38" width="9" height="3" fill="#8a6a3a"/>
+              <rect x="44" y="41" width="3" height="5" fill="#5a3e1f"/>
+            </g>
+          </svg>
+        </span>
+      </div>
+      <!-- 末尾 CTA 魔法陣 -->
       <div class="magic-circle-wrap">
         <svg class="magic-circle" viewBox="0 0 240 240" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
           <circle cx="120" cy="120" r="115" stroke="var(--gold)" stroke-width="1.2" stroke-dasharray="6 4"/>
