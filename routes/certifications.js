@@ -3,6 +3,7 @@
 const express = require('express');
 const router = express.Router();
 const questionService = require('../services/questionService');
+const certificationParser = require('../services/certificationParser');
 const { requireAuth } = require('../middleware/auth');
 
 router.get('/', requireAuth, async (req, res) => {
@@ -23,6 +24,16 @@ router.get('/new', requireAuth, (req, res) => {
     error: null,
     userEmail: res.locals.userEmail,
   });
+});
+
+router.post('/extract', requireAuth, async (req, res) => {
+  try {
+    const { studyGuideUrl } = req.body;
+    const domains = await certificationParser.extractDomains(studyGuideUrl);
+    res.json({ domains });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
 });
 
 router.post('/new', requireAuth, async (req, res) => {
