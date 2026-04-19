@@ -1,10 +1,8 @@
 'use strict';
 
 const crypto = require('crypto');
-const bcrypt = require('bcrypt');
-const { getDb } = require('./dbService');
+const cosmosService = require('./cosmosService');
 
-const SALT_ROUNDS = 12;
 const ALGORITHM = 'aes-256-gcm';
 
 function getEncryptionKey() {
@@ -15,7 +13,7 @@ function getEncryptionKey() {
   return Buffer.from(key, 'hex');
 }
 
-function encryptApiKey(plaintext) {
+function encrypt(plaintext) {
   const key = getEncryptionKey();
   const iv = crypto.randomBytes(12);
   const cipher = crypto.createCipheriv(ALGORITHM, key, iv);
@@ -24,7 +22,7 @@ function encryptApiKey(plaintext) {
   return `${iv.toString('hex')}:${authTag.toString('hex')}:${encrypted.toString('hex')}`;
 }
 
-function decryptApiKey(ciphertext) {
+function decrypt(ciphertext) {
   const key = getEncryptionKey();
   const [ivHex, authTagHex, encryptedHex] = ciphertext.split(':');
   const iv = Buffer.from(ivHex, 'hex');
@@ -35,101 +33,59 @@ function decryptApiKey(ciphertext) {
   return decipher.update(encrypted) + decipher.final('utf8');
 }
 
-// ─── User CRUD ───────────────────────────────────────────
-
-function createUser(email, password) {
-  const db = getDb();
-  const existing = db.prepare('SELECT id FROM users WHERE email = ?').get(email);
-  if (existing) throw new Error('このメールアドレスは既に登録されています');
-
-  const passwordHash = bcrypt.hashSync(password, SALT_ROUNDS);
-  const id = crypto.randomUUID();
-  db.prepare('INSERT INTO users (id, email, password_hash) VALUES (?, ?, ?)').run(id, email, passwordHash);
-  return { id, email };
+function userId(githubId) {
+  return `github-${githubId}`;
 }
 
-/**
- * GitHub OAuth でのユーザー作成または更新
- * 既存ユーザーなら github_id/login を更新して返す
- */
-function upsertGithubUser({ githubId, githubLogin, email }) {
-  const db = getDb();
-
-  // 既存の GitHub ユーザー
-  const existing = db.prepare('SELECT id, email, github_login FROM users WHERE github_id = ?').get(String(githubId));
-  if (existing) {
-    db.prepare('UPDATE users SET github_login = ? WHERE id = ?').run(githubLogin, existing.id);
-    return { id: existing.id, email: existing.email || email, githubLogin };
-  }
-
-  // メールが既存ユーザーと一致する場合は紐付け
-  if (email) {
-    const byEmail = db.prepare('SELECT id FROM users WHERE email = ?').get(email);
-    if (byEmail) {
-      db.prepare('UPDATE users SET github_id = ?, github_login = ? WHERE id = ?').run(String(githubId), githubLogin, byEmail.id);
-      return { id: byEmail.id, email, githubLogin };
-    }
-  }
-
-  // 新規作成
-  const id = crypto.randomUUID();
-  db.prepare('INSERT INTO users (id, email, github_id, github_login) VALUES (?, ?, ?, ?)').run(
-    id, email || null, String(githubId), githubLogin
-  );
-  return { id, email: email || null, githubLogin };
-}
-
-function verifyUser(email, password) {
-  const db = getDb();
-  const user = db.prepare('SELECT id, email, password_hash FROM users WHERE email = ?').get(email);
-  if (!user) return null;
-  const valid = bcrypt.compareSync(password, user.password_hash);
-  return valid ? { id: user.id, email: user.email } : null;
-}
-
-function getUserById(userId) {
-  const db = getDb();
-  return db.prepare('SELECT id, email, created_at FROM users WHERE id = ?').get(userId) || null;
-}
-
-// ─── LLM Config ──────────────────────────────────────────
-
-function saveLlmConfig(userId, { endpointUrl, apiKey, modelName }) {
-  const db = getDb();
-  const apiKeyEncrypted = encryptApiKey(apiKey);
-  db.prepare(`
-    INSERT INTO llm_configs (user_id, endpoint_url, api_key_encrypted, model_name, updated_at)
-    VALUES (?, ?, ?, ?, datetime('now'))
-    ON CONFLICT(user_id) DO UPDATE SET
-      endpoint_url = excluded.endpoint_url,
-      api_key_encrypted = excluded.api_key_encrypted,
-      model_name = excluded.model_name,
-      updated_at = excluded.updated_at
-  `).run(userId, endpointUrl, apiKeyEncrypted, modelName);
-}
-
-function getLlmConfig(userId) {
-  const db = getDb();
-  const row = db.prepare('SELECT * FROM llm_configs WHERE user_id = ?').get(userId);
-  if (!row) return null;
-  return {
-    endpointUrl: row.endpoint_url,
-    apiKey: decryptApiKey(row.api_key_encrypted),
-    modelName: row.model_name,
+async function upsertGithubUser({ githubId, githubLogin, email, accessToken, displayName, avatarUrl }) {
+  const id = userId(githubId);
+  const existing = await cosmosService.read('users', id, id);
+  const now = new Date().toISOString();
+  const user = {
+    id,
+    githubId: Number(githubId),
+    username: githubLogin,
+    displayName: displayName || githubLogin,
+    avatarUrl: avatarUrl || null,
+    email: email || existing?.email || null,
+    role: existing?.role || 'user',
+    githubAccessToken: accessToken ? encrypt(accessToken) : existing?.githubAccessToken || null,
+    stats: existing?.stats || {
+      totalSessions: 0,
+      totalCorrect: 0,
+      totalAnswered: 0,
+      weeklyCorrectRate: null,
+      monthlyCorrectRate: null,
+      certStats: {},
+    },
+    createdAt: existing?.createdAt || now,
+    lastLoginAt: now,
   };
+  await cosmosService.upsert('users', user);
+  return user;
 }
 
-function hasLlmConfig(userId) {
-  const db = getDb();
-  return !!db.prepare('SELECT 1 FROM llm_configs WHERE user_id = ?').get(userId);
+async function getUserById(id) {
+  return cosmosService.read('users', id, id);
+}
+
+async function getGithubAccessToken(id) {
+  const user = await getUserById(id);
+  if (!user?.githubAccessToken) return null;
+  return decrypt(user.githubAccessToken);
+}
+
+async function updateUserStats(id, updater) {
+  const user = await getUserById(id);
+  if (!user) return null;
+  user.stats = updater(user.stats || {});
+  await cosmosService.upsert('users', user);
+  return user;
 }
 
 module.exports = {
-  createUser,
   upsertGithubUser,
-  verifyUser,
   getUserById,
-  saveLlmConfig,
-  getLlmConfig,
-  hasLlmConfig,
+  getGithubAccessToken,
+  updateUserStats,
 };
