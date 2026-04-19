@@ -52,8 +52,11 @@ router.post('/certifications/:certId/domains/:domainId/generate', requireAuth, a
       onProgress: (msg) => send('progress', { message: msg }),
     });
 
-    await questionService.replaceDomainQuestions(certId, domainId, questions);
-    send('done', { message: `${questions.length}問を生成しました`, count: questions.length });
+    const result = await questionService.appendDomainQuestions(certId, domainId, questions);
+    send('done', {
+      message: `${result.appended}問を追加しました（重複スキップ: ${result.skipped}問）`,
+      count: result.appended,
+    });
   } catch (err) {
     console.error('Generation error:', err);
     send('error', { message: err.message });

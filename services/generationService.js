@@ -109,7 +109,8 @@ async function generateQuestions({ cert, certId, domain, llmConfig, onProgress }
 
   onProgress?.('レスポンスを解析中...');
   const text = response.choices[0]?.message?.content || '';
-  return parseQuestionsFromResponse(text, certId, domain.id);
+  const idOffset = domain.questions?.length || 0;
+  return parseQuestionsFromResponse(text, certId, domain.id, idOffset);
 }
 
 /**
@@ -175,7 +176,7 @@ function buildContextSection(guideText, courseText) {
     : '## 参考資料\n（コンテンツの取得に失敗しました。一般的な知識から問題を作成してください）';
 }
 
-function parseQuestionsFromResponse(text, certId, domainId) {
+function parseQuestionsFromResponse(text, certId, domainId, idOffset = 0) {
   const jsonMatch = text.match(/\[[\s\S]*\]/);
   if (!jsonMatch) throw new Error('LLM のレスポンスから JSON を抽出できませんでした');
 
@@ -191,7 +192,7 @@ function parseQuestionsFromResponse(text, certId, domainId) {
   }
 
   return questions.map((q, i) => ({
-    id: `${certId}-${domainId}-${String(i + 1).padStart(3, '0')}-gen`,
+    id: `${certId}-${domainId}-${String(idOffset + i + 1).padStart(3, '0')}-gen`,
     question: q.question || '',
     options: q.options || {},
     correctAnswer: q.correctAnswer || 'A',

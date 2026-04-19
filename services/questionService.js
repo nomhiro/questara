@@ -57,14 +57,19 @@ async function getQuestionsByIds(certId, questionIds) {
   return all.filter((q) => idSet.has(q.id));
 }
 
-async function replaceDomainQuestions(certId, domainId, newQuestions) {
+async function appendDomainQuestions(certId, domainId, newQuestions) {
   const cert = await readCertification(certId);
   if (!cert) throw new Error(`Certification not found: ${certId}`);
   const domain = cert.domains.find((d) => d.id === domainId);
   if (!domain) throw new Error(`Domain not found: ${domainId}`);
-  domain.questions = newQuestions;
+
+  const existingIds = new Set(domain.questions.map((q) => q.id));
+  const toAppend = newQuestions.filter((q) => !existingIds.has(q.id));
+
+  domain.questions = [...domain.questions, ...toAppend];
   domain.generatedAt = new Date().toISOString();
   await writeCertification(cert);
+  return { appended: toAppend.length, skipped: newQuestions.length - toAppend.length };
 }
 
 module.exports = {
@@ -75,5 +80,5 @@ module.exports = {
   getAllQuestions,
   getQuestionsByDomain,
   getQuestionsByIds,
-  replaceDomainQuestions,
+  appendDomainQuestions,
 };
