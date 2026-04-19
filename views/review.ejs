@@ -4,73 +4,83 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title><%= title %></title>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DotGothic16&family=M+PLUS+1+Code:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/theme.css">
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-gray-50 min-h-screen">
-  <nav class="bg-gray-900 text-white px-6 py-3 flex items-center justify-between text-sm">
-    <div class="flex items-center gap-2">
-      <a href="/" class="font-bold">📚</a>
-      <span class="text-gray-400">/</span>
-      <a href="/certifications/<%= certId %>" class="text-gray-300 hover:text-white"><%= certId.toUpperCase() %></a>
-      <span class="text-gray-400">/</span>
-      <span class="text-gray-200">間違い復習</span>
-    </div>
-    <form method="POST" action="/auth/logout" class="inline">
-      <button type="submit" class="text-gray-400 hover:text-white transition">ログアウト</button>
-    </form>
-  </nav>
-  <main class="max-w-3xl mx-auto px-4 py-8">
+<body>
+  <%- include('partials/hud', { userEmail: typeof userEmail !== 'undefined' ? userEmail : null, heroHud: typeof heroHud !== 'undefined' ? heroHud : null, combo: null }) %>
 
-    <h1 class="text-2xl font-bold mb-2">間違えた問題の復習</h1>
-    <p class="text-gray-500 mb-8"><%= wrongQuestions.length %> 問を間違えました</p>
+  <main class="main">
+
+    <div style="font-family: var(--font-body); font-size: 12px; color: #c0c6e0; margin-bottom: 8px;">
+      <a href="/" style="color: var(--gold); text-decoration:none;">🏰 ホーム</a>
+      <span style="opacity:.6; margin: 0 6px;">▸</span>
+      <a href="/certifications/<%= certId %>" style="color: var(--gold); text-decoration:none;"><%= certId.toUpperCase() %></a>
+      <span style="opacity:.6; margin: 0 6px;">▸</span>
+      <span>間違い復習</span>
+    </div>
+
+    <h1 class="rpg-title" style="font-size: 24px; margin-bottom: 4px;">📜 間違えた問題の復習</h1>
+    <p style="font-family: var(--font-body); color: #c0c6e0; font-size: 13px; margin-bottom: 24px;">
+      <span class="pill" style="color: var(--crimson);">✗ <%= wrongQuestions.length %> 問</span> を間違えました
+    </p>
 
     <% if (wrongQuestions.length === 0) { %>
-      <div class="bg-green-50 border border-green-200 rounded-xl p-6 text-center text-green-700">
-        🎉 このセッションでは間違えた問題はありませんでした！
-      </div>
+      <section class="rpg-window is-open" style="text-align:center;">
+        <div style="font-size: 40px; margin-bottom: 8px;">🎉</div>
+        <p style="font-family: var(--font-display); color: var(--fern); font-size: 16px; text-shadow: 2px 2px 0 var(--shadow); margin: 0;">
+          このセッションでは間違えた問題はありませんでした！
+        </p>
+      </section>
     <% } %>
 
-    <div class="space-y-6">
+    <div style="display:flex; flex-direction:column; gap: 18px;">
       <% for (let i = 0; i < wrongQuestions.length; i++) { %>
         <% const q = wrongQuestions[i]; %>
-        <div class="bg-white border border-red-200 rounded-2xl p-6">
-          <div class="text-xs font-medium text-red-500 mb-2"><%= q.domainName %></div>
-          <p class="font-medium text-gray-800 mb-4 leading-relaxed"><%= q.question %></p>
+        <section class="rpg-window is-open" style="border-color: var(--crimson); box-shadow: inset 0 0 0 3px var(--window), inset 0 0 0 6px #7a1320, 4px 4px 0 var(--shadow);">
+          <div class="pill" style="color: var(--crimson); border-color: var(--crimson); margin-bottom: 10px;">
+            <%= q.domainName %>
+          </div>
+          <p style="font-family: var(--font-body); font-size: 15px; line-height: 1.7; color: var(--ink); margin: 0 0 16px;">
+            Q<%= i + 1 %>. <%= q.question %>
+          </p>
 
-          <div class="space-y-2 mb-4">
+          <div style="display:flex; flex-direction:column; gap: 8px; margin-bottom: 16px;">
             <% for (const [key, val] of Object.entries(q.options)) { %>
-              <div class="flex gap-2 items-start text-sm rounded-lg px-3 py-2
-                <%= key === q.correctAnswer ? 'bg-green-50 text-green-800 font-medium' :
-                    key === q.selectedAnswer ? 'bg-red-50 text-red-700' : 'text-gray-600' %>">
-                <span class="font-bold flex-shrink-0"><%= key %>.</span>
-                <span>
-                  <%= val %>
-                  <% if (key === q.correctAnswer) { %> <span class="ml-1">✓ 正解</span><% } %>
-                  <% if (key === q.selectedAnswer && key !== q.correctAnswer) { %> <span class="ml-1">← あなたの回答</span><% } %>
-                </span>
+              <% const isCorrect = key === q.correctAnswer; %>
+              <% const isPicked = key === q.selectedAnswer; %>
+              <% const bg = isCorrect ? '#1f4a18' : (isPicked ? '#3a0a12' : '#000a'); %>
+              <% const border = isCorrect ? 'var(--fern)' : (isPicked ? 'var(--crimson)' : 'var(--ink)'); %>
+              <% const color = isCorrect ? 'var(--fern)' : (isPicked ? 'var(--crimson)' : 'var(--ink)'); %>
+              <div style="display:flex; gap: 10px; align-items:flex-start; padding: 8px 12px; background: <%= bg %>; border: 2px solid <%= border %>; font-family: var(--font-body); font-size: 13px; color: <%= color %>;">
+                <span style="font-family: var(--font-display); font-weight: bold; flex-shrink:0; color: var(--gold);"><%= key %>.</span>
+                <span style="flex:1;"><%= val %></span>
+                <% if (isCorrect) { %>
+                  <span style="font-family: var(--font-display); font-size: 11px;">✓ 正解</span>
+                <% } else if (isPicked) { %>
+                  <span style="font-family: var(--font-display); font-size: 11px;">← あなたの回答</span>
+                <% } %>
               </div>
             <% } %>
           </div>
 
-          <div class="pt-3 border-t border-gray-100 text-sm text-gray-600 leading-relaxed">
-            <span class="font-medium text-gray-700">解説:</span> <%= q.explanation %>
+          <div style="padding-top: 12px; border-top: 2px dashed var(--gold); font-family: var(--font-body); font-size: 13px; line-height: 1.7; color: #dadde6;">
+            <span style="font-family: var(--font-display); color: var(--gold); margin-right: 6px;">📖 解説:</span>
+            <%= q.explanation %>
           </div>
-        </div>
+        </section>
       <% } %>
     </div>
 
-    <div class="mt-8 flex flex-wrap gap-3">
-      <form method="POST" action="/quiz/start">
+    <div style="margin-top: 28px; display:flex; flex-wrap:wrap; gap: 12px;">
+      <form method="POST" action="/quiz/start" style="margin:0;">
         <input type="hidden" name="certId" value="<%= certId %>">
         <input type="hidden" name="mode" value="wrong-only">
-        <button class="bg-red-500 hover:bg-red-600 text-white font-semibold px-5 py-2 rounded-lg text-sm">
-          ❌ 間違えた問題で再挑戦
-        </button>
+        <button class="rpg-btn" type="submit">❌ 間違えた問題で再挑戦</button>
       </form>
-      <a href="/certifications/<%= certId %>"
-         class="bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold px-5 py-2 rounded-lg text-sm inline-block">
-        ← 資格ページへ
-      </a>
+      <a href="/certifications/<%= certId %>" class="rpg-btn is-gold">← 資格ページへ</a>
     </div>
 
   </main>

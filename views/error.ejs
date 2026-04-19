@@ -3,17 +3,30 @@
 <head>
   <meta charset="UTF-8">
   <title><%= title %></title>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DotGothic16&family=M+PLUS+1+Code:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/theme.css">
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-gray-50 min-h-screen">
-  <nav class="bg-gray-900 text-white px-6 py-3">
-    <a href="/" class="font-bold">📚 資格学習エージェント</a>
+<body>
+  <nav class="hud">
+    <a class="rpg-btn is-gold" href="/" style="font-size:11px;padding:6px 12px;">🗺️ ホーム</a>
+    <div class="hud-spacer"></div>
   </nav>
-  <main class="max-w-xl mx-auto px-4 py-16 text-center">
-    <div class="text-5xl mb-4">⚠️</div>
-    <h1 class="text-xl font-bold text-gray-800 mb-2"><%= title %></h1>
-    <p class="text-gray-500 mb-6"><%= message %></p>
-    <a href="/" class="text-blue-600 hover:underline text-sm">← ホームに戻る</a>
+
+  <main class="main" style="text-align:center;">
+    <div style="font-size:64px; margin: 40px 0 12px; text-shadow: 4px 4px 0 var(--shadow);">⚠️</div>
+    <h1 class="rpg-title" style="font-size: 28px; margin-bottom: 12px;"><%= title %></h1>
+
+    <section class="rpg-window is-open" style="display:inline-block; max-width: 560px; text-align:left;">
+      <p style="font-family: var(--font-body); color: var(--ink); line-height: 1.7; margin: 0;">
+        <%= message %>
+      </p>
+    </section>
+
+    <div style="margin-top: 28px;">
+      <a href="/" class="rpg-btn is-gold">← ホームに戻る</a>
+    </div>
   </main>
 </body>
 </html>
