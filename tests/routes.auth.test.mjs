@@ -39,6 +39,6 @@ describe('routes/auth', () => {
     const res = await agent.post('/auth/logout');
     expect(res.status).toBe(302);
     expect(res.headers.location).toBe('/');
-    expect(res.headers['set-cookie']?.[0]).toMatch(/cert_quiz_session_test=;/);
+    expect(res.headers['set-cookie']?.[0]).toMatch(/questara_session_test=;/);
   });
 });

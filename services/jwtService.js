@@ -48,6 +48,6 @@ function getClearCookieOptions() {
   };
 }
 
-const COOKIE_NAME = process.env.JWT_COOKIE_NAME || 'cert_quiz_session';
+const COOKIE_NAME = process.env.JWT_COOKIE_NAME || 'questara_session';
 
 module.exports = { sign, verify, getCookieOptions, getClearCookieOptions, COOKIE_NAME, SEVEN_DAYS_SEC };
