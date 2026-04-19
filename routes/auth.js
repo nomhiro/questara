@@ -79,7 +79,7 @@ router.get('/login', (req, res) => {
 });
 
 router.post('/logout', (req, res) => {
-  res.clearCookie(jwtService.COOKIE_NAME, jwtService.getCookieOptions());
+  res.clearCookie(jwtService.COOKIE_NAME, jwtService.getClearCookieOptions());
   res.redirect('/auth/login');
 });
 

@@ -10,7 +10,9 @@
     "seed": "node --env-file=.env scripts/seed-certifications.js",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:ui": "vitest --ui"
+    "test:ui": "vitest --ui",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix"
   },
   "dependencies": {
     "@azure/cosmos": "^4.9.2",
@@ -27,6 +29,8 @@
   },
   "devDependencies": {
     "@vitest/ui": "^2.1.9",
+    "eslint": "^9.39.4",
+    "globals": "^15.15.0",
     "supertest": "^7.2.2",
     "vitest": "^2.1.9"
   }
