@@ -59,6 +59,7 @@ async function parseDomainsWithLlm(md, accessToken) {
 - ウェイト表記は「20%」「約20%」「(20%)」など多様
 - ドメイン名は日本語/英語そのままの表記を維持
 - ウェイトが明記されていない場合は 0 を設定
+- **ウェイトは必ず整数で出力する**（小数点を含めない。「20-25%」のような範囲表記は中央値を四捨五入）
 
 ## 出力形式
 JSON 配列のみを返してください（説明文・コードブロック記号は不要）:
@@ -89,7 +90,7 @@ ${truncated}`;
   return parsed.map((d, i) => ({
     id: d.id || `domain-${i + 1}`,
     name: d.name || `Domain ${i + 1}`,
-    weight: Number(d.weight) || 0,
+    weight: Math.round(Number(d.weight) || 0),
   }));
 }
 

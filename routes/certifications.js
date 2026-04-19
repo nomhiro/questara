@@ -67,7 +67,7 @@ router.post('/new', requireAuth, async (req, res) => {
     domains: domains.map((d, i) => ({
       id: d.id || `domain-${i + 1}`,
       name: d.name || `Domain ${i + 1}`,
-      weight: Number(d.weight) || 0,
+      weight: Math.round(Number(d.weight) || 0),
       generatedAt: null,
       questions: [],
     })),
