@@ -12,7 +12,6 @@ const CONTAINERS = {
 };
 
 let client;
-let database;
 const containers = {};
 
 function getClient() {
@@ -28,7 +27,6 @@ function getClient() {
 async function init() {
   const c = getClient();
   const { database: db } = await c.databases.createIfNotExists({ id: DATABASE_ID });
-  database = db;
   for (const [key, def] of Object.entries(CONTAINERS)) {
     const { container } = await db.containers.createIfNotExists(def);
     containers[key] = container;

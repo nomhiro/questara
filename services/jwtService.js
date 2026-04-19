@@ -37,6 +37,17 @@ function getCookieOptions() {
   };
 }
 
+/**
+ * res.clearCookie 用のオプション（maxAge は含めない）
+ */
+function getClearCookieOptions() {
+  return {
+    httpOnly: true,
+    sameSite: 'strict',
+    secure: process.env.NODE_ENV === 'production',
+  };
+}
+
 const COOKIE_NAME = process.env.JWT_COOKIE_NAME || 'cert_quiz_session';
 
-module.exports = { sign, verify, getCookieOptions, COOKIE_NAME, SEVEN_DAYS_SEC };
+module.exports = { sign, verify, getCookieOptions, getClearCookieOptions, COOKIE_NAME, SEVEN_DAYS_SEC };

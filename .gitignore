@@ -6,6 +6,8 @@ data/app.db-wal
 data/sessions.db
 .env
 
+# .env.test はリポジトリに含める（ダミー値のみ）
+
 .superpowers/
 .claude/
 

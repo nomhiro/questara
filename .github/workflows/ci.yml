@@ -1,0 +1,62 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    services:
+      cosmos:
+        image: mcr.microsoft.com/cosmosdb/linux/azure-cosmos-emulator:vnext-preview
+        ports:
+          - 8081:8081
+        env:
+          PROTOCOL: https
+        options: >-
+          --health-cmd="curl -fks https://localhost:8081/_explorer/emulator.pem || exit 1"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=30
+          --health-start-period=180s
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Wait for Cosmos DB Emulator
+        run: |
+          for i in $(seq 1 60); do
+            if curl -fks https://localhost:8081/_explorer/emulator.pem > /dev/null 2>&1; then
+              echo "Emulator ready"
+              exit 0
+            fi
+            if curl -ks -o /dev/null -w "%{http_code}" https://localhost:8081/_explorer/emulator.pem | grep -qE "^[234]"; then
+              echo "Emulator responding"
+              exit 0
+            fi
+            echo "Waiting for emulator... ($i/60)"
+            sleep 5
+          done
+          echo "Emulator did not become ready"
+          exit 1
+
+      - name: Run tests
+        run: npm test
+        env:
+          NODE_TLS_REJECT_UNAUTHORIZED: '0'
