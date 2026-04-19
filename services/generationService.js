@@ -12,7 +12,7 @@ const MICROSOFT_LEARN_MCP_URL = 'https://learn.microsoft.com/api/mcp';
  * 失敗時は null を返す (フォールバック用)
  */
 async function fetchViaLearnMcp(url) {
-  const client = new Client({ name: 'cert-study-agent', version: '1.0.0' });
+  const client = new Client({ name: 'questara', version: '1.0.0' });
   const transport = new StreamableHTTPClientTransport(new URL(MICROSOFT_LEARN_MCP_URL));
   try {
     await client.connect(transport);

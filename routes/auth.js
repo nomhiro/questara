@@ -39,10 +39,10 @@ router.get('/github/callback', async (req, res) => {
 
     const [userRes, emailsRes] = await Promise.all([
       fetch('https://api.github.com/user', {
-        headers: { Authorization: `Bearer ${accessToken}`, 'User-Agent': 'cert-study-agent' },
+        headers: { Authorization: `Bearer ${accessToken}`, 'User-Agent': 'questara' },
       }),
       fetch('https://api.github.com/user/emails', {
-        headers: { Authorization: `Bearer ${accessToken}`, 'User-Agent': 'cert-study-agent' },
+        headers: { Authorization: `Bearer ${accessToken}`, 'User-Agent': 'questara' },
       }),
     ]);
     const githubUser = await userRes.json();

@@ -6,7 +6,7 @@ const { StreamableHTTPClientTransport } = require('@modelcontextprotocol/sdk/cli
 const DEFAULT_URL = process.env.MS_LEARN_MCP_URL || 'https://learn.microsoft.com/api/mcp';
 
 async function withClient(fn) {
-  const client = new Client({ name: 'cert-study-agent', version: '1.0.0' });
+  const client = new Client({ name: 'questara', version: '1.0.0' });
   const transport = new StreamableHTTPClientTransport(new URL(DEFAULT_URL));
   try {
     await client.connect(transport);

@@ -9,7 +9,7 @@ const GITHUB_MODELS_ENDPOINT = 'https://models.inference.ai.azure.com';
 const GITHUB_MODELS_DEFAULT_MODEL = 'gpt-4o-mini';
 
 async function fetchMarkdown(url) {
-  const client = new Client({ name: 'cert-study-agent', version: '1.0.0' });
+  const client = new Client({ name: 'questara', version: '1.0.0' });
   const transport = new StreamableHTTPClientTransport(new URL(LEARN_MCP_URL));
   try {
     await client.connect(transport);
