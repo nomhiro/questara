@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %></title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 min-h-screen">
+  <nav class="bg-gray-900 text-white px-6 py-3 flex items-center justify-between">
+    <div class="flex items-center gap-4">
+      <a href="/" class="text-lg font-bold">📚 資格学習エージェント</a>
+      <span class="text-gray-400">/</span>
+      <a href="/my/certifications" class="text-sm text-gray-300 hover:text-white">マイ資格</a>
+      <span class="text-gray-400">/</span>
+      <span class="text-sm">新規作成</span>
+    </div>
+    <div class="flex items-center gap-4 text-sm">
+      <span class="text-gray-400"><%= userEmail %></span>
+      <form method="POST" action="/auth/logout" class="inline">
+        <button class="text-gray-400 hover:text-white">ログアウト</button>
+      </form>
+    </div>
+  </nav>
+  <main class="max-w-2xl mx-auto px-4 py-8">
+    <h1 class="text-2xl font-bold mb-6"><%= title %></h1>
+    <% if (error) { %>
+      <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-2 rounded mb-4"><%= error %></div>
+    <% } %>
+    <form method="POST" action="/my/certifications/new" class="space-y-4">
+      <div>
+        <label class="block text-sm font-medium mb-1">資格ID <span class="text-red-500">*</span></label>
+        <input name="id" required pattern="[a-z0-9-]+" value="<%= cert.id %>"
+               placeholder="例: az-900" class="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+        <p class="text-xs text-gray-500 mt-1">小文字・数字・ハイフンのみ</p>
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-1">資格名 <span class="text-red-500">*</span></label>
+        <input name="name" required value="<%= cert.name %>"
+               placeholder="例: Microsoft Azure Fundamentals (AZ-900)"
+               class="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-1">スタディガイド URL</label>
+        <input name="studyGuideUrl" type="url" id="studyGuideUrl" value="<%= cert.studyGuideUrl %>"
+               placeholder="https://learn.microsoft.com/..."
+               class="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-1">コース URL（任意）</label>
+        <input name="courseUrl" type="url" value="<%= cert.courseUrl %>"
+               placeholder="https://learn.microsoft.com/..."
+               class="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+      </div>
+
+      <div class="flex items-center gap-2">
+        <button type="button" id="extractBtn"
+                class="text-sm bg-amber-100 hover:bg-amber-200 text-amber-800 px-4 py-2 rounded">
+          🤖 URL からドメイン構造を自動抽出
+        </button>
+        <span id="extractStatus" class="text-sm text-gray-500"></span>
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium mb-2">ドメイン一覧</label>
+        <div id="domainsList" class="space-y-2"></div>
+        <input type="hidden" name="domainsJson" id="domainsJson" value="<%- JSON.stringify(cert.domains) %>">
+        <button type="button" id="addDomainBtn"
+                class="text-xs bg-gray-100 hover:bg-gray-200 px-3 py-1.5 rounded mt-2">＋ ドメインを手動追加</button>
+      </div>
+
+      <div class="flex gap-3 pt-4">
+        <button class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-2 rounded">保存</button>
+        <a href="/my/certifications" class="text-gray-600 hover:text-gray-800 px-6 py-2">キャンセル</a>
+      </div>
+    </form>
+
+    <script>
+      let domains = JSON.parse(document.getElementById('domainsJson').value || '[]');
+
+      function escapeHtml(s) {
+        return String(s ?? '').replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+      }
+
+      function renderDomains() {
+        const container = document.getElementById('domainsList');
+        if (domains.length === 0) {
+          container.innerHTML = '<p class="text-sm text-gray-400">ドメインがありません。URLから抽出するか手動追加してください。</p>';
+          return;
+        }
+        container.innerHTML = domains.map((d, i) => `
+          <div class="flex gap-2 bg-white border border-gray-200 rounded p-2 items-center">
+            <input value="${escapeHtml(d.id)}" data-i="${i}" data-field="id"
+                   placeholder="domain-1" class="domain-input border rounded px-2 py-1 text-sm w-28">
+            <input value="${escapeHtml(d.name)}" data-i="${i}" data-field="name"
+                   placeholder="ドメイン名" class="domain-input border rounded px-2 py-1 text-sm flex-1">
+            <input value="${escapeHtml(d.weight)}" data-i="${i}" data-field="weight"
+                   type="number" min="0" max="100" class="domain-input border rounded px-2 py-1 text-sm w-16">
+            <span class="text-xs text-gray-400">%</span>
+            <button type="button" data-remove="${i}" class="text-red-500 text-xs">削除</button>
+          </div>
+        `).join('');
+        container.querySelectorAll('.domain-input').forEach((el) => {
+          el.addEventListener('change', (e) => {
+            const i = Number(e.target.dataset.i);
+            const f = e.target.dataset.field;
+            domains[i][f] = f === 'weight' ? Number(e.target.value) : e.target.value;
+            sync();
+          });
+        });
+        container.querySelectorAll('[data-remove]').forEach((btn) => {
+          btn.addEventListener('click', (e) => {
+            domains.splice(Number(e.target.dataset.remove), 1);
+            renderDomains(); sync();
+          });
+        });
+      }
+
+      function sync() {
+        document.getElementById('domainsJson').value = JSON.stringify(domains);
+      }
+
+      document.getElementById('addDomainBtn').addEventListener('click', () => {
+        domains.push({ id: `domain-${domains.length + 1}`, name: '', weight: 0 });
+        renderDomains(); sync();
+      });
+
+      document.getElementById('extractBtn').addEventListener('click', async () => {
+        const url = document.getElementById('studyGuideUrl').value;
+        if (!url) return alert('スタディガイド URL を入力してください');
+        const status = document.getElementById('extractStatus');
+        status.textContent = '抽出中...';
+        try {
+          const res = await fetch('/my/certifications/extract', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ studyGuideUrl: url }),
+          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+          domains = data.domains;
+          renderDomains(); sync();
+          status.textContent = `${domains.length} 個のドメインを抽出しました`;
+          status.className = 'text-sm text-green-600';
+        } catch (e) {
+          status.textContent = 'エラー: ' + e.message;
+          status.className = 'text-sm text-red-600';
+        }
+      });
+
+      renderDomains();
+    </script>
+  </main>
+</body>
+</html>

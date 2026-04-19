@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %></title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 min-h-screen">
+  <nav class="bg-gray-900 text-white px-6 py-3 flex items-center justify-between">
+    <div class="flex items-center gap-4">
+      <a href="/" class="text-lg font-bold">📚 資格学習エージェント</a>
+      <span class="text-gray-400">/</span>
+      <span class="text-sm">ランキング</span>
+    </div>
+    <div class="flex items-center gap-4 text-sm">
+      <span class="text-gray-400"><%= userEmail %></span>
+      <form method="POST" action="/auth/logout" class="inline">
+        <button class="text-gray-400 hover:text-white">ログアウト</button>
+      </form>
+    </div>
+  </nav>
+  <main class="max-w-3xl mx-auto px-4 py-8">
+    <h1 class="text-2xl font-bold mb-6">🏆 ランキング</h1>
+
+    <form method="GET" class="flex gap-3 mb-6 text-sm items-center flex-wrap">
+      <select name="period" class="border border-gray-300 rounded px-2 py-1">
+        <option value="weekly" <%= period === 'weekly' ? 'selected' : '' %>>週次</option>
+        <option value="monthly" <%= period === 'monthly' ? 'selected' : '' %>>月次</option>
+      </select>
+      <select name="certId" class="border border-gray-300 rounded px-2 py-1">
+        <option value="">全資格</option>
+        <% for (const c of allCerts) { %>
+          <option value="<%= c.id %>" <%= c.id === certId ? 'selected' : '' %>><%= c.name %></option>
+        <% } %>
+      </select>
+      <button class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded">表示</button>
+    </form>
+
+    <% if (ranking.length === 0) { %>
+      <div class="bg-white border border-gray-200 rounded-xl p-8 text-center">
+        <p class="text-gray-500">まだランキングを表示できるデータがありません（最低10問の回答が必要）。</p>
+      </div>
+    <% } else { %>
+      <div class="bg-white border border-gray-200 rounded-xl overflow-hidden">
+        <table class="w-full">
+          <thead class="bg-gray-50 text-sm text-gray-600">
+            <tr>
+              <th class="px-3 py-2 text-left">順位</th>
+              <th class="px-3 py-2 text-left">ユーザー</th>
+              <th class="px-3 py-2 text-left">資格</th>
+              <th class="px-3 py-2 text-right">正答率</th>
+              <th class="px-3 py-2 text-right">回答数</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% ranking.forEach((r, i) => { %>
+              <tr class="border-t border-gray-100 text-sm">
+                <td class="px-3 py-2 font-bold text-gray-700"><%= i + 1 %></td>
+                <td class="px-3 py-2"><%= r.user && (r.user.displayName || r.user.username) || 'unknown' %></td>
+                <td class="px-3 py-2 text-gray-500"><%= r.certificationId %></td>
+                <td class="px-3 py-2 text-right font-semibold <%= r.rate >= 70 ? 'text-green-600' : 'text-red-500' %>">
+                  <%= r.rate %>%
+                </td>
+                <td class="px-3 py-2 text-right text-gray-500"><%= r.correct %>/<%= r.total %></td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+    <% } %>
+  </main>
+</body>
+</html>

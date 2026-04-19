@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %></title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 min-h-screen">
+  <nav class="bg-gray-900 text-white px-6 py-3 flex items-center justify-between">
+    <div class="flex items-center gap-4">
+      <a href="/" class="text-lg font-bold">📚 資格学習エージェント</a>
+      <span class="text-gray-400">/</span>
+      <span class="text-sm">学習計画</span>
+    </div>
+    <div class="flex items-center gap-4 text-sm">
+      <span class="text-gray-400"><%= userEmail %></span>
+      <form method="POST" action="/auth/logout" class="inline">
+        <button class="text-gray-400 hover:text-white">ログアウト</button>
+      </form>
+    </div>
+  </nav>
+  <main class="max-w-3xl mx-auto px-4 py-8">
+    <h1 class="text-2xl font-bold mb-6">📅 学習計画</h1>
+
+    <div class="bg-white border border-gray-200 rounded-xl p-4 mb-6">
+      <h2 class="font-semibold mb-3">新しい計画を作成</h2>
+      <form method="POST" action="/plans" class="flex gap-2 items-end flex-wrap text-sm">
+        <div>
+          <label class="block text-xs text-gray-500 mb-1">資格</label>
+          <select name="certificationId" required class="border border-gray-300 rounded px-2 py-1.5">
+            <% if (allCerts.length === 0) { %>
+              <option value="">（利用可能な資格がありません）</option>
+            <% } %>
+            <% for (const c of allCerts) { %>
+              <option value="<%= c.id %>"><%= c.name %></option>
+            <% } %>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs text-gray-500 mb-1">試験予定日</label>
+          <input name="examDate" type="date" required class="border border-gray-300 rounded px-2 py-1.5">
+        </div>
+        <button class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-1.5 rounded">作成</button>
+      </form>
+    </div>
+
+    <% if (plans.length === 0) { %>
+      <div class="bg-white border border-gray-200 rounded-xl p-8 text-center">
+        <p class="text-gray-500">学習計画がまだありません。</p>
+      </div>
+    <% } else { %>
+      <% for (const p of plans) { %>
+        <div class="bg-white border border-gray-200 rounded-xl p-5 mb-4">
+          <div class="flex items-start justify-between mb-3">
+            <div>
+              <h2 class="text-xl font-semibold"><%= p.cert && p.cert.name || p.certificationId %></h2>
+              <p class="text-xs text-gray-500 mt-1">
+                試験予定日: <%= p.examDate %> &nbsp;·&nbsp; 全 <%= p.schedule.length %> 週
+              </p>
+            </div>
+            <form method="POST" action="/plans/<%= p.certificationId %>/delete" class="inline"
+                  onsubmit="return confirm('削除しますか？');">
+              <button class="text-xs bg-red-100 hover:bg-red-200 text-red-700 px-3 py-1.5 rounded transition">
+                削除
+              </button>
+            </form>
+          </div>
+          <% if (p.currentWeek) { %>
+            <div class="bg-blue-50 border border-blue-200 rounded p-3 mb-3">
+              <p class="text-sm text-blue-800">
+                <strong>今週のタスク (Week <%= p.currentWeek.week %>)</strong>:
+                <%= p.currentWeek.domains.join(', ') %> を <%= p.currentWeek.targetQuestions %> 問
+              </p>
+            </div>
+          <% } %>
+          <details class="text-sm">
+            <summary class="cursor-pointer text-gray-600 hover:text-gray-800">全週スケジュール</summary>
+            <ul class="mt-2 space-y-1 text-gray-600">
+              <% for (const s of p.schedule) { %>
+                <li>Week <%= s.week %>: <%= s.domains.join(', ') %> (<%= s.targetQuestions %> 問)</li>
+              <% } %>
+            </ul>
+          </details>
+        </div>
+      <% } %>
+    <% } %>
+  </main>
+</body>
+</html>

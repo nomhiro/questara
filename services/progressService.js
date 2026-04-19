@@ -2,6 +2,7 @@
 
 const crypto = require('crypto');
 const cosmosService = require('./cosmosService');
+const userService = require('./userService');
 
 async function createSession({ userId, certificationId, domainFilter = null, mode = 'all' }) {
   const session = {
@@ -45,6 +46,30 @@ async function completeSession(sessionId, userId) {
   const correct = session.answers.filter((a) => a.isCorrect).length;
   session.score = total > 0 ? Math.round((correct / total) * 100) : 0;
   await cosmosService.upsert('sessions', session);
+
+  // ユーザー統計を更新
+  await userService.updateUserStats(userId, (stats) => {
+    stats.totalSessions = (stats.totalSessions || 0) + 1;
+    stats.totalAnswered = (stats.totalAnswered || 0) + total;
+    stats.totalCorrect = (stats.totalCorrect || 0) + correct;
+
+    const cs = { ...(stats.certStats || {}) };
+    const cur = cs[session.certificationId] || { correct: 0, answered: 0, sessionsCount: 0 };
+    cur.correct += correct;
+    cur.answered += total;
+    cur.sessionsCount += 1;
+    cur.correctRate = cur.answered > 0 ? Math.round((cur.correct / cur.answered) * 100) : 0;
+    cs[session.certificationId] = cur;
+    stats.certStats = cs;
+
+    const overall = stats.totalAnswered > 0
+      ? Math.round((stats.totalCorrect / stats.totalAnswered) * 100)
+      : 0;
+    stats.weeklyCorrectRate = overall;
+    stats.monthlyCorrectRate = overall;
+    return stats;
+  });
+
   return session;
 }
 
