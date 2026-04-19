@@ -7,11 +7,11 @@ describe('routes/ranking', () => {
   beforeAll(async () => { await setupTestDb(); });
   beforeEach(async () => { await truncateAll(); });
 
-  test('未認証で /ranking は /auth/login', async () => {
+  test('未認証で /ranking は /', async () => {
     const agent = await anonAgent();
     const res = await agent.get('/ranking');
     expect(res.status).toBe(302);
-    expect(res.headers.location).toBe('/auth/login');
+    expect(res.headers.location).toBe('/');
   });
 
   test('認証済み GET /ranking は 200', async () => {

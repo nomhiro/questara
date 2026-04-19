@@ -17,7 +17,7 @@ function authContext(req, res, next) {
 
 function requireAuth(req, res, next) {
   if (req.user) return next();
-  res.redirect('/auth/login');
+  res.redirect('/');
 }
 
 module.exports = { authContext, requireAuth };

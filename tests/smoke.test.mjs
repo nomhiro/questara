@@ -62,11 +62,11 @@ describe('smoke', () => {
     expect(res.headers.location).toBe('/adventures/new');
   });
 
-  test('未認証 GET /adventure は /auth/login にリダイレクト', async () => {
+  test('未認証 GET /adventure は / にリダイレクト', async () => {
     const agent = await anonAgent();
     const res = await agent.get('/adventure');
     expect(res.status).toBe(302);
-    expect(res.headers.location).toBe('/auth/login');
+    expect(res.headers.location).toBe('/');
   });
 
   test('認証済み GET /certifications/:id は 200 と詳細を返す', async () => {

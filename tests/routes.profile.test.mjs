@@ -7,11 +7,11 @@ describe('routes/profile', () => {
   beforeAll(async () => { await setupTestDb(); });
   beforeEach(async () => { await truncateAll(); });
 
-  test('未認証は /auth/login へリダイレクト', async () => {
+  test('未認証は / へリダイレクト', async () => {
     const agent = await anonAgent();
     const res = await agent.get('/my/profile');
     expect(res.status).toBe(302);
-    expect(res.headers.location).toBe('/auth/login');
+    expect(res.headers.location).toBe('/');
   });
 
   test('認証済みはプロフィール画面 200 とユーザー名・Lv 表示', async () => {

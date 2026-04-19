@@ -16,11 +16,11 @@ describe('heroHudMiddleware (integration)', () => {
   beforeAll(async () => { await setupTestDb(); });
   beforeEach(async () => { await truncateAll(); });
 
-  test('未認証リクエストでは heroHud は設定されずログイン画面にリダイレクト', async () => {
+  test('未認証リクエストでは heroHud は設定されずランディングにリダイレクト', async () => {
     const agent = await anonAgent();
     const res = await agent.get('/my/profile');
     expect(res.status).toBe(302);
-    expect(res.headers.location).toBe('/auth/login');
+    expect(res.headers.location).toBe('/');
   });
 
   test('認証済みリクエストでは HUD の Lv / EXP / 勇者名が描画される', async () => {
