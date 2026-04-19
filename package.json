@@ -7,7 +7,10 @@
     "start": "node --env-file=.env app.js",
     "dev": "node --env-file=.env --watch app.js",
     "setup": "node -e \"const c=require('crypto');const fs=require('fs');if(fs.existsSync('.env')){console.log('.env already exists');process.exit(0)}const t=fs.readFileSync('.env.example','utf8').replace('change-me-to-a-random-32-byte-hex-string',c.randomBytes(32).toString('hex')).replace('0000000000000000000000000000000000000000000000000000000000000000',c.randomBytes(32).toString('hex'));fs.writeFileSync('.env',t);console.log('✅ .env created');console.log('');console.log('⚠️  .env の GITHUB_CLIENT_ID と GITHUB_CLIENT_SECRET を設定してください');console.log('   https://github.com/settings/developers → OAuth Apps → New OAuth App');console.log('   Callback URL: http://localhost:3000/auth/github/callback');\"",
-    "seed": "node --env-file=.env scripts/seed-certifications.js"
+    "seed": "node --env-file=.env scripts/seed-certifications.js",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:ui": "vitest --ui"
   },
   "dependencies": {
     "@azure/cosmos": "^4.9.2",
@@ -21,5 +24,10 @@
   },
   "engines": {
     "node": ">=20.0.0"
+  },
+  "devDependencies": {
+    "@vitest/ui": "^2.1.9",
+    "supertest": "^7.2.2",
+    "vitest": "^2.1.9"
   }
 }
