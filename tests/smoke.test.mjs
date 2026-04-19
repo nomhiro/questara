@@ -29,6 +29,22 @@ describe('smoke', () => {
     expect(res.text).toContain('パブリック資格');
   });
 
+  test('GET / は publicCerts と myCerts 両方をレンダリング', async () => {
+    const user = await createTestUser();
+    await createTestCertification({ id: 'pub-1', name: 'パブリック資格A', isPublic: true });
+    await createTestCertification({ id: 'priv-1', name: '自分の非公開資格', createdBy: user.id, creatorName: user.username, isPublic: false });
+    await createTestCertification({ id: 'other-priv', name: '他人の非公開資格', createdBy: 'github-99999', creatorName: 'other', isPublic: false });
+
+    const agent = await authedAgent(user);
+    const res = await agent.get('/');
+    expect(res.status).toBe(200);
+    expect(res.text).toContain('パブリック資格A');
+    expect(res.text).toContain('自分の非公開資格');
+    expect(res.text).not.toContain('他人の非公開資格');
+    expect(res.text).toContain('公開資格 (1)');
+    expect(res.text).toContain('自分の非公開資格 (1)');
+  });
+
   test('認証済み GET /certifications/:id は 200 と詳細を返す', async () => {
     const user = await createTestUser();
     const cert = await createTestCertification({ id: 'test-cert-detail' });

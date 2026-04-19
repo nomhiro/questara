@@ -20,44 +20,84 @@
 
     <div class="flex items-center justify-between mb-6">
       <h1 class="text-2xl font-bold">学習する資格を選んでください</h1>
-      <details class="relative">
-        <summary class="cursor-pointer text-sm text-indigo-600 hover:text-indigo-800 font-medium select-none">
-          ＋ 新しい資格を追加
-        </summary>
-        <div class="absolute right-0 mt-2 w-96 bg-white border border-gray-200 rounded-xl shadow-lg p-4 z-10 text-sm">
-          <p class="font-semibold text-gray-800 mb-2">資格 JSON を追加する方法</p>
-          <ol class="list-decimal list-inside space-y-1 text-gray-600">
-            <li>ターミナルで以下のコマンドを実行:</li>
-          </ol>
-          <pre class="mt-2 bg-gray-100 rounded p-2 text-xs overflow-x-auto">node scripts/add-cert.js &lt;id&gt; \
-  "&lt;学習ガイドURL&gt;" \
-  "&lt;コースURL&gt;"</pre>
-          <p class="mt-2 text-gray-500">例: <code class="text-xs bg-gray-100 px-1 rounded">node scripts/add-cert.js ai-102 "https://learn.microsoft.com/.../ai-102" "https://learn.microsoft.com/.../ai-102t00"</code></p>
-          <p class="mt-2 text-gray-400 text-xs">JSON 作成後にページをリロードすると一覧に表示されます。</p>
-        </div>
-      </details>
     </div>
 
-    <% if (certs.length === 0) { %>
-      <div class="text-gray-500">資格データがありません。<code>data/certifications/</code> に JSON ファイルを追加してください。</div>
-    <% } %>
+    <nav class="flex gap-4 mb-6 text-sm">
+      <a href="/my/certifications" class="text-blue-600 hover:underline">マイ資格</a>
+      <a href="/ranking" class="text-blue-600 hover:underline">ランキング</a>
+      <a href="/plans" class="text-blue-600 hover:underline">学習計画</a>
+    </nav>
 
-    <div class="grid gap-4">
-      <% for (const cert of certs) { %>
-        <a href="/certifications/<%= cert.id %>"
-           class="block bg-white rounded-xl border border-gray-200 p-6 hover:shadow-md transition-shadow">
-          <div class="flex items-start justify-between">
-            <div>
+    <div class="mb-4 border-b">
+      <button onclick="showTab('public')" id="tab-public"
+              class="px-4 py-2 border-b-2 border-blue-600 font-semibold text-sm">
+        公開資格 (<%= publicCerts.length %>)
+      </button>
+      <button onclick="showTab('mine')" id="tab-mine"
+              class="px-4 py-2 border-b-2 border-transparent text-gray-500 text-sm">
+        自分の非公開資格 (<%= myCerts.length %>)
+      </button>
+    </div>
+
+    <div id="panel-public">
+      <% if (publicCerts.length === 0) { %>
+        <p class="text-gray-500">公開資格がありません。</p>
+      <% } else { %>
+        <div class="space-y-3">
+          <% for (const cert of publicCerts) { %>
+            <a href="/certifications/<%= cert.id %>"
+               class="block bg-white rounded-xl border border-gray-200 p-4 hover:shadow-md transition-shadow">
               <h2 class="text-xl font-semibold text-gray-800"><%= cert.name %></h2>
               <p class="text-sm text-gray-500 mt-1">
                 <%= cert.domainCount %> ドメイン &nbsp;·&nbsp; <%= cert.questionCount %> 問
+                <% if (cert.createdBy !== 'system') { %>
+                  &nbsp;·&nbsp; 作成者: <%= cert.creatorName %>
+                <% } %>
               </p>
-            </div>
-            <span class="text-gray-400 text-2xl">→</span>
-          </div>
-        </a>
+            </a>
+          <% } %>
+        </div>
       <% } %>
     </div>
+
+    <div id="panel-mine" class="hidden">
+      <% if (myCerts.length === 0) { %>
+        <p class="text-gray-500">
+          非公開資格はありません。
+          <a href="/my/certifications/new" class="text-blue-600 hover:underline">新規作成</a>
+        </p>
+      <% } else { %>
+        <div class="space-y-3">
+          <% for (const cert of myCerts) { %>
+            <a href="/certifications/<%= cert.id %>"
+               class="block bg-white rounded-xl border border-gray-200 p-4 hover:shadow-md transition-shadow">
+              <h2 class="text-xl font-semibold text-gray-800"><%= cert.name %></h2>
+              <p class="text-sm text-gray-500 mt-1">
+                <%= cert.domainCount %> ドメイン &nbsp;·&nbsp; <%= cert.questionCount %> 問 &nbsp;·&nbsp; 非公開
+              </p>
+            </a>
+          <% } %>
+        </div>
+      <% } %>
+    </div>
+
+    <script>
+      function showTab(key) {
+        for (const t of ['public', 'mine']) {
+          const btn = document.getElementById('tab-' + t);
+          const panel = document.getElementById('panel-' + t);
+          if (t === key) {
+            btn.classList.add('border-blue-600', 'font-semibold');
+            btn.classList.remove('border-transparent', 'text-gray-500');
+            panel.classList.remove('hidden');
+          } else {
+            btn.classList.remove('border-blue-600', 'font-semibold');
+            btn.classList.add('border-transparent', 'text-gray-500');
+            panel.classList.add('hidden');
+          }
+        }
+      }
+    </script>
 
   </main>
 </body>
