@@ -56,4 +56,25 @@ describe('routes/index — landing page', () => {
     expect(res.status).toBe(200);
     expect(res.text).toContain('みんなで資格取得');
   });
+
+  test('GET /?error=no_code でエラーバナー表示', async () => {
+    const agent = await anonAgent();
+    const res = await agent.get('/?error=no_code');
+    expect(res.status).toBe(200);
+    expect(res.text).toMatch(/応答が不完全/);
+  });
+
+  test('GET /?error=token_failed でエラーバナー表示', async () => {
+    const agent = await anonAgent();
+    const res = await agent.get('/?error=token_failed');
+    expect(res.status).toBe(200);
+    expect(res.text).toMatch(/アクセストークン.*失敗/);
+  });
+
+  test('GET /?error=unknown_key では エラーバナー非表示', async () => {
+    const agent = await anonAgent();
+    const res = await agent.get('/?error=unknown_key');
+    expect(res.status).toBe(200);
+    expect(res.text).not.toMatch(/⚠/);
+  });
 });
