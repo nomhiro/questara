@@ -32,6 +32,64 @@ describe('parseDomainsFromMarkdown', () => {
     const md = `# 普通の見出し\n本文`;
     expect(parseDomainsFromMarkdown(md)).toEqual([]);
   });
+
+  test('現代的な Microsoft Learn 形式（H3 + 範囲ウェイト）を抽出し 100 に正規化する', () => {
+    const md = `
+## 2026 年 1 月 14 日時点で測定されたスキル
+### クラウドの概念について説明する (25–30%)
+#### サブセクション
+### Azure のアーキテクチャとサービスについて説明する (35–40%)
+### Azure の管理とガバナンスについて説明する (30–35%)
+`;
+    const domains = parseDomainsFromMarkdown(md);
+    expect(domains).toHaveLength(3);
+    expect(domains[0].id).toBe('domain-1');
+    expect(domains[0].name).toBe('Domain 1: クラウドの概念について説明する');
+    const sum = domains.reduce((a, d) => a + d.weight, 0);
+    expect(sum).toBe(100);
+  });
+
+  test('現代形式で単一値ウェイト (XX%) も認識', () => {
+    const md = `### 基本 (40%)\n### 応用 (60%)`;
+    const domains = parseDomainsFromMarkdown(md);
+    expect(domains).toHaveLength(2);
+    expect(domains[0].weight).toBe(40);
+    expect(domains[1].weight).toBe(60);
+  });
+
+  test('レガシー形式が優先される（両方あれば legacy を使う）', () => {
+    const md = `# Domain 1: Legacy (50%)\n### Modern Heading (30–40%)`;
+    const domains = parseDomainsFromMarkdown(md);
+    expect(domains).toHaveLength(1);
+    expect(domains[0].name).toContain('Legacy');
+  });
+
+  test('範囲区切り「から」も範囲として認識する（AZ-305 形式）', () => {
+    const md = `### ID、ガバナンスを設計する (25 から 30%)\n### データを設計する (20 から 25%)`;
+    const domains = parseDomainsFromMarkdown(md);
+    expect(domains).toHaveLength(2);
+    const sum = domains.reduce((a, d) => a + d.weight, 0);
+    expect(sum).toBe(100);
+  });
+
+  test('学習リソース以降のセクションは無視される', () => {
+    const md = `### 現行ドメイン (40–50%)
+### 現行ドメイン 2 (40–50%)
+## 学習リソース
+### ノイズ見出し (10%)`;
+    const domains = parseDomainsFromMarkdown(md);
+    expect(domains).toHaveLength(2);
+  });
+
+  test('SC-400 形式の「以前の評価されるスキル」セクションで重複を防ぐ', () => {
+    const md = `### 情報保護を実装する (25 – 30%)
+### DLP を実装する (15 – 20%)
+## 2023 年 8 月 22 日以前の評価されるスキル
+### 情報保護を実装する (25 – 30%)
+### DLP を実装する (15 – 20%)`;
+    const domains = parseDomainsFromMarkdown(md);
+    expect(domains).toHaveLength(2);
+  });
 });
 
 describe('normalizeWeightsToSum100', () => {

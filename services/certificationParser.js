@@ -21,23 +21,73 @@ async function fetchMarkdown(url) {
 }
 
 /**
+ * 現行スキル範囲より後ろのセクション（学習リソース / 変更履歴 / 以前の評価されるスキル）を落とす。
+ * SC-400 のように旧版スキルを併記する学習ガイドでドメインが重複するのを防ぐ。
+ */
+function trimPastCurrentSkills(md) {
+  const stopRes = [
+    /^##\s+学習リソース/m,
+    /^##\s+変更履歴/m,
+    /^##\s+ログの変更/m,
+    /^##\s+Change\s+log/im,
+    /^##\s+Learning\s+resources/im,
+    /^##\s+.+以前/m,
+  ];
+  let out = md;
+  for (const re of stopRes) {
+    const m = out.match(re);
+    if (m && typeof m.index === 'number') {
+      out = out.slice(0, m.index);
+    }
+  }
+  return out;
+}
+
+/**
  * Markdown からドメイン一覧を正規表現で抽出する（速い・API不要）
+ *
+ * 2 パターンを順に試す:
+ *   1) レガシー形式 - "# Domain 1: Foo (15%)" / "## ドメイン 2: ..."
+ *   2) 現代的な Microsoft Learn 形式 - "### トピック (25–30%)" / "(25 から 30%)"
  */
 function parseDomainsFromMarkdown(md) {
-  const domains = [];
-  const lines = md.split('\n');
-  const headerRe = /^#+\s*(?:Domain|ドメイン)\s*(\d+)\s*[:：]\s*(.+?)(?:\s*[（(]\s*(\d+)\s*%?\s*[）)])?\s*$/i;
+  const trimmed = trimPastCurrentSkills(md);
+  const lines = trimmed.split('\n');
+
+  // 1) レガシー形式
+  const legacy = [];
+  const legacyRe = /^#+\s*(?:Domain|ドメイン)\s*(\d+)\s*[:：]\s*(.+?)(?:\s*[（(]\s*(\d+)\s*%?\s*[）)])?\s*$/i;
   for (const line of lines) {
-    const m = line.match(headerRe);
+    const m = line.match(legacyRe);
     if (m) {
-      domains.push({
+      legacy.push({
         id: `domain-${m[1]}`,
         name: `Domain ${m[1]}: ${m[2].trim()}`,
         weight: m[3] ? Number(m[3]) : 0,
       });
     }
   }
-  return domains;
+  if (legacy.length > 0) return legacy;
+
+  // 2) 現代的な Microsoft Learn 形式（H3 + 末尾ウェイト。範囲区切りに「から」「to」も含む）
+  const modern = [];
+  const modernRe = /^###\s+(.+?)\s*[（(]\s*(\d+)\s*(?:(?:[-–—~〜]|から|to)\s*(\d+))?\s*%?\s*[）)]\s*$/i;
+  for (const line of lines) {
+    const m = line.match(modernRe);
+    if (m) {
+      const w1 = Number(m[2]);
+      const w2 = m[3] ? Number(m[3]) : w1;
+      const idx = modern.length + 1;
+      modern.push({
+        id: `domain-${idx}`,
+        name: `Domain ${idx}: ${m[1].trim()}`,
+        weight: Math.round((w1 + w2) / 2),
+      });
+    }
+  }
+  if (modern.length > 0) return normalizeWeightsToSum100(modern);
+
+  return [];
 }
 
 /**
