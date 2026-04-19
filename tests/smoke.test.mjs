@@ -54,6 +54,21 @@ describe('smoke', () => {
     expect(res.text).toContain('自分の非公開資格 (1)');
   });
 
+  test('認証済み GET /adventure は アクティブ冒険なしなら /adventures/new へリダイレクト', async () => {
+    const user = await createTestUser();
+    const agent = await authedAgent(user);
+    const res = await agent.get('/adventure');
+    expect(res.status).toBe(302);
+    expect(res.headers.location).toBe('/adventures/new');
+  });
+
+  test('未認証 GET /adventure は /auth/login にリダイレクト', async () => {
+    const agent = await anonAgent();
+    const res = await agent.get('/adventure');
+    expect(res.status).toBe(302);
+    expect(res.headers.location).toBe('/auth/login');
+  });
+
   test('認証済み GET /certifications/:id は 200 と詳細を返す', async () => {
     const user = await createTestUser();
     const cert = await createTestCertification({ id: 'test-cert-detail' });
