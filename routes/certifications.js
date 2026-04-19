@@ -4,6 +4,7 @@ const express = require('express');
 const router = express.Router();
 const questionService = require('../services/questionService');
 const certificationParser = require('../services/certificationParser');
+const userService = require('../services/userService');
 const { requireAuth } = require('../middleware/auth');
 
 router.get('/', requireAuth, async (req, res) => {
@@ -29,7 +30,8 @@ router.get('/new', requireAuth, (req, res) => {
 router.post('/extract', requireAuth, async (req, res) => {
   try {
     const { studyGuideUrl } = req.body;
-    const domains = await certificationParser.extractDomains(studyGuideUrl);
+    const accessToken = await userService.getGithubAccessToken(req.user.id);
+    const domains = await certificationParser.extractDomains(studyGuideUrl, { accessToken });
     res.json({ domains });
   } catch (err) {
     res.status(400).json({ error: err.message });
