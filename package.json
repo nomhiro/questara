@@ -1,7 +1,7 @@
 {
-  "name": "cert-study-agent",
+  "name": "questara",
   "version": "1.0.0",
-  "description": "Microsoft/GitHub認定資格学習AIエージェント",
+  "description": "Questara — Microsoft/GitHub 認定資格の学習を冒険として楽しむエージェント",
   "main": "app.js",
   "scripts": {
     "start": "node --env-file=.env app.js",
