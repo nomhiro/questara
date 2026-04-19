@@ -106,10 +106,11 @@ describe('views render without 500', () => {
     expect(res.status).toBe(200);
   });
 
-  test('views/login.ejs', async () => {
+  test('views/login.ejs (廃止: /auth/login は / に 301)', async () => {
     const agent = await anonAgent();
     const res = await agent.get('/auth/login');
-    expect(res.status).toBe(200);
+    expect(res.status).toBe(301);
+    expect(res.headers.location).toBe('/');
   });
 
   test('views/error.ejs (404)', async () => {

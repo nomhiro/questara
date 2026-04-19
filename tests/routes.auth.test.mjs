@@ -12,11 +12,11 @@ describe('routes/auth', () => {
     await truncateAll();
   });
 
-  test('GET /auth/login は 200', async () => {
+  test('GET /auth/login は / に 301 リダイレクト (legacy互換)', async () => {
     const agent = await anonAgent();
     const res = await agent.get('/auth/login');
-    expect(res.status).toBe(200);
-    expect(res.text).toContain('ログイン');
+    expect(res.status).toBe(301);
+    expect(res.headers.location).toBe('/');
   });
 
   test('GET /auth/github は GitHub の認可URLにリダイレクト', async () => {
@@ -26,20 +26,19 @@ describe('routes/auth', () => {
     expect(res.headers.location).toContain('github.com/login/oauth/authorize');
   });
 
-  test('認証済みで /auth/login は / にリダイレクト', async () => {
-    const user = await createTestUser();
-    const agent = await authedAgent(user);
-    const res = await agent.get('/auth/login');
+  test('GET /auth/github/callback (codeなし) は /?error=no_code にリダイレクト', async () => {
+    const agent = await anonAgent();
+    const res = await agent.get('/auth/github/callback');
     expect(res.status).toBe(302);
-    expect(res.headers.location).toBe('/');
+    expect(res.headers.location).toBe('/?error=no_code');
   });
 
-  test('POST /auth/logout は cookie をクリアして /auth/login にリダイレクト', async () => {
+  test('POST /auth/logout は cookie をクリアして / にリダイレクト', async () => {
     const user = await createTestUser();
     const agent = await authedAgent(user);
     const res = await agent.post('/auth/logout');
     expect(res.status).toBe(302);
-    expect(res.headers.location).toBe('/auth/login');
+    expect(res.headers.location).toBe('/');
     expect(res.headers['set-cookie']?.[0]).toMatch(/cert_quiz_session_test=;/);
   });
 });

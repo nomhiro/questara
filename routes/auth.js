@@ -21,7 +21,7 @@ router.get('/github', (req, res) => {
 
 router.get('/github/callback', async (req, res) => {
   const { code } = req.query;
-  if (!code) return res.redirect('/auth/login');
+  if (!code) return res.redirect('/?error=no_code');
 
   try {
     const tokenRes = await fetch('https://github.com/login/oauth/access_token', {
@@ -66,21 +66,21 @@ router.get('/github/callback', async (req, res) => {
       username: user.username,
     });
     res.cookie(jwtService.COOKIE_NAME, token, jwtService.getCookieOptions());
-    res.redirect('/');
+    res.redirect('/adventure');
   } catch (err) {
     console.error('GitHub OAuth error:', err);
-    res.render('error', { title: 'GitHub ログインエラー', message: err.message });
+    const key = err.message?.includes('アクセストークン') ? 'token_failed' : 'auth_failed';
+    res.redirect(`/?error=${key}`);
   }
 });
 
 router.get('/login', (req, res) => {
-  if (req.user) return res.redirect('/');
-  res.render('login', { title: 'ログイン', error: null });
+  res.redirect(301, '/');
 });
 
 router.post('/logout', (req, res) => {
   res.clearCookie(jwtService.COOKIE_NAME, jwtService.getClearCookieOptions());
-  res.redirect('/auth/login');
+  res.redirect('/');
 });
 
 module.exports = router;
