@@ -14,7 +14,6 @@ describe('routes/index — landing page', () => {
     expect(res.status).toBe(200);
     expect(res.text).toContain('Questara');
     expect(res.text).toContain('クエスターラ');
-    expect(res.text).toContain('資格という名のダンジョンへ');
   });
 
   test('未認証 GET / には GitHub ログイン CTA が含まれる', async () => {

@@ -82,8 +82,7 @@
 
 - メインタイトル: `rpg-title` クラス（DotGothic16）で「⚔ Questara ⚔」
 - 読み仮名: 「クエスターラ」を小さく（14px, gold, タイトル直下）
-- タグライン（和）: 「資格という名のダンジョンへ。」（18px, gold）
-- タグライン（英）: `Your certification quest begins.`（12px, opacity 低めで装飾的）
+- 装飾的タグラインは採用しない（過剰な比喩は避ける方針）
 - 説明: 「Microsoft / GitHub 認定資格の学習を、みんなで冒険として楽しめる学習エージェント。」
 - ログイン状態の判定は `res.locals.userEmail` の有無で行う（既存 HUD と同じ判定軸）
 - CTA ボタン（`rpg-btn is-gold`）:
