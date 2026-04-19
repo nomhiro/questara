@@ -10,10 +10,13 @@ services:
     volumes:
       - cosmos-data:/tmp/cosmos/appdata
     healthcheck:
-      test: ["CMD-SHELL", "curl -fks https://localhost:8081/_explorer/emulator.pem || exit 1"]
+      # エミュレータ本体はコンテナ内 8080 番で /ready /alive /status を HTTP で返す。
+      # 旧設定の /_explorer/emulator.pem は vnext-preview には存在せず、常に失敗する。
+      test: ["CMD-SHELL", "curl -fs http://localhost:8080/ready || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 30
+      start_period: 60s
 
 volumes:
   cosmos-data:
