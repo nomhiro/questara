@@ -10,45 +10,23 @@ const gamificationService = require('../services/gamificationService');
 const userService = require('../services/userService');
 const { requireAuth } = require('../middleware/auth');
 
-router.get('/', requireAuth, async (req, res) => {
-  const user = await userService.getUserById(req.user.id);
-  const stats = user?.stats || {};
-
-  const activeAdventure = stats.activeAdventureId
-    ? await adventureService.getAdventure(stats.activeAdventureId, req.user.id)
-    : null;
-
-  if (!activeAdventure) {
-    return res.redirect('/adventures/new');
-  }
-
-  // dungeons に対応する cert を fully（domains 付き）で取得
-  const certEntries = await Promise.all(
-    activeAdventure.dungeons.map(async (d) => {
-      const c = await questionService.readCertification(d.certificationId);
-      return c ? [c.id, c] : null;
-    })
-  );
-  const certById = Object.fromEntries(certEntries.filter(Boolean));
-
-  const masteryRanks = stats.masteryRanks || {};
-  const achievementsMaster = achievementService.loadMaster();
-  const unlocked = new Set(stats.unlockedAchievements || []);
-  const recentAchievements = achievementsMaster.filter((a) => unlocked.has(a.id)).slice(-3).reverse();
-
-  const dailyQuest = stats.dailyQuest || { date: null, completed: [], xpClaimed: 0 };
-
-  res.render('adventure-map', {
-    title: '冒険の道',
+router.get('/', (req, res) => {
+  const errorKey = typeof req.query.error === 'string' ? req.query.error : null;
+  const errorMessage = mapAuthError(errorKey);
+  res.render('landing', {
     userEmail: res.locals.userEmail,
-    adventure: activeAdventure,
-    certById,
-    stats,
-    masteryRanks,
-    recentAchievements,
-    dailyQuest,
+    errorMessage,
   });
 });
+
+function mapAuthError(key) {
+  switch (key) {
+    case 'auth_failed': return 'GitHub の認可に失敗しました。もう一度お試しください。';
+    case 'no_code': return 'GitHub からの応答が不完全でした。もう一度ログインしてください。';
+    case 'token_failed': return 'アクセストークンの取得に失敗しました。時間を置いて再度お試しください。';
+    default: return null;
+  }
+}
 
 router.get('/adventure', requireAuth, async (req, res) => {
   const user = await userService.getUserById(req.user.id);

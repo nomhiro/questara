@@ -13,19 +13,19 @@ describe('smoke', () => {
     await truncateAll();
   });
 
-  test('未認証で / は /auth/login にリダイレクト', async () => {
+  test('未認証で / は 200 とランディングを返す', async () => {
     const agent = await anonAgent();
     const res = await agent.get('/');
-    expect(res.status).toBe(302);
-    expect(res.headers.location).toBe('/auth/login');
+    expect(res.status).toBe(200);
+    expect(res.text).toContain('Questara');
   });
 
-  test('認証済み GET / は アクティブ冒険なしなら /adventures/new へリダイレクト', async () => {
+  test('認証済み GET / は 200 とランディング(冒険を再開CTA)を返す', async () => {
     const user = await createTestUser();
     const agent = await authedAgent(user);
     const res = await agent.get('/');
-    expect(res.status).toBe(302);
-    expect(res.headers.location).toBe('/adventures/new');
+    expect(res.status).toBe(200);
+    expect(res.text).toContain('冒険を再開');
   });
 
   test('認証済み GET /free-mode は 200 と資格一覧を返す', async () => {
