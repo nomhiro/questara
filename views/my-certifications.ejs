@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %></title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 min-h-screen">
+  <nav class="bg-gray-900 text-white px-6 py-3 flex items-center justify-between">
+    <div class="flex items-center gap-4">
+      <a href="/" class="text-lg font-bold tracking-tight">📚 資格学習エージェント</a>
+      <span class="text-gray-400">/</span>
+      <span class="text-sm">マイ資格</span>
+    </div>
+    <div class="flex items-center gap-4 text-sm">
+      <span class="text-gray-400"><%= userEmail %></span>
+      <form method="POST" action="/auth/logout" class="inline">
+        <button type="submit" class="text-gray-400 hover:text-white transition">ログアウト</button>
+      </form>
+    </div>
+  </nav>
+  <main class="max-w-4xl mx-auto px-4 py-8">
+    <div class="flex items-center justify-between mb-6">
+      <h1 class="text-2xl font-bold">マイ資格</h1>
+      <a href="/my/certifications/new"
+         class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-4 py-2 rounded">
+        ＋ 新規追加
+      </a>
+    </div>
+    <% if (certs.length === 0) { %>
+      <div class="bg-white border border-gray-200 rounded-xl p-8 text-center">
+        <p class="text-gray-500">まだ資格を作成していません。</p>
+        <a href="/my/certifications/new" class="inline-block mt-4 text-blue-600 hover:underline">
+          最初の資格を作成する →
+        </a>
+      </div>
+    <% } else { %>
+      <div class="space-y-3">
+        <% for (const c of certs) { %>
+          <div class="bg-white border border-gray-200 rounded-xl p-4 flex items-center justify-between">
+            <div>
+              <h2 class="font-semibold text-gray-800"><%= c.name %></h2>
+              <p class="text-xs text-gray-500 mt-0.5">
+                <%= c.domainCount %> ドメイン · <%= c.questionCount %> 問
+                · <%- c.isPublic ? '<span class="text-green-600">公開中</span>' : '<span class="text-gray-400">非公開</span>' %>
+              </p>
+            </div>
+            <div class="flex items-center gap-2 flex-shrink-0">
+              <a href="/certifications/<%= c.id %>"
+                 class="text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1.5 rounded transition">開く</a>
+              <% if (c.isPublic) { %>
+                <form method="POST" action="/my/certifications/<%= c.id %>/unpublish" class="inline">
+                  <button class="text-xs bg-amber-100 hover:bg-amber-200 text-amber-800 px-3 py-1.5 rounded transition">
+                    非公開にする
+                  </button>
+                </form>
+              <% } else { %>
+                <form method="POST" action="/my/certifications/<%= c.id %>/publish" class="inline">
+                  <button class="text-xs bg-green-100 hover:bg-green-200 text-green-800 px-3 py-1.5 rounded transition">
+                    公開する
+                  </button>
+                </form>
+              <% } %>
+              <form method="POST" action="/my/certifications/<%= c.id %>/delete" class="inline"
+                    onsubmit="return confirm('削除しますか？');">
+                <button class="text-xs bg-red-100 hover:bg-red-200 text-red-700 px-3 py-1.5 rounded transition">
+                  削除
+                </button>
+              </form>
+            </div>
+          </div>
+        <% } %>
+      </div>
+    <% } %>
+  </main>
+</body>
+</html>

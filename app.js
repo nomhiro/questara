@@ -27,6 +27,7 @@ function createApp() {
   const domainsRouter = require('./routes/domains');
   const apiRouter = require('./routes/api');
   const authRouter = require('./routes/auth');
+  const certificationsRouter = require('./routes/certifications');
   const { authContext } = require('./middleware/auth');
 
   const app = express();
@@ -45,6 +46,7 @@ function createApp() {
   app.use('/quiz', quizRouter);
   app.use('/certifications', domainsRouter);
   app.use('/api', apiRouter);
+  app.use('/my/certifications', certificationsRouter);
 
   app.use((req, res) => {
     res.status(404).render('error', { title: '404 Not Found', message: 'ページが見つかりません' });

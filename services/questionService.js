@@ -28,6 +28,7 @@ async function listCertifications({ includePrivate = false, userId = null } = {}
     questionCount: data.domains.reduce((acc, d) => acc + d.questions.length, 0),
     createdBy: data.createdBy,
     creatorName: data.creatorName,
+    isPublic: data.isPublic,
   }));
 }
 
@@ -72,6 +73,10 @@ async function appendDomainQuestions(certId, domainId, newQuestions) {
   return { appended: toAppend.length, skipped: newQuestions.length - toAppend.length };
 }
 
+async function deleteCertification(certId) {
+  await cosmosService.remove('certifications', certId, certId);
+}
+
 module.exports = {
   readCertification,
   writeCertification,
@@ -81,4 +86,5 @@ module.exports = {
   getQuestionsByDomain,
   getQuestionsByIds,
   appendDomainQuestions,
+  deleteCertification,
 };
