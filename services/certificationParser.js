@@ -60,6 +60,7 @@ async function parseDomainsWithLlm(md, accessToken) {
 - ドメイン名は日本語/英語そのままの表記を維持
 - ウェイトが明記されていない場合は 0 を設定
 - **ウェイトは必ず整数で出力する**（小数点を含めない。「20-25%」のような範囲表記は中央値を四捨五入）
+- **全ドメインのウェイト合計がちょうど100になるようにする**（丸め誤差がある場合は最大ウェイトのドメインで調整）
 
 ## 出力形式
 JSON 配列のみを返してください（説明文・コードブロック記号は不要）:
@@ -87,11 +88,43 @@ ${truncated}`;
     throw new Error('LLM が有効なドメイン一覧を返しませんでした');
   }
 
-  return parsed.map((d, i) => ({
+  const mapped = parsed.map((d, i) => ({
     id: d.id || `domain-${i + 1}`,
     name: d.name || `Domain ${i + 1}`,
     weight: Math.round(Number(d.weight) || 0),
   }));
+  return normalizeWeightsToSum100(mapped);
+}
+
+/**
+ * ドメインのウェイト合計を 100 に正規化する。
+ * すべて 0 の場合は均等配分。それ以外は比例配分して余剰/不足を最大のドメインに加減する。
+ */
+function normalizeWeightsToSum100(domains) {
+  if (domains.length === 0) return domains;
+  const sum = domains.reduce((acc, d) => acc + (d.weight || 0), 0);
+  if (sum === 100) return domains;
+
+  if (sum === 0) {
+    // 全て 0 なら均等配分
+    const base = Math.floor(100 / domains.length);
+    const remainder = 100 - base * domains.length;
+    return domains.map((d, i) => ({ ...d, weight: base + (i < remainder ? 1 : 0) }));
+  }
+
+  // 比例配分して整数化
+  const scaled = domains.map((d) => ({ ...d, weight: Math.round((d.weight * 100) / sum) }));
+  const newSum = scaled.reduce((acc, d) => acc + d.weight, 0);
+  const diff = 100 - newSum;
+  if (diff !== 0) {
+    // 最大ウェイトのドメインで調整
+    let maxIdx = 0;
+    for (let i = 1; i < scaled.length; i++) {
+      if (scaled[i].weight > scaled[maxIdx].weight) maxIdx = i;
+    }
+    scaled[maxIdx] = { ...scaled[maxIdx], weight: scaled[maxIdx].weight + diff };
+  }
+  return scaled;
 }
 
 /**
@@ -116,4 +149,4 @@ async function extractDomains(studyGuideUrl, { accessToken } = {}) {
   return parseDomainsWithLlm(md, accessToken);
 }
 
-module.exports = { extractDomains, parseDomainsFromMarkdown, parseDomainsWithLlm };
+module.exports = { extractDomains, parseDomainsFromMarkdown, parseDomainsWithLlm, normalizeWeightsToSum100 };

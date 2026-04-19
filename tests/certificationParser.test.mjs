@@ -1,7 +1,7 @@
 import { describe, test, expect } from 'vitest';
 import { createRequire } from 'node:module';
 const require = createRequire(import.meta.url);
-const { parseDomainsFromMarkdown } = require('../services/certificationParser');
+const { parseDomainsFromMarkdown, normalizeWeightsToSum100 } = require('../services/certificationParser');
 
 describe('parseDomainsFromMarkdown', () => {
   test('標準的なドメインヘッダを抽出', () => {
@@ -31,5 +31,49 @@ describe('parseDomainsFromMarkdown', () => {
   test('該当ヘッダがない場合は空配列', () => {
     const md = `# 普通の見出し\n本文`;
     expect(parseDomainsFromMarkdown(md)).toEqual([]);
+  });
+});
+
+describe('normalizeWeightsToSum100', () => {
+  test('既に100ならそのまま', () => {
+    const input = [{ id: 'd1', name: 'D1', weight: 60 }, { id: 'd2', name: 'D2', weight: 40 }];
+    expect(normalizeWeightsToSum100(input)).toEqual(input);
+  });
+
+  test('合計が99なら最大に+1', () => {
+    const result = normalizeWeightsToSum100([
+      { id: 'd1', name: 'D1', weight: 30 },
+      { id: 'd2', name: 'D2', weight: 50 },
+      { id: 'd3', name: 'D3', weight: 19 },
+    ]);
+    const sum = result.reduce((a, d) => a + d.weight, 0);
+    expect(sum).toBe(100);
+    expect(result[1].weight).toBe(51);
+  });
+
+  test('合計が120なら比例配分で100に', () => {
+    const result = normalizeWeightsToSum100([
+      { id: 'd1', name: 'D1', weight: 60 },
+      { id: 'd2', name: 'D2', weight: 60 },
+    ]);
+    const sum = result.reduce((a, d) => a + d.weight, 0);
+    expect(sum).toBe(100);
+  });
+
+  test('全て0なら均等配分', () => {
+    const result = normalizeWeightsToSum100([
+      { id: 'd1', name: 'D1', weight: 0 },
+      { id: 'd2', name: 'D2', weight: 0 },
+      { id: 'd3', name: 'D3', weight: 0 },
+    ]);
+    const sum = result.reduce((a, d) => a + d.weight, 0);
+    expect(sum).toBe(100);
+    expect(result[0].weight).toBe(34);
+    expect(result[1].weight).toBe(33);
+    expect(result[2].weight).toBe(33);
+  });
+
+  test('空配列はそのまま', () => {
+    expect(normalizeWeightsToSum100([])).toEqual([]);
   });
 });
