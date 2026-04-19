@@ -12,8 +12,9 @@ describe('routes/index — landing page', () => {
     const agent = await anonAgent();
     const res = await agent.get('/');
     expect(res.status).toBe(200);
-    expect(res.text).toContain('資格学習エージェント');
-    expect(res.text).toContain('みんなで資格取得を冒険しよう');
+    expect(res.text).toContain('Questara');
+    expect(res.text).toContain('クエスターラ');
+    expect(res.text).toContain('資格という名のダンジョンへ');
   });
 
   test('未認証 GET / には GitHub ログイン CTA が含まれる', async () => {
@@ -47,5 +48,12 @@ describe('routes/index — landing page', () => {
     expect(res.text).toContain('GitHub Models');
     expect(res.text).toMatch(/rate.?limit/i);
     expect(res.text).toContain('docs.github.com/en/github-models');
+  });
+
+  test('GET / の Why セクションに「みんなで資格取得」の思いが残っている', async () => {
+    const agent = await anonAgent();
+    const res = await agent.get('/');
+    expect(res.status).toBe(200);
+    expect(res.text).toContain('みんなで資格取得');
   });
 });

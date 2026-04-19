@@ -154,8 +154,9 @@ describe('routes/index — landing page', () => {
     const agent = await anonAgent();
     const res = await agent.get('/');
     expect(res.status).toBe(200);
-    expect(res.text).toContain('資格学習エージェント');
-    expect(res.text).toContain('みんなで資格取得を冒険しよう');
+    expect(res.text).toContain('Questara');
+    expect(res.text).toContain('クエスターラ');
+    expect(res.text).toContain('資格という名のダンジョンへ');
   });
 
   test('未認証 GET / には GitHub ログイン CTA が含まれる', async () => {
@@ -187,8 +188,15 @@ describe('routes/index — landing page', () => {
     const res = await agent.get('/');
     expect(res.status).toBe(200);
     expect(res.text).toContain('GitHub Models');
-    expect(res.text).toContain('rate limit');
+    expect(res.text).toMatch(/rate.?limit/i);
     expect(res.text).toContain('docs.github.com/en/github-models');
+  });
+
+  test('GET / の Why セクションに「みんなで資格取得を」の思いが残っている', async () => {
+    const agent = await anonAgent();
+    const res = await agent.get('/');
+    expect(res.status).toBe(200);
+    expect(res.text).toContain('みんなで資格取得');
   });
 });
 ```
@@ -226,7 +234,7 @@ git commit -m "test: add failing tests for landing page at /"
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>資格学習エージェント — みんなで資格取得を冒険しよう</title>
+  <title>Questara — 資格という名のダンジョンへ。</title>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DotGothic16&family=M+PLUS+1+Code:wght@400;500;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/theme.css">
@@ -234,7 +242,7 @@ git commit -m "test: add failing tests for landing page at /"
 </head>
 <body>
   <nav class="hud">
-    <div class="hud-cell">📚 <span class="value">資格学習エージェント</span></div>
+    <div class="hud-cell">📚 <span class="value">Questara</span></div>
     <div class="hud-spacer"></div>
     <% if (userEmail) { %>
       <span class="hud-cell" style="font-size:11px;"><%= userEmail %></span>
@@ -252,11 +260,13 @@ git commit -m "test: add failing tests for landing page at /"
 
     <!-- Hero -->
     <section class="rpg-window is-open" style="text-align:center; padding: 40px 24px; margin-bottom: 32px;">
-      <h1 class="rpg-title" style="font-size: 32px; margin-bottom: 16px;">⚔ 資格学習エージェント</h1>
-      <p style="font-family: var(--font-display); color: var(--gold); font-size: 18px; margin: 0 0 24px;">みんなで資格取得を冒険しよう</p>
+      <h1 class="rpg-title" style="font-size: 36px; margin-bottom: 4px; letter-spacing: 0.08em;">⚔ Questara ⚔</h1>
+      <p style="font-family: var(--font-body); color: var(--gold); font-size: 14px; margin: 0 0 20px; letter-spacing: 0.2em;">— クエスターラ —</p>
+      <p style="font-family: var(--font-display); color: var(--gold); font-size: 20px; margin: 0 0 4px;">資格という名のダンジョンへ。</p>
+      <p style="font-family: var(--font-body); color: #8a90aa; font-size: 11px; margin: 0 0 24px; letter-spacing: 0.1em; font-style: italic;">Your certification quest begins.</p>
       <p style="font-family: var(--font-body); color: #c0c6e0; font-size: 13px; line-height: 1.8; margin: 0 0 32px; max-width: 560px; margin-left:auto; margin-right:auto;">
         Microsoft / GitHub 認定資格の学習を、<br>
-        単なる暗記ではなく「冒険」として楽しめる学習エージェントです。
+        みんなで冒険として楽しめる学習エージェント。
       </p>
       <% if (userEmail) { %>
         <a href="/adventure" class="rpg-btn is-gold" style="display:inline-block; font-size: 14px; padding: 12px 28px;">▶ 冒険を再開する</a>
@@ -373,7 +383,7 @@ function mapAuthError(key) {
     const agent = await anonAgent();
     const res = await agent.get('/');
     expect(res.status).toBe(200);
-    expect(res.text).toContain('資格学習エージェント');
+    expect(res.text).toContain('Questara');
   });
 ```
 
@@ -796,7 +806,7 @@ Expected: `Listening on http://localhost:3000`
 - [ ] **Step 2: 未ログイン動線の確認**
 
 1. ブラウザのシークレットウィンドウで http://localhost:3000/ を開く
-2. ランディングページが表示されること（資格学習エージェント・みんなで資格取得を冒険しよう・3カード・3ステップ・仕組み・CTA 再掲）
+2. ランディングページが表示されること（Questara・クエスターラ・資格という名のダンジョンへ・みんなで資格取得（Why末）・3カード・3ステップ・仕組み・CTA 再掲）
 3. 「GitHubでログインして始める」ボタンをクリック → GitHub 認可画面に遷移すること
 4. GitHub で承認 → `/adventure` に着地すること（アクティブ冒険なしなら `/adventures/new` に自動遷移）
 
@@ -831,6 +841,244 @@ Expected: `Listening on http://localhost:3000`
 - [ ] **Step 8: 問題なければコミット不要（変更なし）、または最終的なまとめコミット**
 
 検証で問題が見つかったら修正してから該当 Task のステップに戻る。
+
+---
+
+## Task 10: `views/layout.ejs` の旧表記を Questara に統一
+
+**目的:** 旧称「資格学習エージェント」「資格取得学習エージェント」をサービス正式名 `Questara` に統一する。
+
+**Files:**
+- Modify: `views/layout.ejs:6` (title 部分)
+- Modify: `views/layout.ejs:11` (HUD ヘッダー部分)
+
+- [ ] **Step 1: 修正前の状態確認**
+
+```bash
+grep -n "資格学習エージェント\|資格取得学習エージェント" views/layout.ejs
+```
+Expected: 2行がヒット（行6: `<title>...` と行11: `<a href="/"...📚 資格学習エージェント</a>`）
+
+- [ ] **Step 2: layout.ejs を修正**
+
+`views/layout.ejs:6`:
+
+```html
+  <title><%= title %> | 資格取得学習エージェント</title>
+```
+
+→
+
+```html
+  <title><%= title %> | Questara</title>
+```
+
+`views/layout.ejs:11`:
+
+```html
+    <a href="/" class="text-lg font-bold tracking-tight">📚 資格学習エージェント</a>
+```
+
+→
+
+```html
+    <a href="/adventure" class="text-lg font-bold tracking-tight">📚 Questara</a>
+```
+
+（href も Task 4 の方針に合わせて `/adventure` に）
+
+- [ ] **Step 3: テスト実行**
+
+Run: `npm test`
+Expected: 全テスト PASS（レイアウトを参照するビューテストは見出し文字列を直接期待していないはず。万が一壊れたらそのテストを修正）
+
+- [ ] **Step 4: コミット**
+
+```bash
+git add views/layout.ejs
+git commit -m "refactor(views): rename brand to Questara in layout.ejs"
+```
+
+注意: `views/login.ejs` にも旧表記があるが、Task 7 でファイルごと削除するので触らない。`views/partials/hud.ejs` には旧表記なし。
+
+---
+
+## Task 11: `package.json` の name と description を Questara に
+
+**目的:** パッケージ識別子とサービス説明文をブランドに合わせる。
+
+**Files:**
+- Modify: `package.json`
+- Modify: `package-lock.json`（npm install で自動更新）
+
+- [ ] **Step 1: package.json の name と description を編集**
+
+`package.json`:
+
+```json
+  "name": "cert-study-agent",
+  "version": "1.0.0",
+  "description": "Microsoft/GitHub認定資格学習AIエージェント",
+```
+
+→
+
+```json
+  "name": "questara",
+  "version": "1.0.0",
+  "description": "Questara — Microsoft/GitHub 認定資格の学習を冒険として楽しむエージェント",
+```
+
+- [ ] **Step 2: package-lock.json を再生成**
+
+Run: `npm install`
+Expected: `package-lock.json` が `"name": "questara"` で更新されるだけで、依存ツリーに変更はない
+
+- [ ] **Step 3: テスト実行**
+
+Run: `npm test`
+Expected: 全テスト PASS
+
+- [ ] **Step 4: コミット**
+
+```bash
+git add package.json package-lock.json
+git commit -m "chore: rename package to questara"
+```
+
+---
+
+## Task 12: 内部識別子 (MCP clientName / UA 等) を questara に
+
+**目的:** ソースコード内のプレースホルダー識別子 `cert-study-agent` を `questara` に統一する。
+
+**Files:**
+- Modify: `services/certificationParser.js`
+- Modify: `services/mcpClient.js`
+- Modify: `services/generationService.js`
+
+- [ ] **Step 1: 現出箇所の確認**
+
+Run: `grep -n "cert-study-agent" services/*.js`
+Expected: 3ファイルでヒット
+
+- [ ] **Step 2: 置換実行**
+
+各ファイルで `'cert-study-agent'` を `'questara'` に置換する。具体的には:
+
+- `services/certificationParser.js`: `new Client({ name: 'cert-study-agent', ... })` → `new Client({ name: 'questara', ... })`
+- `services/mcpClient.js`: 同様の MCP Client 名文字列
+- `services/generationService.js:15`: `new Client({ name: 'cert-study-agent', version: '1.0.0' })` → `new Client({ name: 'questara', version: '1.0.0' })`
+
+User-Agent ヘッダーとして使われている `'User-Agent': 'cert-study-agent'` があれば（`routes/auth.js` に存在）、それも `'questara'` に置換する。
+
+- [ ] **Step 3: 確認**
+
+Run: `grep -rn "cert-study-agent" . --include="*.js" --include="*.mjs"`
+Expected: ヒットゼロ（docs 配下は対象外、grep は `.` ルートから実行）
+
+- [ ] **Step 4: テスト実行**
+
+Run: `npm test`
+Expected: 全テスト PASS
+
+- [ ] **Step 5: コミット**
+
+```bash
+git add services/certificationParser.js services/mcpClient.js services/generationService.js routes/auth.js
+git commit -m "refactor: use 'questara' as internal service identifier (MCP client / UA)"
+```
+
+---
+
+## Task 13: Cookie / セッション名を `questara_session` に変更
+
+**目的:** JWT セッション Cookie の名前を `cert_quiz_session` から `questara_session` に変更し、Questara ブランドで統一する。
+
+**副作用:** 既存ユーザーのログインセッションは全て無効化される（次回アクセス時に再ログインが必要）。
+
+**Files:**
+- Modify: `services/jwtService.js:51`
+- Modify: `.env.example`
+- Modify: `.env.test`
+- Modify: `tests/routes.auth.test.mjs`
+
+- [ ] **Step 1: 失敗するテストに更新**
+
+`tests/routes.auth.test.mjs` の `POST /auth/logout` テストで、cookie クリアのアサーションを更新する。
+
+```javascript
+    expect(res.headers['set-cookie']?.[0]).toMatch(/cert_quiz_session_test=;/);
+```
+
+→
+
+```javascript
+    expect(res.headers['set-cookie']?.[0]).toMatch(/questara_session_test=;/);
+```
+
+- [ ] **Step 2: テスト実行で fail を確認**
+
+Run: `npm test -- tests/routes.auth.test.mjs`
+Expected: ログアウトテストが cookie 名不一致で FAIL
+
+- [ ] **Step 3: jwtService.js のデフォルト cookie 名を更新**
+
+`services/jwtService.js:51`:
+
+```javascript
+const COOKIE_NAME = process.env.JWT_COOKIE_NAME || 'cert_quiz_session';
+```
+
+→
+
+```javascript
+const COOKIE_NAME = process.env.JWT_COOKIE_NAME || 'questara_session';
+```
+
+- [ ] **Step 4: .env.example を更新**
+
+```
+JWT_COOKIE_NAME=cert_quiz_session
+```
+
+→
+
+```
+JWT_COOKIE_NAME=questara_session
+```
+
+- [ ] **Step 5: .env.test を更新**
+
+```
+JWT_COOKIE_NAME=cert_quiz_session_test
+```
+
+→
+
+```
+JWT_COOKIE_NAME=questara_session_test
+```
+
+- [ ] **Step 6: テスト実行で pass を確認**
+
+Run: `npm test`
+Expected: 全テスト PASS（テスト環境の env ファイルが questara_session_test を返し、テスト期待と一致）
+
+- [ ] **Step 7: コミット**
+
+```bash
+git add services/jwtService.js .env.example .env.test tests/routes.auth.test.mjs
+git commit -m "refactor(auth): rename session cookie to questara_session
+
+既存ユーザーの JWT セッション cookie は無効化されるため、デプロイ後は
+全ユーザーに再ログインが必要になる。ローカル .env を持つ開発者も
+.env の JWT_COOKIE_NAME を新しい値に書き換えること。"
+```
+
+- [ ] **Step 8: ローカル `.env` の更新案内**
+
+ローカル開発者は手元の `.env`（git 管理外）の `JWT_COOKIE_NAME` を `questara_session` に書き換えてから開発サーバーを起動する必要がある。このタスクのコミットメッセージに含めて周知する。
 
 ---
 

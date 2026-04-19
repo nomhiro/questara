@@ -1,8 +1,8 @@
-# ランディングページ設計 — 2026-04-19
+# Questara ランディングページ設計 — 2026-04-19
 
 ## 背景と目的
 
-本サービス（資格学習エージェント）は現状、`/` にアクセスすると即 `requireAuth` により認証を求め、ログイン済みユーザーを冒険マップに誘導している。未ログインユーザーに対する「このサービスは何か・なぜ作ったか・どう使うか」という説明がなく、GitHub でログインした瞬間に GitHub Models API の rate limit を消費することも明示されていない。
+本サービス（正式名称: **Questara** / クエスターラ）は現状、`/` にアクセスすると即 `requireAuth` により認証を求め、ログイン済みユーザーを冒険マップに誘導している。未ログインユーザーに対する「このサービスは何か・なぜ作ったか・どう使うか」という説明がなく、GitHub でログインした瞬間に GitHub Models API の rate limit を消費することも明示されていない。加えて、サービス内部では `cert-study-agent` や「資格取得学習エージェント」など複数の開発期の仮称が残っており、ブランド統一ができていない。
 
 このページは以下を達成する:
 
@@ -14,15 +14,23 @@
 ## スコープ
 
 **含む:**
-- 新規ビュー `views/landing.ejs` の追加
+- 新規ビュー `views/landing.ejs` の追加（Questara ブランディング）
 - ルーティング再編（`/` をランディングに、冒険マップを `/adventure` に移動）
 - `/auth/login` 中継ページの廃止とランディングへの統合
 - 既存テストのリダイレクト先期待値更新と、新規ルートのテスト追加
+- **Questara へのブランディング統一**:
+  - `views/layout.ejs` の「資格取得学習エージェント」「資格学習エージェント」を「Questara」に
+  - `package.json` の `name` を `cert-study-agent` → `questara` に
+  - 内部識別子（MCP クライアント名・UA 文字列）を `cert-study-agent` → `questara` に
+  - Cookie 名を `cert_quiz_session` → `questara_session` に（テスト用は `questara_session_test`）
 
 **含まない:**
-- 冒険マップ・既存各画面の UI 変更
+- 冒険マップ・既存各画面の機能変更
 - `theme.css` の改修
 - 多言語化・SEO メタタグ最適化（将来課題）
+- Cosmos DB データベース名（`cert-quiz`）の変更 — データマイグレーションが必要なため別作業
+
+**Cookie 名変更の副作用:** 既存ユーザーのログインセッションは全て無効化され、次回アクセス時に再ログインが必要になる。本 PR の適用タイミングで告知すること。
 
 ## ルーティング
 
@@ -69,13 +77,19 @@
 既存 `theme.css` の RPG トーンを踏襲し、以下5ブロックで構成する。
 
 ### Hero セクション
-- タイトル: `rpg-title` クラス（DotGothic16）で「資格学習エージェント」
-- キャッチコピー: 「みんなで資格取得を冒険しよう」
+
+**ブランディング:** サービス名は **Questara**（読み: クエスターラ）。語源は Quest + ラテン的女性形語尾 -ara で、RPG ファンタジーの荘厳さと「探求」のニュアンスを両立。
+
+- メインタイトル: `rpg-title` クラス（DotGothic16）で「⚔ Questara ⚔」
+- 読み仮名: 「クエスターラ」を小さく（14px, gold, タイトル直下）
+- タグライン（和）: 「資格という名のダンジョンへ。」（18px, gold）
+- タグライン（英）: `Your certification quest begins.`（12px, opacity 低めで装飾的）
+- 説明: 「Microsoft / GitHub 認定資格の学習を、みんなで冒険として楽しめる学習エージェント。」
 - ログイン状態の判定は `res.locals.userEmail` の有無で行う（既存 HUD と同じ判定軸）
 - CTA ボタン（`rpg-btn is-gold`）:
   - 未ログイン: 「⚔ GitHubでログインして始める」→ `/auth/github`
   - ログイン済み: 「▶ 冒険を再開する」→ `/adventure`
-- `?error=<key>` クエリがある場合、CTA 上部に `rpg-window` 風のエラーバナーを表示（既存 `login.ejs` のエラー UI を参考に）
+- `?error=<key>` クエリがある場合、CTA 上部に `rpg-window` 風のエラーバナーを表示
 - 許容するエラーキー: `auth_failed`（OAuth認可失敗）・`no_code`（code欠落）・`token_failed`（アクセストークン取得失敗）。不明なキーは無視
 
 ### Why（思い）セクション
@@ -135,6 +149,12 @@
 | 変更 | `tests/routes.profile.test.mjs` | 未認証リダイレクト先期待値を `/` に更新 |
 | 新規/変更 | `tests/routes.index.test.mjs` | `GET /` を未認証・認証済み両方でテスト（200 応答、CTA 切替、エラーバナー表示）。`GET /adventure` を新設してテスト |
 | 変更 | `views/partials/hud.ejs` ほか HUD の「ホーム」リンク箇所 | `href="/"` を `href="/adventure"` に変更（ログイン後ユーザーの「ホーム」は冒険マップのため） |
+| 変更 | `views/layout.ejs` | `<title>` と HUD ヘッダーの「資格取得学習エージェント」「資格学習エージェント」を `Questara` に |
+| 変更 | `package.json` / `package-lock.json` | `name: cert-study-agent` → `name: questara`（`description` も日本語で「Questara — 資格取得を冒険として楽しむ学習エージェント」相当に更新） |
+| 変更 | `services/certificationParser.js`, `services/mcpClient.js`, `services/generationService.js` | 内部文字列 `cert-study-agent`（MCP Client name, UA）を `questara` に |
+| 変更 | `services/jwtService.js` | `COOKIE_NAME` のデフォルト値 `cert_quiz_session` → `questara_session` |
+| 変更 | `.env.example` / `.env.test` | `JWT_COOKIE_NAME` を `questara_session` / `questara_session_test` に |
+| 変更 | `tests/routes.auth.test.mjs` | cookie クリア後のマッチ `cert_quiz_session_test=;` を `questara_session_test=;` に |
 
 ### レイヤー間の依存関係確認
 
