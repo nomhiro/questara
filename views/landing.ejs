@@ -8,6 +8,167 @@
   <link href="https://fonts.googleapis.com/css2?family=DotGothic16&family=M+PLUS+1+Code:wght@400;500;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/theme.css">
   <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    /* ======================================================
+       1. 背景の霧
+    ====================================================== */
+    .hero-fog {
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+      background: radial-gradient(ellipse 70% 60% at 50% 50%,
+        rgba(180,160,80,0.18) 0%,
+        rgba(80,60,120,0.12) 50%,
+        transparent 100%);
+      opacity: 0.25;
+      animation: fog-slide 20s ease-in-out infinite alternate;
+    }
+    @keyframes fog-slide {
+      from { transform: translateX(-12%) scaleX(1.1); }
+      to   { transform: translateX(12%)  scaleX(0.95); }
+    }
+
+    /* ======================================================
+       2. タイトル ⚔ の揺らぎ
+    ====================================================== */
+    .flame-flicker {
+      display: inline-block;
+      animation: flicker 1.5s ease-in-out infinite alternate;
+    }
+    @keyframes flicker {
+      from { transform: rotate(-3deg) scale(0.95); }
+      to   { transform: rotate(3deg)  scale(1.05); }
+    }
+
+    /* ======================================================
+       3. Questara 文字 glow
+    ====================================================== */
+    .title-glow {
+      animation: glow 3s ease-in-out infinite alternate;
+    }
+    @keyframes glow {
+      from {
+        text-shadow:
+          0 0  6px rgba(212,175,55,0.4),
+          0 0 12px rgba(212,175,55,0.3),
+          0 0 24px rgba(212,175,55,0.1);
+      }
+      to {
+        text-shadow:
+          0 0 10px rgba(212,175,55,0.9),
+          0 0 22px rgba(212,175,55,0.7),
+          0 0 40px rgba(212,175,55,0.35),
+          0 0 60px rgba(180,80,80,0.15);
+      }
+    }
+
+    /* ======================================================
+       4. タグラインのタイプライター
+    ====================================================== */
+    .typewriter {
+      display: inline-block;
+      overflow: hidden;
+      white-space: nowrap;
+      border-right: 2px solid var(--gold);
+      width: 0;
+      animation:
+        typing 2.5s steps(13, end) 0.5s forwards,
+        caret  0.8s step-end     infinite;
+    }
+    @keyframes typing {
+      from { width: 0; }
+      to   { width: 13ch; }
+    }
+    @keyframes caret {
+      0%, 100% { border-right-color: var(--gold); }
+      50%       { border-right-color: transparent; }
+    }
+
+    /* ======================================================
+       5. 足元スライム
+    ====================================================== */
+    .slime {
+      display: inline-block;
+      animation: slime-bounce 1.2s ease-in-out infinite;
+    }
+    @keyframes slime-bounce {
+      0%   { transform: translateY(0)   rotate(0deg); }
+      40%  { transform: translateY(-8px) rotate(-2deg); }
+      60%  { transform: translateY(-8px) rotate(2deg); }
+      100% { transform: translateY(0)   rotate(0deg); }
+    }
+
+    /* ======================================================
+       6. Scroll フェードイン
+    ====================================================== */
+    .reveal {
+      opacity: 0;
+      transform: translateY(24px);
+      transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+    }
+    .reveal.revealed {
+      opacity: 1;
+      transform: none;
+    }
+
+    /* ======================================================
+       7. CTA 魔法陣
+    ====================================================== */
+    .magic-circle-wrap {
+      position: relative;
+      display: inline-block;
+    }
+    .magic-circle {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 240px;
+      height: 240px;
+      transform: translate(-50%, -50%);
+      opacity: 0.15;
+      z-index: 0;
+      pointer-events: none;
+      animation: spin 30s linear infinite;
+    }
+    @keyframes spin {
+      from { transform: translate(-50%, -50%) rotate(0deg); }
+      to   { transform: translate(-50%, -50%) rotate(360deg); }
+    }
+    .magic-circle-wrap:hover .magic-circle {
+      opacity: 0.35;
+    }
+    .magic-circle-wrap .rpg-btn {
+      position: relative;
+      z-index: 2;
+    }
+
+    /* ======================================================
+       8. prefers-reduced-motion
+    ====================================================== */
+    @media (prefers-reduced-motion: reduce) {
+      .flame-flicker,
+      .title-glow,
+      .slime,
+      .typewriter,
+      .reveal,
+      .magic-circle {
+        animation: none !important;
+        transform: none !important;
+        transition: none !important;
+      }
+      .typewriter {
+        width: auto !important;
+        border-right: none !important;
+      }
+      .reveal {
+        opacity: 1 !important;
+      }
+      .hero-fog {
+        animation: none !important;
+      }
+    }
+  </style>
 </head>
 <body>
   <nav class="hud">
@@ -28,37 +189,82 @@
     <% } %>
 
     <!-- Hero -->
-    <section class="rpg-window is-open" style="text-align:center; padding: 40px 24px; margin-bottom: 32px;">
-      <h1 class="rpg-title" style="font-size: 36px; margin-bottom: 4px; letter-spacing: 0.08em;">⚔ Questara ⚔</h1>
-      <p style="font-family: var(--font-body); color: var(--gold); font-size: 14px; margin: 0 0 20px; letter-spacing: 0.2em;">— クエスターラ —</p>
-      <p style="font-family: var(--font-display); color: var(--gold); font-size: 20px; margin: 0 0 4px;">資格という名のダンジョンへ。</p>
-      <p style="font-family: var(--font-body); color: #8a90aa; font-size: 11px; margin: 0 0 24px; letter-spacing: 0.1em; font-style: italic;">Your certification quest begins.</p>
-      <p style="font-family: var(--font-body); color: #c0c6e0; font-size: 13px; line-height: 1.8; margin: 0 0 32px; max-width: 560px; margin-left:auto; margin-right:auto;">
-        Microsoft / GitHub 認定資格の学習を、<br>
-        みんなで冒険として楽しめる学習エージェント。
-      </p>
-      <% if (userEmail) { %>
-        <a href="/adventure" class="rpg-btn is-gold" style="display:inline-block; font-size: 14px; padding: 12px 28px;">▶ 冒険を再開する</a>
-      <% } else { %>
-        <a href="/auth/github" class="rpg-btn is-gold" style="display:inline-flex; align-items:center; gap:10px; font-size: 14px; padding: 12px 28px;">
-          <svg style="width:18px; height:18px;" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/></svg>
-          GitHubでログインして始める
-        </a>
-      <% } %>
+    <section class="rpg-window is-open reveal" style="text-align:center; padding: 40px 24px; margin-bottom: 32px; position:relative; overflow:hidden;">
+      <!-- 1. 背景の霧 -->
+      <div class="hero-fog"></div>
+      <!-- コンテンツ（z-index:1 で霧の上） -->
+      <div style="position:relative; z-index:1;">
+        <!-- 2. タイトル ⚔ glow + flicker -->
+        <h1 class="rpg-title title-glow" style="font-size: 36px; margin-bottom: 4px; letter-spacing: 0.08em;">
+          <span class="flame-flicker">⚔</span> Questara <span class="flame-flicker">⚔</span>
+        </h1>
+        <p style="font-family: var(--font-body); color: var(--gold); font-size: 14px; margin: 0 0 20px; letter-spacing: 0.2em;">— クエスターラ —</p>
+        <!-- 4. タイプライター（HTML に完全テキストを保持） -->
+        <p style="font-family: var(--font-display); color: var(--gold); font-size: 20px; margin: 0 0 4px;">
+          <span class="typewriter">資格という名のダンジョンへ。</span>
+        </p>
+        <p style="font-family: var(--font-body); color: #8a90aa; font-size: 11px; margin: 0 0 24px; letter-spacing: 0.1em; font-style: italic;">Your certification quest begins.</p>
+        <p style="font-family: var(--font-body); color: #c0c6e0; font-size: 13px; line-height: 1.8; margin: 0 0 32px; max-width: 560px; margin-left:auto; margin-right:auto;">
+          Microsoft / GitHub 認定資格の学習を、<br>
+          みんなで冒険として楽しめる学習エージェント。
+        </p>
+        <!-- 7. Hero CTA 魔法陣 -->
+        <div class="magic-circle-wrap">
+          <!-- 魔法陣 SVG (円 + 六芒星) -->
+          <svg class="magic-circle" viewBox="0 0 240 240" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <circle cx="120" cy="120" r="115" stroke="var(--gold)" stroke-width="1.2" stroke-dasharray="6 4"/>
+            <circle cx="120" cy="120" r="90"  stroke="var(--gold)" stroke-width="0.8" stroke-dasharray="3 5"/>
+            <circle cx="120" cy="120" r="60"  stroke="var(--gold)" stroke-width="0.6"/>
+            <!-- 六芒星 (2つの三角形) -->
+            <polygon points="120,14 210,167 30,167"   stroke="var(--gold)" stroke-width="1" fill="none"/>
+            <polygon points="120,226 30,73  210,73"   stroke="var(--gold)" stroke-width="1" fill="none"/>
+            <!-- 中心点 -->
+            <circle cx="120" cy="120" r="4" fill="var(--gold)" opacity="0.6"/>
+          </svg>
+          <!-- CTA ボタン -->
+          <% if (userEmail) { %>
+            <a href="/adventure" class="rpg-btn is-gold" style="display:inline-block; font-size: 14px; padding: 12px 28px;">▶ 冒険を再開する</a>
+          <% } else { %>
+            <a href="/auth/github" class="rpg-btn is-gold" style="display:inline-flex; align-items:center; gap:10px; font-size: 14px; padding: 12px 28px;">
+              <svg style="width:18px; height:18px;" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/></svg>
+              GitHubでログインして始める
+            </a>
+          <% } %>
+        </div>
+        <!-- 5. 足元スライム -->
+        <div style="margin-top: 24px;">
+          <span class="slime" aria-hidden="true">
+            <svg width="48" height="52" viewBox="0 0 48 52" xmlns="http://www.w3.org/2000/svg">
+              <!-- 水滴形ボディ -->
+              <path d="M24 4 C10 4 6 16 6 26 C6 38 14 48 24 48 C34 48 42 38 42 26 C42 16 38 4 24 4 Z" fill="#6ac47f" opacity="0.9"/>
+              <!-- 光沢 -->
+              <ellipse cx="17" cy="16" rx="5" ry="3" fill="white" opacity="0.35" transform="rotate(-20,17,16)"/>
+              <!-- 目 (左) -->
+              <circle cx="18" cy="26" r="3" fill="#1a2a1a"/>
+              <circle cx="19" cy="25" r="1" fill="white" opacity="0.7"/>
+              <!-- 目 (右) -->
+              <circle cx="30" cy="26" r="3" fill="#1a2a1a"/>
+              <circle cx="31" cy="25" r="1" fill="white" opacity="0.7"/>
+              <!-- 笑顔 -->
+              <path d="M18 33 Q24 39 30 33" stroke="#1a2a1a" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+            </svg>
+          </span>
+        </div>
+      </div>
     </section>
 
     <!-- Why -->
     <h2 class="rpg-title" style="font-size: 18px; margin-bottom: 16px;">✧ このサービスの思い</h2>
     <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin-bottom: 16px;">
-      <div class="rpg-window">
+      <div class="rpg-window reveal">
         <h3 class="rpg-title" style="font-size: 14px; margin-bottom: 8px;">🗡 冒険として学ぶ</h3>
         <p style="font-family: var(--font-body); color: #c0c6e0; font-size: 12px; line-height: 1.7; margin: 0;">ドメインを攻略する冒険として資格学習を楽しむ。単なる暗記ではなく、戦略的に合格ラインを目指す。</p>
       </div>
-      <div class="rpg-window">
+      <div class="rpg-window reveal">
         <h3 class="rpg-title" style="font-size: 14px; margin-bottom: 8px;">✨ AIで無限に問題生成</h3>
         <p style="font-family: var(--font-body); color: #c0c6e0; font-size: 12px; line-height: 1.7; margin: 0;">Microsoft Learn の学習ガイドを元に AI が実務的な4択問題を生成。飽きずに何度でも挑める。</p>
       </div>
-      <div class="rpg-window">
+      <div class="rpg-window reveal">
         <h3 class="rpg-title" style="font-size: 14px; margin-bottom: 8px;">📊 弱点を自動ドリル</h3>
         <p style="font-family: var(--font-body); color: #c0c6e0; font-size: 12px; line-height: 1.7; margin: 0;">正答率 70% 未満のドメインをワンクリックで再練習。苦手を可視化して潰す。</p>
       </div>
@@ -68,15 +274,15 @@
     <!-- 3ステップで始める -->
     <h2 class="rpg-title" style="font-size: 18px; margin-bottom: 16px;">✧ 3ステップで始める</h2>
     <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin-bottom: 32px;">
-      <div class="rpg-window">
+      <div class="rpg-window reveal">
         <h3 class="rpg-title" style="font-size: 14px; margin-bottom: 8px;">🔑 1. GitHubでログイン</h3>
         <p style="font-family: var(--font-body); color: #c0c6e0; font-size: 12px; line-height: 1.7; margin: 0;">認証と問題生成 API の設定を自動で済ませます。</p>
       </div>
-      <div class="rpg-window">
+      <div class="rpg-window reveal">
         <h3 class="rpg-title" style="font-size: 14px; margin-bottom: 8px;">📚 2. 資格を選ぶ</h3>
         <p style="font-family: var(--font-body); color: #c0c6e0; font-size: 12px; line-height: 1.7; margin: 0;">GH-100・AI-102 など公開資格から選択、または独自資格を追加。</p>
       </div>
-      <div class="rpg-window">
+      <div class="rpg-window reveal">
         <h3 class="rpg-title" style="font-size: 14px; margin-bottom: 8px;">⚔ 3. 冒険スタート</h3>
         <p style="font-family: var(--font-body); color: #c0c6e0; font-size: 12px; line-height: 1.7; margin: 0;">各ドメインを攻略し、弱点を潰して合格ラインへ。</p>
       </div>
@@ -84,7 +290,7 @@
 
     <!-- 仕組み（透明性） -->
     <h2 class="rpg-title" style="font-size: 18px; margin-bottom: 16px;">✧ 仕組みと API 利用について</h2>
-    <div class="rpg-window" style="margin-bottom: 32px;">
+    <div class="rpg-window reveal" style="margin-bottom: 32px;">
       <p style="font-family: var(--font-body); color: #c0c6e0; font-size: 13px; line-height: 1.8; margin: 0 0 12px;">
         本サービスは問題生成に <strong style="color: var(--gold);">GitHub Models API</strong>(既定モデル: <code>gpt-4o-mini</code>)を使います。
         GitHub アカウントでログインするとご自身のアクセストークンが API 呼び出しに使われ、
@@ -100,16 +306,52 @@
     </div>
 
     <!-- CTA 再掲 -->
-    <section class="rpg-window is-open" style="text-align:center; padding: 32px 24px; margin-bottom: 32px;">
+    <section class="rpg-window is-open reveal" style="text-align:center; padding: 32px 24px; margin-bottom: 32px;">
       <h2 class="rpg-title" style="font-size: 20px; margin-bottom: 16px;">さあ、学びの冒険へ</h2>
-      <% if (userEmail) { %>
-        <a href="/adventure" class="rpg-btn is-gold" style="display:inline-block; font-size: 14px; padding: 12px 28px;">▶ 冒険を再開する</a>
-      <% } else { %>
-        <a href="/auth/github" class="rpg-btn is-gold" style="display:inline-block; font-size: 14px; padding: 12px 28px;">⚔ GitHubでログインして始める</a>
-      <% } %>
+      <!-- 7. 末尾 CTA 魔法陣 -->
+      <div class="magic-circle-wrap">
+        <svg class="magic-circle" viewBox="0 0 240 240" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <circle cx="120" cy="120" r="115" stroke="var(--gold)" stroke-width="1.2" stroke-dasharray="6 4"/>
+          <circle cx="120" cy="120" r="90"  stroke="var(--gold)" stroke-width="0.8" stroke-dasharray="3 5"/>
+          <circle cx="120" cy="120" r="60"  stroke="var(--gold)" stroke-width="0.6"/>
+          <polygon points="120,14 210,167 30,167"   stroke="var(--gold)" stroke-width="1" fill="none"/>
+          <polygon points="120,226 30,73  210,73"   stroke="var(--gold)" stroke-width="1" fill="none"/>
+          <circle cx="120" cy="120" r="4" fill="var(--gold)" opacity="0.6"/>
+        </svg>
+        <% if (userEmail) { %>
+          <a href="/adventure" class="rpg-btn is-gold" style="display:inline-block; font-size: 14px; padding: 12px 28px;">▶ 冒険を再開する</a>
+        <% } else { %>
+          <a href="/auth/github" class="rpg-btn is-gold" style="display:inline-block; font-size: 14px; padding: 12px 28px;">⚔ GitHubでログインして始める</a>
+        <% } %>
+      </div>
       <p style="font-family: var(--font-body); color: #8a90aa; font-size: 11px; margin: 16px 0 0;">※ ログインと問題生成で GitHub Models API の rate limit を消費します</p>
     </section>
 
   </main>
+
+  <!-- 6. Scroll フェードイン: IntersectionObserver -->
+  <script>
+    (function () {
+      if (!('IntersectionObserver' in window)) {
+        // フォールバック: アニメーション非対応ブラウザは全表示
+        document.querySelectorAll('.reveal').forEach(function (el) {
+          el.classList.add('revealed');
+        });
+        return;
+      }
+      var observer = new IntersectionObserver(function (entries) {
+        entries.forEach(function (entry) {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('revealed');
+            observer.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.1 });
+
+      document.querySelectorAll('.reveal').forEach(function (el) {
+        observer.observe(el);
+      });
+    })();
+  </script>
 </body>
 </html>
