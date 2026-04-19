@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %></title>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DotGothic16&family=M+PLUS+1+Code:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/theme.css">
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body>
+  <%- include('partials/hud', { userEmail: typeof userEmail !== 'undefined' ? userEmail : null, heroHud: typeof heroHud !== 'undefined' ? heroHud : null, combo: null }) %>
+
+  <main class="main">
+    <h1 class="rpg-title" style="font-size: 26px; margin-bottom: 16px;">🧙 勇者ステータス</h1>
+
+    <% const xpInto = stats.xpIntoLevel || 0;
+       const xpFor = stats.xpForLevel || 100;
+       const xpPct = Math.min(100, Math.round((xpInto / xpFor) * 100));
+       const streak = (stats.streak && stats.streak.current) || 0;
+       const longest = (stats.streak && stats.streak.longest) || 0;
+       const freeze = !!(stats.streak && stats.streak.freeze);
+    %>
+
+    <section class="rpg-window" style="display: grid; grid-template-columns: auto 1fr; gap: 20px; align-items: center;">
+      <% if (profileUser.avatarUrl) { %>
+        <img src="<%= profileUser.avatarUrl %>" alt="avatar"
+             style="width: 96px; height: 96px; image-rendering: pixelated; border: 3px solid var(--gold); box-shadow: 3px 3px 0 var(--shadow);">
+      <% } else { %>
+        <div style="width:96px;height:96px;display:grid;place-items:center;font-size:56px;background:#000;border:3px solid var(--gold);">🧙</div>
+      <% } %>
+
+      <div style="display: flex; flex-direction: column; gap: 6px; font-family: var(--font-display);">
+        <div style="font-size: 22px; color: var(--gold); text-shadow: 2px 2px 0 var(--shadow);"><%= profileUser.name %></div>
+        <div style="font-size: 14px;">Lv.<span style="color: var(--gold);"><%= stats.level || 1 %></span> &nbsp; 総EXP <span style="color: var(--gold);"><%= stats.xp || 0 %></span></div>
+
+        <div style="display: flex; align-items: center; gap: 10px; font-size: 12px;">
+          <span style="color: var(--ink);">次のLvまで</span>
+          <span class="xp-bar" style="width: 220px;"><i style="width: <%= xpPct %>%"></i></span>
+          <span style="color: var(--gold);"><%= xpInto %>/<%= xpFor %></span>
+          <span style="color: #c0c6e0; font-family: var(--font-body);">（残り <%= Math.max(0, xpFor - xpInto) %>）</span>
+        </div>
+
+        <div style="font-size: 13px; margin-top: 4px;">
+          <span style="color: var(--crimson);">🔥 連続 <%= streak %>日</span>
+          <span style="color: #c0c6e0; margin-left: 14px;">最長 <%= longest %>日</span>
+          <% if (freeze) { %><span style="color: #6fb6ff; margin-left: 14px;">🧚 妖精の加護あり</span><% } %>
+        </div>
+      </div>
+    </section>
+
+    <% if (stats.dailyQuest && stats.dailyQuest.date) { %>
+    <section class="rpg-window" style="margin-top: 18px;">
+      <h2 class="rpg-title" style="font-size: 16px;">📜 本日のクエスト</h2>
+      <% const completed = new Set(stats.dailyQuest.completed || []); %>
+      <ul style="list-style: none; padding: 0; margin: 10px 0 0; display: flex; flex-direction: column; gap: 6px; font-family: var(--font-display); font-size: 12px;">
+        <% for (const q of [
+          ['daily-session',   '1セッション完了',        30],
+          ['daily-5q',        '今日5問解く',            50],
+          ['daily-domain-80', '1ドメインで正答率80%以上', 80],
+        ]) { const id=q[0], name=q[1], xp=q[2]; const ok = completed.has(id); %>
+          <li style="display:flex;justify-content:space-between;padding:6px 10px;background:#0008;border-left:4px solid <%= ok ? 'var(--fern)' : 'var(--gold)' %>;<%= ok ? 'opacity:.7;text-decoration:line-through;' : '' %>">
+            <span><%= name %></span>
+            <span style="color: <%= ok ? 'var(--fern)' : 'var(--gold)' %>;">+<%= xp %> EXP</span>
+          </li>
+        <% } %>
+      </ul>
+    </section>
+    <% } %>
+
+    <h2 class="rpg-title" style="font-size: 18px; margin: 24px 0 10px;">🏅 実績 (<%= unlocked.size %>/<%= achievementsMaster.length %>)</h2>
+    <section class="rpg-window">
+      <div class="ach-grid">
+        <% for (const a of achievementsMaster) { const ok = unlocked.has(a.id); %>
+          <div class="ach-cell <%= ok ? '' : 'is-locked' %>" title="<%= a.description %>">
+            <div class="icon"><%= a.icon %></div>
+            <div class="name"><%= a.name %></div>
+            <div class="desc"><%= a.description %></div>
+            <div style="margin-top:6px;font-size:10px;color: <%= ok ? 'var(--fern)' : '#888' %>;">
+              <%= ok ? '解放済み' : `+${a.xpReward} EXP` %>
+            </div>
+          </div>
+        <% } %>
+      </div>
+    </section>
+
+  </main>
+</body>
+</html>

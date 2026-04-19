@@ -4,51 +4,45 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title><%= title %></title>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DotGothic16&family=M+PLUS+1+Code:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/theme.css">
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-gray-50 min-h-screen">
-  <nav class="bg-gray-900 text-white px-6 py-3 flex items-center justify-between">
-    <a href="/" class="text-lg font-bold tracking-tight">📚 資格学習エージェント</a>
-    <div class="flex items-center gap-4 text-sm">
-      <span class="text-gray-400"><%= userEmail %></span>
-      <form method="POST" action="/auth/logout" class="inline">
-        <button type="submit" class="text-gray-400 hover:text-white transition">ログアウト</button>
-      </form>
-    </div>
-  </nav>
-  <main class="max-w-4xl mx-auto px-4 py-8">
+<body>
+  <%- include('partials/hud', { userEmail: typeof userEmail !== 'undefined' ? userEmail : null, heroHud: typeof heroHud !== 'undefined' ? heroHud : null, combo: null }) %>
+  <main class="main">
 
-    <div class="flex items-center justify-between mb-6">
-      <h1 class="text-2xl font-bold">学習する資格を選んでください</h1>
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:24px;">
+      <h1 class="rpg-title" style="font-size: 24px;">学習する資格を選んでください</h1>
     </div>
 
-    <nav class="flex gap-4 mb-6 text-sm">
-      <a href="/my/certifications" class="text-blue-600 hover:underline">マイ資格</a>
-      <a href="/ranking" class="text-blue-600 hover:underline">ランキング</a>
-      <a href="/plans" class="text-blue-600 hover:underline">学習計画</a>
-    </nav>
+    <div style="display:flex; gap:12px; margin-bottom:24px; flex-wrap:wrap;">
+      <a href="/my/certifications" class="rpg-btn">マイ資格</a>
+      <a href="/ranking" class="rpg-btn">ランキング</a>
+      <a href="/plans" class="rpg-btn">学習計画</a>
+    </div>
 
-    <div class="mb-4 border-b">
+    <div style="display:flex; gap:4px; margin-bottom:16px; border-bottom:2px solid var(--window-lt);">
       <button onclick="showTab('public')" id="tab-public"
-              class="px-4 py-2 border-b-2 border-blue-600 font-semibold text-sm">
+              style="padding:8px 16px; background:transparent; border:none; border-bottom:3px solid var(--gold); font-family: var(--font-display); color: var(--ink); cursor:pointer;">
         公開資格 (<%= publicCerts.length %>)
       </button>
       <button onclick="showTab('mine')" id="tab-mine"
-              class="px-4 py-2 border-b-2 border-transparent text-gray-500 text-sm">
+              style="padding:8px 16px; background:transparent; border:none; border-bottom:3px solid transparent; font-family: var(--font-display); color:#c0c6e0; cursor:pointer;">
         自分の非公開資格 (<%= myCerts.length %>)
       </button>
     </div>
 
     <div id="panel-public">
       <% if (publicCerts.length === 0) { %>
-        <p class="text-gray-500">公開資格がありません。</p>
+        <p style="color:#c0c6e0; font-family: var(--font-body);">公開資格がありません。</p>
       <% } else { %>
-        <div class="space-y-3">
+        <div style="display:flex; flex-direction:column; gap:12px;">
           <% for (const cert of publicCerts) { %>
-            <a href="/certifications/<%= cert.id %>"
-               class="block bg-white rounded-xl border border-gray-200 p-4 hover:shadow-md transition-shadow">
-              <h2 class="text-xl font-semibold text-gray-800"><%= cert.name %></h2>
-              <p class="text-sm text-gray-500 mt-1">
+            <a href="/certifications/<%= cert.id %>" class="rpg-window" style="display:block; text-decoration:none;">
+              <h2 class="rpg-title" style="font-size: 16px;"><%= cert.name %></h2>
+              <p style="color:#c0c6e0; font-family: var(--font-body); margin-top:4px; font-size: 13px;">
                 <%= cert.domainCount %> ドメイン &nbsp;·&nbsp; <%= cert.questionCount %> 問
                 <% if (cert.createdBy !== 'system') { %>
                   &nbsp;·&nbsp; 作成者: <%= cert.creatorName %>
@@ -62,17 +56,16 @@
 
     <div id="panel-mine" class="hidden">
       <% if (myCerts.length === 0) { %>
-        <p class="text-gray-500">
+        <p style="color:#c0c6e0; font-family: var(--font-body);">
           非公開資格はありません。
-          <a href="/my/certifications/new" class="text-blue-600 hover:underline">新規作成</a>
+          <a href="/my/certifications/new" style="color: var(--gold);">新規作成</a>
         </p>
       <% } else { %>
-        <div class="space-y-3">
+        <div style="display:flex; flex-direction:column; gap:12px;">
           <% for (const cert of myCerts) { %>
-            <a href="/certifications/<%= cert.id %>"
-               class="block bg-white rounded-xl border border-gray-200 p-4 hover:shadow-md transition-shadow">
-              <h2 class="text-xl font-semibold text-gray-800"><%= cert.name %></h2>
-              <p class="text-sm text-gray-500 mt-1">
+            <a href="/certifications/<%= cert.id %>" class="rpg-window" style="display:block; text-decoration:none;">
+              <h2 class="rpg-title" style="font-size: 16px;"><%= cert.name %></h2>
+              <p style="color:#c0c6e0; font-family: var(--font-body); margin-top:4px; font-size: 13px;">
                 <%= cert.domainCount %> ドメイン &nbsp;·&nbsp; <%= cert.questionCount %> 問 &nbsp;·&nbsp; 非公開
               </p>
             </a>
@@ -87,12 +80,12 @@
           const btn = document.getElementById('tab-' + t);
           const panel = document.getElementById('panel-' + t);
           if (t === key) {
-            btn.classList.add('border-blue-600', 'font-semibold');
-            btn.classList.remove('border-transparent', 'text-gray-500');
+            btn.style.borderBottomColor = 'var(--gold)';
+            btn.style.color = 'var(--ink)';
             panel.classList.remove('hidden');
           } else {
-            btn.classList.remove('border-blue-600', 'font-semibold');
-            btn.classList.add('border-transparent', 'text-gray-500');
+            btn.style.borderBottomColor = 'transparent';
+            btn.style.color = '#c0c6e0';
             panel.classList.add('hidden');
           }
         }

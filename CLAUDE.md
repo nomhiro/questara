@@ -30,11 +30,19 @@ Node.js + Express + EJS による SSR。`@github/copilot-sdk` を使ってドメ
 ## 開発コマンド
 
 ```bash
-npm run dev    # node --watch app.js でホットリロード起動 (http://localhost:3000)
-npm start      # 本番起動
+npm run dev                           # node --watch app.js でホットリロード起動 (http://localhost:3000)
+npm start                             # 本番起動
+npm test                              # vitest で全テストを run
+npm run test:watch                    # vitest watch
+npm test -- spec-coverage             # 網羅性ハーネスだけ実行
 ```
 
-テストは存在しない。動作確認はブラウザまたは `Invoke-WebRequest` で行う。
+## テスト方針（仕様駆動開発）
+
+- **テストは仕様（`docs/superpowers/specs/*.md`）の実行可能なスナップショット**。仕様を変えたら必ず既存テストを先に更新し、赤→緑の順で実装を追随させる。
+- **網羅性ハーネス**: `tests/_harness/spec-coverage.test.mjs` が `services/` `routes/` `middleware/` の全ファイルにテストがあるかを自動検証。新規ファイル追加時、対応テストが無いと red になる。
+- 例外は `ALLOWED_UNTESTED` マップに **理由付き** で登録する（外部 IO ラッパーなど）。
+- 詳細は `docs/TESTING.md` を参照。
 
 ## アーキテクチャ
 

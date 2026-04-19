@@ -4,65 +4,58 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title><%= title %></title>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DotGothic16&family=M+PLUS+1+Code:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/theme.css">
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-gray-50 min-h-screen">
-  <nav class="bg-gray-900 text-white px-6 py-3 flex items-center justify-between">
-    <div class="flex items-center gap-4">
-      <a href="/" class="text-lg font-bold">📚 資格学習エージェント</a>
-      <span class="text-gray-400">/</span>
-      <span class="text-sm">ランキング</span>
-    </div>
-    <div class="flex items-center gap-4 text-sm">
-      <span class="text-gray-400"><%= userEmail %></span>
-      <form method="POST" action="/auth/logout" class="inline">
-        <button class="text-gray-400 hover:text-white">ログアウト</button>
+<body>
+  <%- include('partials/hud', { userEmail: typeof userEmail !== 'undefined' ? userEmail : null, heroHud: typeof heroHud !== 'undefined' ? heroHud : null, combo: null }) %>
+  <main class="main">
+    <h1 class="rpg-title" style="font-size: 24px; margin-bottom: 24px;">🏆 ランキング</h1>
+
+    <div class="rpg-window" style="margin-bottom: 24px;">
+      <form method="GET" style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
+        <select name="period" style="background:#000; color: var(--ink); border:2px solid var(--ink); padding:6px 10px; font-family: var(--font-body); border-radius:0;">
+          <option value="weekly" <%= period === 'weekly' ? 'selected' : '' %>>週次</option>
+          <option value="monthly" <%= period === 'monthly' ? 'selected' : '' %>>月次</option>
+        </select>
+        <select name="certId" style="background:#000; color: var(--ink); border:2px solid var(--ink); padding:6px 10px; font-family: var(--font-body); border-radius:0;">
+          <option value="">全資格</option>
+          <% for (const c of allCerts) { %>
+            <option value="<%= c.id %>" <%= c.id === certId ? 'selected' : '' %>><%= c.name %></option>
+          <% } %>
+        </select>
+        <button class="rpg-btn is-gold">表示</button>
       </form>
     </div>
-  </nav>
-  <main class="max-w-3xl mx-auto px-4 py-8">
-    <h1 class="text-2xl font-bold mb-6">🏆 ランキング</h1>
-
-    <form method="GET" class="flex gap-3 mb-6 text-sm items-center flex-wrap">
-      <select name="period" class="border border-gray-300 rounded px-2 py-1">
-        <option value="weekly" <%= period === 'weekly' ? 'selected' : '' %>>週次</option>
-        <option value="monthly" <%= period === 'monthly' ? 'selected' : '' %>>月次</option>
-      </select>
-      <select name="certId" class="border border-gray-300 rounded px-2 py-1">
-        <option value="">全資格</option>
-        <% for (const c of allCerts) { %>
-          <option value="<%= c.id %>" <%= c.id === certId ? 'selected' : '' %>><%= c.name %></option>
-        <% } %>
-      </select>
-      <button class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded">表示</button>
-    </form>
 
     <% if (ranking.length === 0) { %>
-      <div class="bg-white border border-gray-200 rounded-xl p-8 text-center">
-        <p class="text-gray-500">まだランキングを表示できるデータがありません（最低10問の回答が必要）。</p>
+      <div class="rpg-window" style="text-align:center;">
+        <p style="color:#c0c6e0; font-family: var(--font-body);">まだランキングを表示できるデータがありません（最低10問の回答が必要）。</p>
       </div>
     <% } else { %>
-      <div class="bg-white border border-gray-200 rounded-xl overflow-hidden">
-        <table class="w-full">
-          <thead class="bg-gray-50 text-sm text-gray-600">
+      <div class="rpg-window">
+        <table style="width:100%; border-collapse: collapse; color: var(--ink); font-family: var(--font-body);">
+          <thead>
             <tr>
-              <th class="px-3 py-2 text-left">順位</th>
-              <th class="px-3 py-2 text-left">ユーザー</th>
-              <th class="px-3 py-2 text-left">資格</th>
-              <th class="px-3 py-2 text-right">正答率</th>
-              <th class="px-3 py-2 text-right">回答数</th>
+              <th style="padding:8px 12px; text-align:left; font-family: var(--font-display); color: var(--gold);">順位</th>
+              <th style="padding:8px 12px; text-align:left; font-family: var(--font-display); color: var(--gold);">ユーザー</th>
+              <th style="padding:8px 12px; text-align:left; font-family: var(--font-display); color: var(--gold);">資格</th>
+              <th style="padding:8px 12px; text-align:right; font-family: var(--font-display); color: var(--gold);">正答率</th>
+              <th style="padding:8px 12px; text-align:right; font-family: var(--font-display); color: var(--gold);">回答数</th>
             </tr>
           </thead>
           <tbody>
             <% ranking.forEach((r, i) => { %>
-              <tr class="border-t border-gray-100 text-sm">
-                <td class="px-3 py-2 font-bold text-gray-700"><%= i + 1 %></td>
-                <td class="px-3 py-2"><%= r.user && (r.user.displayName || r.user.username) || 'unknown' %></td>
-                <td class="px-3 py-2 text-gray-500"><%= r.certificationId %></td>
-                <td class="px-3 py-2 text-right font-semibold <%= r.rate >= 70 ? 'text-green-600' : 'text-red-500' %>">
+              <tr style="border-top: 2px solid var(--window-lt);">
+                <td style="padding:8px 12px; font-weight:bold;"><%= i + 1 %></td>
+                <td style="padding:8px 12px;"><%= r.user && (r.user.displayName || r.user.username) || 'unknown' %></td>
+                <td style="padding:8px 12px; color:#c0c6e0;"><%= r.certificationId %></td>
+                <td style="padding:8px 12px; text-align:right; font-weight:bold; color: <%= r.rate >= 70 ? 'var(--fern)' : 'var(--crimson)' %>;">
                   <%= r.rate %>%
                 </td>
-                <td class="px-3 py-2 text-right text-gray-500"><%= r.correct %>/<%= r.total %></td>
+                <td style="padding:8px 12px; text-align:right; color:#c0c6e0;"><%= r.correct %>/<%= r.total %></td>
               </tr>
             <% }) %>
           </tbody>

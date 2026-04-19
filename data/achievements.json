@@ -1,0 +1,12 @@
+[
+  { "id": "first-quest",     "name": "旅立ち",         "description": "初セッション完了",                         "icon": "🗡", "category": "milestone", "condition": { "type": "session-count", "value": 1 },  "xpReward": 50 },
+  { "id": "streak-3",        "name": "三日修行",       "description": "3日連続学習",                              "icon": "🔥", "category": "streak",    "condition": { "type": "streak-reach",  "value": 3 },  "xpReward": 100 },
+  { "id": "streak-7",        "name": "七日修行",       "description": "7日連続学習",                              "icon": "⚔️", "category": "streak",    "condition": { "type": "streak-reach",  "value": 7 },  "xpReward": 300 },
+  { "id": "streak-30",       "name": "三十日修行",     "description": "30日連続学習",                             "icon": "🛡", "category": "streak",    "condition": { "type": "streak-reach",  "value": 30 }, "xpReward": 1000 },
+  { "id": "level-5",         "name": "見習い卒業",     "description": "Lv.5 到達",                                "icon": "🎖", "category": "level",     "condition": { "type": "level-reach",   "value": 5 },  "xpReward": 200 },
+  { "id": "level-10",        "name": "一人前",         "description": "Lv.10 到達",                               "icon": "🏅", "category": "level",     "condition": { "type": "level-reach",   "value": 10 }, "xpReward": 500 },
+  { "id": "mastery-first-b", "name": "初段昇格",       "description": "任意ドメインで B 達成",                    "icon": "🥉", "category": "mastery",   "condition": { "type": "rank-reach",    "value": "B" }, "xpReward": 100 },
+  { "id": "mastery-first-s", "name": "達人への扉",     "description": "任意ドメインで S 達成",                    "icon": "🥇", "category": "mastery",   "condition": { "type": "rank-reach",    "value": "S" }, "xpReward": 500 },
+  { "id": "combo-10",        "name": "連撃の極意",     "description": "コンボ 10 達成",                           "icon": "💥", "category": "combo",     "condition": { "type": "combo-reach",   "value": 10 }, "xpReward": 200 },
+  { "id": "dungeon-cleared", "name": "ダンジョン踏破", "description": "1 資格の全ドメインを B 以上に",             "icon": "🏰", "category": "milestone", "condition": { "type": "dungeon-clear" },                  "xpReward": 1000 }
+]

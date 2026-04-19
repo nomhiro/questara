@@ -5,6 +5,8 @@ const router = express.Router();
 const questionService = require('../services/questionService');
 const progressService = require('../services/progressService');
 const { requireAuth } = require('../middleware/auth');
+const userService = require('../services/userService');
+const gamificationService = require('../services/gamificationService');
 
 router.post('/start', requireAuth, async (req, res) => {
   const { certId, mode, domainId } = req.body;
@@ -53,19 +55,32 @@ router.get('/:sessionId', requireAuth, async (req, res) => {
   const question = allQuestions.find((q) => q.id === questionIds[currentIdx]);
   if (!question) return res.redirect(`/quiz/${sessionId}/result?certId=${certId}`);
 
+  const user = await userService.getUserById(req.user.id);
+  const rawStats = user?.stats || {};
+  const xpBreak = gamificationService.xpBreakdown(rawStats.xp || 0);
+  const currentCombo = gamificationService.calcCombo(session);
+  const hudUserName = user?.displayName || user?.username || 'NoName';
+  const hudStats = { ...rawStats, ...xpBreak };
+
   res.render('quiz', {
     title: `問題 ${currentIdx + 1} / ${questionIds.length}`,
     session, question, currentIdx,
     total: questionIds.length,
     questionIds: questionIdsStr, certId, answered: null,
+    userName: hudUserName,
+    stats: hudStats,
+    currentCombo,
   });
 });
 
 router.post('/:sessionId/answer', requireAuth, async (req, res) => {
   const { sessionId } = req.params;
   const { questionId, domainId, selectedAnswer, isCorrect, questionIds, certId, currentIdx } = req.body;
+  const cert = await questionService.readCertification(certId);
+  const domain = cert?.domains?.find((d) => d.id === domainId);
   await progressService.recordAnswer({
     sessionId, userId: req.user.id, questionId, domainId, selectedAnswer,
+    domainWeight: domain?.weight || 0,
     isCorrect: isCorrect === 'true',
   });
   const nextIdx = parseInt(currentIdx, 10) + 1;
@@ -94,6 +109,7 @@ router.get('/:sessionId/result', requireAuth, async (req, res) => {
   res.render('result', {
     title: 'セッション結果', session, cert, overallRate, correct, total,
     domainsWithScores, weakDomains, certId,
+    gamification: session.gamification || null,
   });
 });
 

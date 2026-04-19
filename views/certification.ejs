@@ -4,102 +4,94 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title><%= title %></title>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DotGothic16&family=M+PLUS+1+Code:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/theme.css">
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-gray-50 min-h-screen">
-  <nav class="bg-gray-900 text-white px-6 py-3 flex items-center justify-between">
-    <div class="flex items-center gap-4">
-      <a href="/" class="text-lg font-bold tracking-tight">📚 資格学習エージェント</a>
-      <span class="text-gray-400">/</span>
-      <span class="text-sm"><%= cert.name %></span>
-    </div>
-    <div class="flex items-center gap-4 text-sm">
-      <span class="text-gray-400"><%= userEmail %></span>
-      <form method="POST" action="/auth/logout" class="inline">
-        <button type="submit" class="text-gray-400 hover:text-white transition">ログアウト</button>
-      </form>
-    </div>
-  </nav>
-  <main class="max-w-4xl mx-auto px-4 py-8">
+<body>
+  <% const s = hudStats || {}; const streak = (s.streak && s.streak.current) || 0;
+     const lv = s.level || 1;
+     const xpInto = s.xpIntoLevel || 0; const xpFor = s.xpForLevel || 100;
+     const xpPct = Math.min(100, Math.round((xpInto / xpFor) * 100));
+  %>
+  <%- include('partials/hud', { userEmail: typeof userEmail !== 'undefined' ? userEmail : null, heroHud: typeof heroHud !== 'undefined' ? heroHud : null, combo: null }) %>
 
-    <h1 class="text-2xl font-bold mb-2"><%= cert.name %></h1>
-    <p class="text-sm text-gray-500 mb-8"><%= totalQuestions %> 問 &nbsp;·&nbsp; <%= domains.length %> ドメイン</p>
+  <main class="main">
+    <h1 class="rpg-title" style="font-size: 26px;">🏰 <%= cert.name %></h1>
+    <p style="font-family: var(--font-display); color: var(--ink); margin: 6px 0 22px; opacity: .9;">
+      <span class="pill"><%= totalQuestions %> 問</span>
+      <span class="pill"><%= domains.length %> ドメイン</span>
+    </p>
 
-    <!-- クイズ開始ボタン -->
-    <div class="flex flex-wrap gap-3 mb-10">
-      <form method="POST" action="/quiz/start">
+    <!-- アクションボタン -->
+    <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 28px;">
+      <form method="POST" action="/quiz/start" style="margin:0;">
         <input type="hidden" name="certId" value="<%= cert.id %>">
         <input type="hidden" name="mode" value="all">
-        <button class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-2 rounded-lg transition-colors">
-          🎯 全問クイズを開始
-        </button>
+        <button class="rpg-btn is-gold">🎯 全問クイズを開始</button>
       </form>
       <% if (wrongCount > 0) { %>
-        <form method="POST" action="/quiz/start">
+        <form method="POST" action="/quiz/start" style="margin:0;">
           <input type="hidden" name="certId" value="<%= cert.id %>">
           <input type="hidden" name="mode" value="wrong-only">
-          <button class="bg-red-500 hover:bg-red-600 text-white font-semibold px-6 py-2 rounded-lg transition-colors">
-            ❌ 間違えた問題のみ (<%= wrongCount %> 問)
-          </button>
+          <button class="rpg-btn">❌ 間違えた問題のみ（<%= wrongCount %>問）</button>
         </form>
       <% } %>
     </div>
 
-    <!-- ドメイン別正答率 -->
-    <h2 class="text-xl font-bold mb-4">ドメイン別正答率</h2>
-    <div class="space-y-4">
-      <% for (const domain of domains) { %>
-        <div class="bg-white rounded-xl border border-gray-200 p-5">
-          <div class="flex items-center justify-between mb-3">
-            <div class="flex-1 min-w-0">
-              <h3 class="font-semibold text-gray-800 truncate"><%= domain.name %></h3>
-              <p class="text-xs text-gray-400 mt-0.5">
-                <%= domain.questionCount %> 問
-                &nbsp;·&nbsp; 試験ウェイト <%= domain.weight %>%
+    <h2 class="rpg-title" style="font-size: 18px; margin-bottom: 12px;">📊 ドメイン別進捗</h2>
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+      <% for (const domain of domains) {
+           const mr = masteryRanks[cert.id + ':' + domain.id] || { rank: '未挑戦' };
+           const rateColor = domain.stats.total > 0 ? (domain.stats.rate >= 70 ? 'var(--fern)' : 'var(--crimson)') : 'var(--ink)';
+      %>
+        <div class="rpg-window">
+          <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap;">
+            <div style="flex: 1; min-width: 200px;">
+              <div style="font-family: var(--font-display); color: var(--ink); font-size: 15px;"><%= domain.name %></div>
+              <div style="font-family: var(--font-body); font-size: 12px; color: #c0c6e0; margin-top: 4px;">
+                <%= domain.questionCount %> 問 &nbsp;·&nbsp; 試験ウェイト <%= domain.weight %>%
                 <% if (domain.generatedAt) { %>
                   &nbsp;·&nbsp; 最終生成: <%= new Date(domain.generatedAt).toLocaleDateString('ja-JP') %>
                 <% } %>
-              </p>
+              </div>
             </div>
-            <div class="ml-4 text-right flex-shrink-0">
+            <div style="text-align: right;">
+              <span class="rank-badge rank-<%= mr.rank === '未挑戦' ? 'D' : mr.rank %>" style="<%= mr.rank === '未挑戦' ? 'opacity:.45;' : '' %>">
+                <%= mr.rank %>
+              </span>
               <% if (domain.stats.total > 0) { %>
-                <span class="text-2xl font-bold <%= domain.stats.rate >= 70 ? 'text-green-600' : 'text-red-500' %>">
+                <div style="font-family: var(--font-display); color: <%= rateColor %>; font-size: 18px; margin-top: 6px; text-shadow: 2px 2px 0 var(--shadow);">
                   <%= domain.stats.rate %>%
-                </span>
-                <p class="text-xs text-gray-400"><%= domain.stats.correct %>/<%= domain.stats.total %> 問正解</p>
+                </div>
+                <div style="font-family: var(--font-body); font-size: 11px; color: #c0c6e0;">
+                  <%= domain.stats.correct %>/<%= domain.stats.total %> 正解
+                </div>
               <% } else { %>
-                <span class="text-gray-300 text-sm">未挑戦</span>
+                <div style="font-family: var(--font-display); color: #888; font-size: 12px; margin-top: 6px;">未挑戦</div>
               <% } %>
             </div>
           </div>
 
-          <!-- 正答率バー -->
           <% if (domain.stats.total > 0) { %>
-            <div class="w-full bg-gray-100 rounded-full h-2 mb-3">
-              <div class="h-2 rounded-full <%= domain.stats.rate >= 70 ? 'bg-green-500' : 'text-red-400 bg-red-400' %>"
-                   style="width: <%= domain.stats.rate %>%"></div>
+            <div style="height: 8px; background: #000; border: 2px solid var(--ink); margin: 12px 0 10px;">
+              <div style="height: 100%; background: repeating-linear-gradient(90deg, <%= domain.stats.rate >= 70 ? 'var(--fern)' : 'var(--crimson)' %> 0 6px, #000a 6px 8px); width: <%= domain.stats.rate %>%;"></div>
             </div>
           <% } %>
 
-          <!-- ドメイン操作ボタン -->
-          <div class="flex flex-wrap gap-2">
-            <form method="POST" action="/quiz/start">
+          <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px;">
+            <form method="POST" action="/quiz/start" style="margin:0;">
               <input type="hidden" name="certId" value="<%= cert.id %>">
               <input type="hidden" name="mode" value="domain">
               <input type="hidden" name="domainId" value="<%= domain.id %>">
-              <button class="text-xs bg-blue-50 hover:bg-blue-100 text-blue-700 px-3 py-1.5 rounded-lg transition-colors">
-                このドメインで練習
-              </button>
+              <button class="rpg-btn" style="font-size: 10px; padding: 5px 12px;">このドメインで挑戦</button>
             </form>
-            <a href="/certifications/<%= cert.id %>/domains/<%= domain.id %>"
-               class="text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1.5 rounded-lg transition-colors">
-              問題を管理・追加生成
-            </a>
+            <a href="/certifications/<%= cert.id %>/domains/<%= domain.id %>" class="rpg-btn is-gold" style="font-size: 10px; padding: 5px 12px;">問題を管理・生成</a>
           </div>
         </div>
       <% } %>
     </div>
-
   </main>
 </body>
 </html>

@@ -77,6 +77,17 @@ async function deleteCertification(certId) {
   await cosmosService.remove('certifications', certId, certId);
 }
 
+async function getCertDomainCounts() {
+  const certs = await cosmosService.query('certifications', { query: 'SELECT * FROM c' });
+  const map = {};
+  for (const c of certs) {
+    if (c?.id && Array.isArray(c.domains)) {
+      map[c.id] = c.domains.length;
+    }
+  }
+  return map;
+}
+
 module.exports = {
   readCertification,
   writeCertification,
@@ -87,4 +98,5 @@ module.exports = {
   getQuestionsByIds,
   appendDomainQuestions,
   deleteCertification,
+  getCertDomainCounts,
 };

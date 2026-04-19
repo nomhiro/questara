@@ -16,11 +16,11 @@ describe('views render without 500', () => {
     await truncateAll();
   });
 
-  test('views/index.ejs', async () => {
+  test('views/index.ejs（自由モード）', async () => {
     const user = await createTestUser();
     await createTestCertification({ id: 'v-index-1' });
     const agent = await authedAgent(user);
-    const res = await agent.get('/');
+    const res = await agent.get('/free-mode');
     expect(res.status).toBe(200);
   });
 

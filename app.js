@@ -30,7 +30,11 @@ function createApp() {
   const certificationsRouter = require('./routes/certifications');
   const rankingRouter = require('./routes/ranking');
   const plansRouter = require('./routes/plans');
+  const profileRouter = require('./routes/profile');
+  const adventuresRouter = require('./routes/adventures');
+  const apiAdventureRouter = require('./routes/api-adventure');
   const { authContext } = require('./middleware/auth');
+  const { heroHudMiddleware } = require('./middleware/hud');
 
   const app = express();
 
@@ -41,6 +45,7 @@ function createApp() {
   app.use(express.urlencoded({ extended: false }));
   app.use(cookieParser());
   app.use(authContext);
+  app.use(heroHudMiddleware);
   app.use(express.static(path.join(__dirname, 'public')));
 
   app.use('/auth', authRouter);
@@ -51,6 +56,9 @@ function createApp() {
   app.use('/my/certifications', certificationsRouter);
   app.use('/ranking', rankingRouter);
   app.use('/plans', plansRouter);
+  app.use('/my/profile', profileRouter);
+  app.use('/adventures', adventuresRouter);
+  app.use('/api/adventures', apiAdventureRouter);
 
   app.use((req, res) => {
     res.status(404).render('error', { title: '404 Not Found', message: 'ページが見つかりません' });
