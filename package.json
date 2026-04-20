@@ -12,7 +12,9 @@
     "test:watch": "vitest",
     "test:ui": "vitest --ui",
     "lint": "eslint .",
-    "lint:fix": "eslint . --fix"
+    "lint:fix": "eslint . --fix",
+    "deploy:infra": "azd provision",
+    "deploy": "node scripts/deploy.mjs"
   },
   "dependencies": {
     "@azure/cosmos": "^4.9.2",

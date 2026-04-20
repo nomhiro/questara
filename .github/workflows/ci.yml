@@ -4,6 +4,7 @@ on:
   push:
     branches: [main]
   pull_request:
+  workflow_call:
 
 jobs:
   lint-and-test:
@@ -12,17 +13,15 @@ jobs:
 
     services:
       cosmos:
+        # Cosmos DB Emulator vnext-preview には GitHub Actions service container の
+        # --health-cmd で使える安定した HTTP エンドポイントがないため、コンテナの
+        # healthcheck は指定せず、下の "Wait for Cosmos DB Emulator" ステップで
+        # 接続確立を待つ（Microsoft Learn 公式サンプルに準拠）。
         image: mcr.microsoft.com/cosmosdb/linux/azure-cosmos-emulator:vnext-preview
         ports:
           - 8081:8081
         env:
           PROTOCOL: https
-        options: >-
-          --health-cmd="curl -fks https://localhost:8081/_explorer/emulator.pem || exit 1"
-          --health-interval=10s
-          --health-timeout=5s
-          --health-retries=30
-          --health-start-period=180s
 
     steps:
       - uses: actions/checkout@v4

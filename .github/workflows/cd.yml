@@ -1,0 +1,140 @@
+name: CD
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - 'infra/**'
+      - 'docs/**'
+      - '**.md'
+      - '.github/workflows/infra.yml'
+      - '.github/ISSUE_TEMPLATE/**'
+  workflow_dispatch:
+
+concurrency:
+  group: cd-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    # PR 時と同一の lint+test を再実行してからデプロイに進む
+    uses: ./.github/workflows/ci.yml
+
+  build-and-push:
+    needs: verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      image: ${{ steps.meta.outputs.tags }}
+      image-ref: ${{ steps.single.outputs.ref }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Derive image metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository }}
+          tags: |
+            type=sha,prefix=sha-,format=short
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Resolve single image ref for deploy
+        id: single
+        run: |
+          # `az containerapp update --image` に渡す 1 つのタグを決定
+          # metadata-action の出力は改行区切りなので、sha- タグを優先的に拾う
+          ref=$(echo "${{ steps.meta.outputs.tags }}" | grep -m1 ':sha-' || true)
+          if [ -z "$ref" ]; then
+            ref=$(echo "${{ steps.meta.outputs.tags }}" | head -n1)
+          fi
+          echo "ref=$ref" >> "$GITHUB_OUTPUT"
+          echo "deploying: $ref"
+
+  deploy:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      id-token: write
+      contents: read
+    env:
+      RESOURCE_GROUP: ${{ vars.AZURE_RESOURCE_GROUP }}
+      CONTAINER_APP: ${{ vars.CONTAINER_APP_NAME }}
+      IMAGE_REF: ${{ needs.build-and-push.outputs.image-ref }}
+    steps:
+      - name: Azure login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Update Container App image
+        uses: azure/cli@v2
+        with:
+          azcliversion: latest
+          inlineScript: |
+            set -euo pipefail
+            echo "Deploying image: $IMAGE_REF"
+            az containerapp update \
+              --name "$CONTAINER_APP" \
+              --resource-group "$RESOURCE_GROUP" \
+              --image "$IMAGE_REF" \
+              --output none
+            fqdn=$(az containerapp show \
+              --name "$CONTAINER_APP" \
+              --resource-group "$RESOURCE_GROUP" \
+              --query properties.configuration.ingress.fqdn -o tsv)
+            echo "fqdn=$fqdn" >> "$GITHUB_ENV"
+            echo "App FQDN: https://$fqdn"
+
+      - name: Smoke test (HTTP 200)
+        run: |
+          set -euo pipefail
+          url="https://${fqdn}/"
+          echo "GET $url"
+          for i in $(seq 1 12); do
+            code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 "$url" || echo "000")
+            if [ "$code" = "200" ]; then
+              echo "OK ($code)"
+              exit 0
+            fi
+            echo "attempt $i: HTTP $code - retrying in 10s"
+            sleep 10
+          done
+          echo "Smoke test failed: last status $code"
+          exit 1
+
+      - name: Summary
+        if: always()
+        run: |
+          echo "### Deploy result" >> "$GITHUB_STEP_SUMMARY"
+          echo "- image: \`${IMAGE_REF}\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- container app: \`${CONTAINER_APP}\` (rg: \`${RESOURCE_GROUP}\`)" >> "$GITHUB_STEP_SUMMARY"
+          if [ -n "${fqdn:-}" ]; then
+            echo "- url: https://${fqdn}/" >> "$GITHUB_STEP_SUMMARY"
+          fi

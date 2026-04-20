@@ -23,16 +23,6 @@ import achievementService from '../services/achievementService.js';
 import questionService from '../services/questionService.js';
 import progressService from '../services/progressService.js';
 
-function makeStats(overrides = {}) {
-  return {
-    totalSessions: 0, totalCorrect: 0, totalAnswered: 0, certStats: {},
-    xp: 0, level: 1, masteryRanks: {},
-    streak: { current: 0, longest: 0, lastStudyDate: null, freeze: false },
-    unlockedAchievements: [],
-    ...overrides,
-  };
-}
-
 describe('recordAnswer with gamification', () => {
   beforeEach(() => {
     vi.clearAllMocks();

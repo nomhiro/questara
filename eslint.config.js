@@ -27,7 +27,9 @@ module.exports = [
     },
   },
   {
-    files: ['**/*.mjs', 'vitest.config.js'],
+    // ESM 構文で書かれたファイル群。vitest のテストは .js 拡張子でも ESM として動くので
+    // tests/**/*.test.js も module 扱いにする。
+    files: ['**/*.mjs', 'vitest.config.js', 'tests/**/*.test.js'],
     languageOptions: {
       ecmaVersion: 2023,
       sourceType: 'module',

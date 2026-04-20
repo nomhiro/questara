@@ -11,5 +11,8 @@ data/sessions.db
 .superpowers/
 .claude/
 
+# Azure Developer CLI — シークレットが平文で保存されるため
+.azure/
+
 server.log
 server.err.log

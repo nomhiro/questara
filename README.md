@@ -43,6 +43,10 @@ npm run dev            # http://localhost:3000 でホットリロード起動
 
 本番起動は `npm start`。
 
+### Azure にデプロイする
+
+Azure Container Apps + Cosmos DB Serverless + GitHub Container Registry でホスティングする手順（初回デプロイ / 継続デプロイ / インフラ変更 / シークレット更新 / ログ / トラブルシューティング）は [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) を参照。`npm run deploy` 一発でコード & インフラ反映できる。
+
 ### `.env` の主なキー
 
 | 変数 | 用途 |
