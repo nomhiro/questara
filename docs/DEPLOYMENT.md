@@ -82,17 +82,11 @@ azd auth login
 
 ### 3.3 GitHub OAuth App を作成
 
-> ⚠️ **OAuth App** を作成すること。**GitHub App** ではない。両者は別物で、GitHub App を選ぶと Webhook URL が必須になる等の違いがある。Questara は Webhook を使わない OAuth 認可フローのみ。
-
-1. 直リンク: [https://github.com/settings/applications/new](https://github.com/settings/applications/new)
-   （Organization 配下で作るなら `https://github.com/organizations/<ORG>/settings/applications` → **New OAuth App**）
+1. [https://github.com/settings/developers](https://github.com/settings/developers) → **New OAuth App**
 2. 以下を入力（URL は仮置きでよい。デプロイ後に本物の URL に更新する）
-   - **Application name**: `Questara` など任意
    - **Homepage URL**: `https://example.com`
    - **Authorization callback URL**: `https://example.com/auth/github/callback`
 3. 発行された `Client ID` と `Client Secret` を控える
-
-> 誤って **GitHub App** を作ってしまった場合は、**Webhook** セクションの `Active` チェックを外せば URL は任意になる（Questara は Webhook 未使用）。ただし GitHub App と OAuth App はトークン発行フローが異なるため、Questara では OAuth App を使うこと。
 
 ### 3.4 GitHub PAT を作成
 
