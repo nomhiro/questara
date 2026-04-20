@@ -24,8 +24,5 @@
     <div class="hud-cell"><span class="label">COMBO</span><span class="value"><%= comboVal > 1 ? '×' + comboVal : '-' %></span></div>
   <% } %>
   <div class="hud-spacer"></div>
-  <% if (typeof userEmail !== 'undefined' && userEmail) { %>
-    <span class="hud-cell" style="font-size:11px;"><%= userEmail %></span>
-  <% } %>
   <form method="POST" action="/auth/logout" style="margin:0;"><button type="submit" class="rpg-btn" style="font-size:11px;padding:6px 12px;">ログアウト</button></form>
 </nav>
