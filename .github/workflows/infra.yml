@@ -1,0 +1,95 @@
+name: Infra (azd provision)
+
+# Bicep / infra/** を変更した時に手動で起動する。通常の CD（cd.yml）はアプリイメージの
+# 差し替えのみを行い、インフラ更新はこの workflow で意図的に実行する。
+on:
+  workflow_dispatch:
+    inputs:
+      env_name:
+        description: 'azd environment name (e.g. questara-prod)'
+        required: true
+        default: 'questara-prod'
+      azure_location:
+        description: 'Azure region (e.g. japaneast)'
+        required: true
+        default: 'japaneast'
+      preview_only:
+        description: 'true の場合は what-if のみ (azd provision --preview)'
+        required: false
+        default: 'false'
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  provision:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      AZURE_ENV_NAME: ${{ inputs.env_name }}
+      AZURE_LOCATION: ${{ inputs.azure_location }}
+      AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install azd
+        uses: Azure/setup-azd@v2
+
+      - name: Azure login (OIDC for az CLI)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: azd login (federated, reuses OIDC)
+        run: |
+          azd auth login \
+            --client-id "${{ secrets.AZURE_CLIENT_ID }}" \
+            --federated-credential-provider "github" \
+            --tenant-id "${{ secrets.AZURE_TENANT_ID }}"
+
+      - name: Prepare azd environment
+        run: |
+          set -euo pipefail
+          if ! azd env select "$AZURE_ENV_NAME" >/dev/null 2>&1; then
+            azd env new "$AZURE_ENV_NAME" --location "$AZURE_LOCATION" --subscription "$AZURE_SUBSCRIPTION_ID"
+          fi
+          azd env set AZURE_LOCATION "$AZURE_LOCATION"
+
+      - name: Inject app secrets into azd env
+        env:
+          APP_JWT_SECRET: ${{ secrets.APP_JWT_SECRET }}
+          APP_ENCRYPTION_KEY: ${{ secrets.APP_ENCRYPTION_KEY }}
+          APP_GITHUB_CLIENT_ID: ${{ secrets.APP_GITHUB_CLIENT_ID }}
+          APP_GITHUB_CLIENT_SECRET: ${{ secrets.APP_GITHUB_CLIENT_SECRET }}
+          APP_GHCR_USERNAME: ${{ secrets.APP_GHCR_USERNAME }}
+          APP_GHCR_PAT: ${{ secrets.APP_GHCR_PAT }}
+        run: |
+          set -euo pipefail
+          azd env set JWT_SECRET           "$APP_JWT_SECRET"
+          azd env set ENCRYPTION_KEY       "$APP_ENCRYPTION_KEY"
+          azd env set GITHUB_CLIENT_ID     "$APP_GITHUB_CLIENT_ID"
+          azd env set GITHUB_CLIENT_SECRET "$APP_GITHUB_CLIENT_SECRET"
+          azd env set GHCR_USERNAME        "$APP_GHCR_USERNAME"
+          azd env set GHCR_PAT             "$APP_GHCR_PAT"
+
+      - name: azd provision (preview)
+        if: ${{ inputs.preview_only == 'true' }}
+        run: azd provision --preview --no-prompt
+
+      - name: azd provision
+        if: ${{ inputs.preview_only != 'true' }}
+        run: azd provision --no-prompt
+
+      - name: Show deployed outputs
+        if: ${{ inputs.preview_only != 'true' }}
+        run: |
+          {
+            echo "### azd outputs"
+            echo '```'
+            azd env get-values | grep -vE '^(GHCR_PAT|JWT_SECRET|ENCRYPTION_KEY|GITHUB_CLIENT_SECRET)=' || true
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"

@@ -12,7 +12,9 @@
 import { execSync, spawnSync } from 'node:child_process';
 
 function runInherit(cmd, args, extra = {}) {
-  const result = spawnSync(cmd, args, { stdio: 'inherit', shell: false, ...extra });
+  // Windows では az / azd が .cmd ラッパーのため shell 経由で起動する必要がある
+  const useShell = process.platform === 'win32';
+  const result = spawnSync(cmd, args, { stdio: 'inherit', shell: useShell, ...extra });
   if (result.status !== 0) {
     console.error(`\n❌ ${cmd} ${args.join(' ')} が失敗しました (exit=${result.status})`);
     process.exit(result.status ?? 1);
@@ -20,10 +22,11 @@ function runInherit(cmd, args, extra = {}) {
 }
 
 function runWithInput(cmd, args, input) {
+  const useShell = process.platform === 'win32';
   const result = spawnSync(cmd, args, {
     input,
     stdio: ['pipe', 'inherit', 'inherit'],
-    shell: false,
+    shell: useShell,
   });
   if (result.status !== 0) {
     console.error(`\n❌ ${cmd} ${args.join(' ')} が失敗しました`);
