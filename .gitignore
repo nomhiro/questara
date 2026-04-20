@@ -9,7 +9,8 @@ data/sessions.db
 # .env.test はリポジトリに含める（ダミー値のみ）
 
 .superpowers/
-.claude/
+.claude/*
+!.claude/settings.json
 
 # Azure Developer CLI — シークレットが平文で保存されるため
 .azure/
