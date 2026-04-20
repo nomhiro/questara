@@ -1,0 +1,6 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/Azure/azure-dev/main/schemas/v1.0/azure.yaml.json
+# ghcr.io を使うため azd の build/push 機能は無効化し、provision のみ使用する。
+# アプリデプロイは `npm run deploy` で docker push → az containerapp update を実行。
+name: questara
+metadata:
+  template: questara@1.0.0

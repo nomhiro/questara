@@ -1,0 +1,10 @@
+{
+  "resourcesResourceGroups": "rg-",
+  "operationalInsightsWorkspaces": "log-",
+  "appManagedEnvironments": "cae-",
+  "containerRegistryRegistries": "cr",
+  "managedIdentityUserAssignedIdentities": "id-",
+  "documentDBDatabaseAccounts": "cosmos-",
+  "appContainerApps": "ca-",
+  "insightsComponents": "appi-"
+}

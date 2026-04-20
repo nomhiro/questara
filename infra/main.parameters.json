@@ -1,0 +1,15 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "environmentName": { "value": "${AZURE_ENV_NAME}" },
+    "location": { "value": "${AZURE_LOCATION}" },
+    "jwtSecret": { "value": "${JWT_SECRET}" },
+    "encryptionKey": { "value": "${ENCRYPTION_KEY}" },
+    "githubClientId": { "value": "${GITHUB_CLIENT_ID}" },
+    "githubClientSecret": { "value": "${GITHUB_CLIENT_SECRET}" },
+    "ghcrUsername": { "value": "${GHCR_USERNAME}" },
+    "ghcrPat": { "value": "${GHCR_PAT}" },
+    "cosmosDatabaseName": { "value": "${COSMOS_DATABASE=cert-quiz}" }
+  }
+}
