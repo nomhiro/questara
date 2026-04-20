@@ -16,7 +16,7 @@
 'use strict';
 
 import { CosmosClient } from '@azure/cosmos';
-import { execFileSync, execSync } from 'node:child_process';
+import { execSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
