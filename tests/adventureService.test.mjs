@@ -65,3 +65,46 @@ describe('checkDungeonUnlocks', () => {
     expect(next.dungeons[0].status).toBe('cleared');
   });
 });
+
+describe('normalizeAdventure', () => {
+  it('locked ステータスは in-progress に変換される', () => {
+    const adv = {
+      id: 'adv1', userId: 'u1',
+      dungeons: [
+        { certificationId: 'gh-100', order: 1, status: 'cleared', unlockedAt: 't1', clearedAt: 't1' },
+        { certificationId: 'gh-200', order: 2, status: 'locked', unlockedAt: null, clearedAt: null },
+      ],
+    };
+    const out = adventureService.normalizeAdventure(adv);
+    expect(out.dungeons[1].status).toBe('in-progress');
+  });
+
+  it('unlockedAt が null のダンジョンは値が補完される', () => {
+    const adv = {
+      id: 'adv1', userId: 'u1',
+      dungeons: [
+        { certificationId: 'gh-100', order: 1, status: 'locked', unlockedAt: null, clearedAt: null },
+      ],
+    };
+    const out = adventureService.normalizeAdventure(adv);
+    expect(out.dungeons[0].unlockedAt).toBeTruthy();
+  });
+
+  it('cleared ステータスはそのまま保持される', () => {
+    const adv = {
+      id: 'adv1', userId: 'u1',
+      dungeons: [
+        { certificationId: 'gh-100', order: 1, status: 'cleared', unlockedAt: 't1', clearedAt: 't2' },
+      ],
+    };
+    const out = adventureService.normalizeAdventure(adv);
+    expect(out.dungeons[0].status).toBe('cleared');
+    expect(out.dungeons[0].unlockedAt).toBe('t1');
+    expect(out.dungeons[0].clearedAt).toBe('t2');
+  });
+
+  it('null や undefined を渡しても落ちない', () => {
+    expect(adventureService.normalizeAdventure(null)).toBe(null);
+    expect(adventureService.normalizeAdventure(undefined)).toBe(undefined);
+  });
+});

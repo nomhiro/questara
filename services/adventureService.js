@@ -15,6 +15,18 @@ function isDungeonBClearable(dungeonEntry, ranks, domainCounts) {
   return ok >= need;
 }
 
+function normalizeAdventure(adv) {
+  if (!adv) return adv;
+  if (!Array.isArray(adv.dungeons)) return adv;
+  const dungeons = adv.dungeons.map((d) => {
+    const status = d.status === 'locked' ? 'in-progress' : d.status;
+    const unlockedAt = d.unlockedAt
+      || (d.status === 'cleared' ? d.clearedAt : new Date(0).toISOString());
+    return { ...d, status, unlockedAt };
+  });
+  return { ...adv, dungeons };
+}
+
 function checkDungeonUnlocks(adventure, ranks, domainCounts) {
   const dungeons = adventure.dungeons.map((d) => ({ ...d }));
   for (let i = 0; i < dungeons.length; i += 1) {
@@ -88,6 +100,7 @@ async function getActiveAdventure(userId) {
 }
 
 module.exports = {
+  normalizeAdventure,
   checkDungeonUnlocks,
   isDungeonBClearable,
   listAdventures,
