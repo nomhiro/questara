@@ -45,14 +45,16 @@ function checkDungeonUnlocks(adventure, ranks, domainCounts) {
 }
 
 async function listAdventures(userId) {
-  return cosmosService.query('adventures', {
+  const items = await cosmosService.query('adventures', {
     query: 'SELECT * FROM c WHERE c.userId = @u',
     parameters: [{ name: '@u', value: userId }],
   }, { partitionKey: userId });
+  return items.map(normalizeAdventure);
 }
 
 async function getAdventure(id, userId) {
-  return cosmosService.read('adventures', id, userId);
+  const adv = await cosmosService.read('adventures', id, userId);
+  return normalizeAdventure(adv);
 }
 
 async function createAdventure(payload) {

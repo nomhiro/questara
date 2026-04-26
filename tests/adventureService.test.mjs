@@ -1,8 +1,17 @@
 import { describe, it, expect, vi } from 'vitest';
+import { createRequire } from 'node:module';
+
+const _require = createRequire(import.meta.url);
 
 vi.mock('../services/cosmosService.js', () => {
-  const mock = { upsert: vi.fn(), read: vi.fn(), query: vi.fn(), remove: vi.fn() };
-  return { default: mock, ...mock };
+  // CJS require キャッシュのオブジェクトのメソッドを vi.fn() に置き換えることで、
+  // adventureService.js の require('./cosmosService') も同じ mock を参照できる
+  const actual = _require('../services/cosmosService.js');
+  actual.read = vi.fn();
+  actual.query = vi.fn();
+  actual.upsert = vi.fn();
+  actual.remove = vi.fn();
+  return { default: actual, ...actual };
 });
 vi.mock('../services/userService.js', () => {
   const mock = { updateUserStats: vi.fn(), getUserById: vi.fn() };
@@ -106,5 +115,33 @@ describe('normalizeAdventure', () => {
   it('null や undefined を渡しても落ちない', () => {
     expect(adventureService.normalizeAdventure(null)).toBe(null);
     expect(adventureService.normalizeAdventure(undefined)).toBe(undefined);
+  });
+});
+
+describe('read methods normalize', () => {
+  it('getAdventure は locked を含むドキュメントを正規化して返す', async () => {
+    const cosmosService = (await import('../services/cosmosService.js')).default;
+    cosmosService.read.mockResolvedValueOnce({
+      id: 'adv1', userId: 'u1',
+      dungeons: [
+        { certificationId: 'gh-100', order: 1, status: 'cleared', unlockedAt: 't1', clearedAt: 't1' },
+        { certificationId: 'gh-200', order: 2, status: 'locked', unlockedAt: null, clearedAt: null },
+      ],
+    });
+    const out = await adventureService.getAdventure('adv1', 'u1');
+    expect(out.dungeons[1].status).toBe('in-progress');
+    expect(out.dungeons[1].unlockedAt).toBeTruthy();
+  });
+
+  it('listAdventures は配列の各要素を正規化する', async () => {
+    const cosmosService = (await import('../services/cosmosService.js')).default;
+    cosmosService.query.mockResolvedValueOnce([
+      {
+        id: 'adv1', userId: 'u1',
+        dungeons: [{ certificationId: 'gh-100', order: 1, status: 'locked', unlockedAt: null, clearedAt: null }],
+      },
+    ]);
+    const out = await adventureService.listAdventures('u1');
+    expect(out[0].dungeons[0].status).toBe('in-progress');
   });
 });
