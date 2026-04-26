@@ -26,12 +26,12 @@ describe('checkDungeonUnlocks', () => {
     dungeons: [
       { certificationId: 'gh-100', order: 1, status: 'cleared', unlockedAt: 'x', clearedAt: 'x' },
       { certificationId: 'gh-200', order: 2, status: 'in-progress', unlockedAt: 'y', clearedAt: null },
-      { certificationId: 'ai-102', order: 3, status: 'locked', unlockedAt: null, clearedAt: null },
+      { certificationId: 'ai-102', order: 3, status: 'in-progress', unlockedAt: 'z', clearedAt: null },
     ],
   };
   const domainCounts = { 'gh-100': 3, 'gh-200': 2, 'ai-102': 3 };
 
-  it('現在のダンジョン全ドメインが B 以上で cleared に遷移し次を unlock', () => {
+  it('B 以上のダンジョンを cleared に遷移させる（次の自動 unlock は行わない）', () => {
     const ranks = {
       'gh-200:d1': { rank: 'B' },
       'gh-200:d2': { rank: 'A' },
@@ -40,14 +40,13 @@ describe('checkDungeonUnlocks', () => {
     expect(next.dungeons[1].status).toBe('cleared');
     expect(next.dungeons[1].clearedAt).not.toBeNull();
     expect(next.dungeons[2].status).toBe('in-progress');
-    expect(next.dungeons[2].unlockedAt).not.toBeNull();
   });
 
   it('未達ランクなら状態変化なし', () => {
     const ranks = { 'gh-200:d1': { rank: 'C' }, 'gh-200:d2': { rank: 'A' } };
     const next = adventureService.checkDungeonUnlocks(baseAdv, ranks, domainCounts);
     expect(next.dungeons[1].status).toBe('in-progress');
-    expect(next.dungeons[2].status).toBe('locked');
+    expect(next.dungeons[2].status).toBe('in-progress');
   });
 
   it('ドメインカウントに無い cert は false 扱い', () => {
@@ -62,16 +61,14 @@ describe('checkDungeonUnlocks', () => {
     expect(next.dungeons[0].status).toBe('cleared');
   });
 
-  it('最終ダンジョン cleared 時も次が存在しない場合例外を出さない', () => {
-    const soloAdv = {
-      id: 'adv1', userId: 'u1',
-      dungeons: [
-        { certificationId: 'gh-100', order: 1, status: 'in-progress', unlockedAt: 'x', clearedAt: null },
-      ],
+  it('全 in-progress ダンジョンが条件を満たせば全て cleared に遷移する', () => {
+    const ranks = {
+      'gh-200:d1': { rank: 'A' }, 'gh-200:d2': { rank: 'A' },
+      'ai-102:d1': { rank: 'B' }, 'ai-102:d2': { rank: 'B' }, 'ai-102:d3': { rank: 'A' },
     };
-    const ranks = { 'gh-100:d1': { rank: 'A' } };
-    const next = adventureService.checkDungeonUnlocks(soloAdv, ranks, { 'gh-100': 1 });
-    expect(next.dungeons[0].status).toBe('cleared');
+    const next = adventureService.checkDungeonUnlocks(baseAdv, ranks, domainCounts);
+    expect(next.dungeons[1].status).toBe('cleared');
+    expect(next.dungeons[2].status).toBe('cleared');
   });
 });
 

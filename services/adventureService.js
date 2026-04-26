@@ -28,19 +28,12 @@ function normalizeAdventure(adv) {
 }
 
 function checkDungeonUnlocks(adventure, ranks, domainCounts) {
-  const dungeons = adventure.dungeons.map((d) => ({ ...d }));
-  for (let i = 0; i < dungeons.length; i += 1) {
-    const d = dungeons[i];
+  const dungeons = adventure.dungeons.map((d) => {
     if (d.status === 'in-progress' && isDungeonBClearable(d, ranks, domainCounts)) {
-      d.status = 'cleared';
-      d.clearedAt = new Date().toISOString();
-      const next = dungeons[i + 1];
-      if (next && next.status === 'locked') {
-        next.status = 'in-progress';
-        next.unlockedAt = new Date().toISOString();
-      }
+      return { ...d, status: 'cleared', clearedAt: new Date().toISOString() };
     }
-  }
+    return d;
+  });
   return { ...adventure, dungeons };
 }
 
