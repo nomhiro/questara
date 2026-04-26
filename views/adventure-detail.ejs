@@ -42,26 +42,29 @@
     <% } %>
 
     <section class="rpg-window">
-      <h2 class="rpg-title" style="font-size: 16px;">🗡 ダンジョン（攻略順）</h2>
+      <h2 class="rpg-title" style="font-size: 16px;">🗡 ダンジョン（推奨順）</h2>
       <ol style="list-style: none; padding: 0; margin: 10px 0 0; display: flex; flex-direction: column; gap: 8px;">
-        <% for (const d of adventure.dungeons) {
+        <% for (let i = 0; i < adventure.dungeons.length; i += 1) {
+             const d = adventure.dungeons[i];
              const cert = certById[d.certificationId];
              const label = cert ? cert.name : d.certificationId;
-             const statusColor = d.status === 'cleared' ? 'var(--fern)' : d.status === 'in-progress' ? 'var(--gold)' : '#888';
-             const statusText = d.status === 'cleared' ? '踏破済み' : d.status === 'in-progress' ? '挑戦中' : '未解放';
+             const statusColor = d.status === 'cleared' ? 'var(--fern)' : 'var(--gold)';
+             const statusText = d.status === 'cleared' ? '踏破済み' : '挑戦中';
+             const isRecommended = (typeof recommendedIndex !== 'undefined') && i === recommendedIndex;
+             const itemBorder = isRecommended ? '2px solid var(--gold)' : '4px solid ' + statusColor;
+             const itemPadding = isRecommended ? '9px 11px' : '10px 12px';
         %>
-          <li style="display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 10px 12px; background: #0008; border-left: 4px solid <%= statusColor %>;">
-            <div style="display:flex; align-items:center; gap: 10px;">
+          <li style="display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: <%= itemPadding %>; background: #0008; border-left: <%= itemBorder %>;<% if (isRecommended) { %> box-shadow: 0 0 0 1px var(--gold) inset;<% } %>">
+            <div style="display:flex; align-items:center; gap: 10px; flex-wrap: wrap;">
               <span style="font-family: var(--font-display); color: <%= statusColor %>;">#<%= d.order %></span>
               <span style="font-family: var(--font-display); color: var(--ink);"><%= label %></span>
               <span class="pill" style="color: <%= statusColor %>; border-color: <%= statusColor %>; font-size:10px;"><%= statusText %></span>
+              <% if (isRecommended) { %>
+                <span class="pill" style="color: var(--gold); border-color: var(--gold); font-size:10px;">▶ 次のおすすめ</span>
+              <% } %>
             </div>
             <div>
-              <% if (d.status === 'locked') { %>
-                <span style="color:#888; font-family: var(--font-display); font-size:12px;">🔒</span>
-              <% } else { %>
-                <a href="/certifications/<%= d.certificationId %>" class="rpg-btn is-gold" style="font-size:11px;padding:5px 12px;">入る</a>
-              <% } %>
+              <a href="/certifications/<%= d.certificationId %>" class="rpg-btn is-gold" style="font-size:11px;padding:5px 12px;">入る</a>
             </div>
           </li>
         <% } %>
