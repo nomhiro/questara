@@ -1,7 +1,12 @@
 import { describe, test, expect, beforeAll, beforeEach } from 'vitest';
+import { createRequire } from 'node:module';
+import crypto from 'node:crypto';
 import { setupTestDb, truncateAll } from './_setup/db.mjs';
 import { createTestUser, createTestCertification } from './_setup/fixtures.mjs';
 import { authedAgent } from './_setup/http.mjs';
+
+const _require = createRequire(import.meta.url);
+const cosmosService = _require('../services/cosmosService');
 
 async function seedAvailableCerts() {
   await createTestCertification({ id: 'gh-100', name: 'GitHub Foundations', isPublic: true });
@@ -86,5 +91,67 @@ describe('routes/adventures', () => {
     const agent = await authedAgent(user);
     const res = await agent.post('/adventures/preset').type('form').send({ presetIds: ['developer'] });
     expect(res.status).toBe(400);
+  });
+
+  test('POST /preset で作成された冒険の全ダンジョンが in-progress で unlockedAt がセットされる', async () => {
+    const user = await createTestUser();
+    await seedAvailableCerts();
+    const agent = await authedAgent(user);
+    const created = await agent.post('/adventures/preset').type('form').send({ presetIds: ['developer'] });
+    const id = created.headers.location.replace('/adventures/', '');
+
+    const adv = await cosmosService.read('adventures', id, user.id);
+    expect(adv.dungeons.length).toBeGreaterThan(1);
+    for (const d of adv.dungeons) {
+      expect(d.status).toBe('in-progress');
+      expect(d.unlockedAt).toBeTruthy();
+      expect(d.clearedAt).toBeNull();
+    }
+  });
+
+  test('GET /:id で全ダンジョンに「入る」ボタンが表示される（🔒 が出ない）', async () => {
+    const user = await createTestUser();
+    await seedAvailableCerts();
+    const agent = await authedAgent(user);
+    const created = await agent.post('/adventures/preset').type('form').send({ presetIds: ['developer'] });
+    const id = created.headers.location.replace('/adventures/', '');
+
+    const detail = await agent.get(`/adventures/${id}`);
+    expect(detail.status).toBe(200);
+    expect(detail.text).not.toContain('🔒');
+    // gh-100 と gh-200 の両方の「入る」リンクが存在
+    expect(detail.text).toContain('href="/certifications/gh-100"');
+    expect(detail.text).toContain('href="/certifications/gh-200"');
+  });
+
+  test('既存の locked ステータスを持つドキュメントも GET 時に正規化されて表示される', async () => {
+    const user = await createTestUser();
+    await seedAvailableCerts();
+    const agent = await authedAgent(user);
+
+    const advId = `adv-${crypto.randomUUID()}`;
+    await cosmosService.upsert('adventures', {
+      id: advId,
+      userId: user.id,
+      name: 'レガシー冒険',
+      description: '',
+      source: 'preset',
+      presetId: 'developer',
+      dungeons: [
+        { certificationId: 'gh-100', order: 1, status: 'cleared', unlockedAt: 't1', clearedAt: 't1' },
+        { certificationId: 'gh-200', order: 2, status: 'locked', unlockedAt: null, clearedAt: null },
+      ],
+      rationale: '',
+      citations: [],
+      verificationStatus: 'verified',
+      isActive: true,
+      createdAt: new Date().toISOString(),
+      completedAt: null,
+    });
+
+    const detail = await agent.get(`/adventures/${advId}`);
+    expect(detail.status).toBe(200);
+    expect(detail.text).not.toContain('🔒');
+    expect(detail.text).toContain('href="/certifications/gh-200"');
   });
 });

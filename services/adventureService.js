@@ -15,32 +15,39 @@ function isDungeonBClearable(dungeonEntry, ranks, domainCounts) {
   return ok >= need;
 }
 
+function normalizeAdventure(adv) {
+  if (!adv) return adv;
+  if (!Array.isArray(adv.dungeons)) return adv;
+  const dungeons = adv.dungeons.map((d) => {
+    const status = d.status === 'locked' ? 'in-progress' : d.status;
+    const unlockedAt = d.unlockedAt
+      || (status === 'cleared' ? d.clearedAt : new Date(0).toISOString());
+    return { ...d, status, unlockedAt };
+  });
+  return { ...adv, dungeons };
+}
+
 function checkDungeonUnlocks(adventure, ranks, domainCounts) {
-  const dungeons = adventure.dungeons.map((d) => ({ ...d }));
-  for (let i = 0; i < dungeons.length; i += 1) {
-    const d = dungeons[i];
+  const dungeons = adventure.dungeons.map((d) => {
     if (d.status === 'in-progress' && isDungeonBClearable(d, ranks, domainCounts)) {
-      d.status = 'cleared';
-      d.clearedAt = new Date().toISOString();
-      const next = dungeons[i + 1];
-      if (next && next.status === 'locked') {
-        next.status = 'in-progress';
-        next.unlockedAt = new Date().toISOString();
-      }
+      return { ...d, status: 'cleared', clearedAt: new Date().toISOString() };
     }
-  }
+    return d;
+  });
   return { ...adventure, dungeons };
 }
 
 async function listAdventures(userId) {
-  return cosmosService.query('adventures', {
+  const items = await cosmosService.query('adventures', {
     query: 'SELECT * FROM c WHERE c.userId = @u',
     parameters: [{ name: '@u', value: userId }],
   }, { partitionKey: userId });
+  return items.map(normalizeAdventure);
 }
 
 async function getAdventure(id, userId) {
-  return cosmosService.read('adventures', id, userId);
+  const adv = await cosmosService.read('adventures', id, userId);
+  return normalizeAdventure(adv);
 }
 
 async function createAdventure(payload) {
@@ -88,6 +95,7 @@ async function getActiveAdventure(userId) {
 }
 
 module.exports = {
+  normalizeAdventure,
   checkDungeonUnlocks,
   isDungeonBClearable,
   listAdventures,

@@ -128,8 +128,8 @@ router.post('/preset', requireAuth, async (req, res) => {
     dungeons: availableDungeons.map((d, i) => ({
       certificationId: d.certId,
       order: i + 1,
-      status: i === 0 ? 'in-progress' : 'locked',
-      unlockedAt: i === 0 ? new Date().toISOString() : null,
+      status: 'in-progress',
+      unlockedAt: new Date().toISOString(),
       clearedAt: null,
     })),
     rationale,
@@ -147,10 +147,12 @@ router.get('/:id', requireAuth, async (req, res) => {
 
   const certs = await questionService.listCertifications({ includePrivate: true, userId: req.user.id });
   const certById = Object.fromEntries(certs.map((c) => [c.id, c]));
+  const recommendedIndex = adv.dungeons.findIndex((d) => d.status === 'in-progress');
   res.render('adventure-detail', {
     title: adv.name,
     adventure: adv,
     certById,
+    recommendedIndex,
   });
 });
 
