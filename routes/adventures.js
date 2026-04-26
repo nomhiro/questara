@@ -147,10 +147,12 @@ router.get('/:id', requireAuth, async (req, res) => {
 
   const certs = await questionService.listCertifications({ includePrivate: true, userId: req.user.id });
   const certById = Object.fromEntries(certs.map((c) => [c.id, c]));
+  const recommendedIndex = adv.dungeons.findIndex((d) => d.status === 'in-progress');
   res.render('adventure-detail', {
     title: adv.name,
     adventure: adv,
     certById,
+    recommendedIndex,
   });
 });
 
