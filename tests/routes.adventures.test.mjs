@@ -1,7 +1,11 @@
 import { describe, test, expect, beforeAll, beforeEach } from 'vitest';
+import { createRequire } from 'node:module';
 import { setupTestDb, truncateAll } from './_setup/db.mjs';
 import { createTestUser, createTestCertification } from './_setup/fixtures.mjs';
 import { authedAgent } from './_setup/http.mjs';
+
+const _require = createRequire(import.meta.url);
+const cosmosService = _require('../services/cosmosService');
 
 async function seedAvailableCerts() {
   await createTestCertification({ id: 'gh-100', name: 'GitHub Foundations', isPublic: true });
@@ -95,7 +99,6 @@ describe('routes/adventures', () => {
     const created = await agent.post('/adventures/preset').type('form').send({ presetIds: ['developer'] });
     const id = created.headers.location.replace('/adventures/', '');
 
-    const cosmosService = (await import('../services/cosmosService.js')).default;
     const adv = await cosmosService.read('adventures', id, user.id);
     expect(adv.dungeons.length).toBeGreaterThan(1);
     for (const d of adv.dungeons) {
