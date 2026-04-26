@@ -21,7 +21,7 @@ function normalizeAdventure(adv) {
   const dungeons = adv.dungeons.map((d) => {
     const status = d.status === 'locked' ? 'in-progress' : d.status;
     const unlockedAt = d.unlockedAt
-      || (d.status === 'cleared' ? d.clearedAt : new Date(0).toISOString());
+      || (status === 'cleared' ? d.clearedAt : new Date(0).toISOString());
     return { ...d, status, unlockedAt };
   });
   return { ...adv, dungeons };

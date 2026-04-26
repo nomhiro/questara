@@ -87,7 +87,7 @@ describe('normalizeAdventure', () => {
       ],
     };
     const out = adventureService.normalizeAdventure(adv);
-    expect(out.dungeons[0].unlockedAt).toBeTruthy();
+    expect(out.dungeons[0].unlockedAt).toBe(new Date(0).toISOString());
   });
 
   it('cleared ステータスはそのまま保持される', () => {
