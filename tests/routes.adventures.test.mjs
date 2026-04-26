@@ -87,4 +87,21 @@ describe('routes/adventures', () => {
     const res = await agent.post('/adventures/preset').type('form').send({ presetIds: ['developer'] });
     expect(res.status).toBe(400);
   });
+
+  test('POST /preset で作成された冒険の全ダンジョンが in-progress で unlockedAt がセットされる', async () => {
+    const user = await createTestUser();
+    await seedAvailableCerts();
+    const agent = await authedAgent(user);
+    const created = await agent.post('/adventures/preset').type('form').send({ presetIds: ['developer'] });
+    const id = created.headers.location.replace('/adventures/', '');
+
+    const cosmosService = (await import('../services/cosmosService.js')).default;
+    const adv = await cosmosService.read('adventures', id, user.id);
+    expect(adv.dungeons.length).toBeGreaterThan(1);
+    for (const d of adv.dungeons) {
+      expect(d.status).toBe('in-progress');
+      expect(d.unlockedAt).toBeTruthy();
+      expect(d.clearedAt).toBeNull();
+    }
+  });
 });

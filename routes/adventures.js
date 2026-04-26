@@ -128,8 +128,8 @@ router.post('/preset', requireAuth, async (req, res) => {
     dungeons: availableDungeons.map((d, i) => ({
       certificationId: d.certId,
       order: i + 1,
-      status: i === 0 ? 'in-progress' : 'locked',
-      unlockedAt: i === 0 ? new Date().toISOString() : null,
+      status: 'in-progress',
+      unlockedAt: new Date().toISOString(),
       clearedAt: null,
     })),
     rationale,
