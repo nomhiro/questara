@@ -1,21 +1,33 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeAll, afterAll } from 'vitest';
 import { createRequire } from 'node:module';
 
 const _require = createRequire(import.meta.url);
 
-vi.mock('../services/cosmosService.js', () => {
-  // CJS require キャッシュのオブジェクトのメソッドを vi.fn() に置き換えることで、
-  // adventureService.js の require('./cosmosService') も同じ mock を参照できる
-  const actual = _require('../services/cosmosService.js');
-  actual.read = vi.fn();
-  actual.query = vi.fn();
-  actual.upsert = vi.fn();
-  actual.remove = vi.fn();
-  return { default: actual, ...actual };
-});
+// adventureService.js は CJS で require('./cosmosService') を使うため
+// CJS require キャッシュのオブジェクトのメソッドを直接 vi.fn() に置き換える必要がある。
+// ただしプロセス全体に残ると他のテストファイルが壊れるので、afterAll で restore する。
+const _cosmos = _require('../services/cosmosService.js');
+const _origCosmos = {
+  read: _cosmos.read,
+  query: _cosmos.query,
+  upsert: _cosmos.upsert,
+  remove: _cosmos.remove,
+};
+
+vi.mock('../services/cosmosService.js', () => ({ default: _cosmos, ..._cosmos }));
 vi.mock('../services/userService.js', () => {
   const mock = { updateUserStats: vi.fn(), getUserById: vi.fn() };
   return { default: mock, ...mock };
+});
+
+beforeAll(() => {
+  _cosmos.read = vi.fn();
+  _cosmos.query = vi.fn();
+  _cosmos.upsert = vi.fn();
+  _cosmos.remove = vi.fn();
+});
+afterAll(() => {
+  Object.assign(_cosmos, _origCosmos);
 });
 
 import adventureService from '../services/adventureService.js';
