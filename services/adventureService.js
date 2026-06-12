@@ -50,6 +50,13 @@ async function getAdventure(id, userId) {
   return normalizeAdventure(adv);
 }
 
+// adventures コンテナへの書き込みはこの関数に集約する（progressService からの
+// 直接 upsert も含め、書き込み経路を adventureService に一本化する・D-10）。
+async function saveAdventure(adventure) {
+  await cosmosService.upsert('adventures', adventure);
+  return adventure;
+}
+
 async function createAdventure(payload) {
   const adv = {
     id: `adv-${crypto.randomUUID()}`,
@@ -57,15 +64,17 @@ async function createAdventure(payload) {
     createdAt: new Date().toISOString(),
     completedAt: null,
   };
-  await cosmosService.upsert('adventures', adv);
-  return adv;
+  return saveAdventure(adv);
 }
 
 async function setActive(userId, adventureId) {
   const all = await listAdventures(userId);
   for (const a of all) {
-    const next = { ...a, isActive: a.id === adventureId };
-    await cosmosService.upsert('adventures', next);
+    const shouldBeActive = a.id === adventureId;
+    // isActive が変わるものだけ書き込む（全件 upsert は無駄・D-16）
+    if (a.isActive !== shouldBeActive) {
+      await saveAdventure({ ...a, isActive: shouldBeActive });
+    }
   }
   const userService = require('./userService');
   await userService.updateUserStats(userId, (s) => {
@@ -101,6 +110,7 @@ module.exports = {
   listAdventures,
   getAdventure,
   createAdventure,
+  saveAdventure,
   setActive,
   deleteAdventure,
   getActiveAdventure,

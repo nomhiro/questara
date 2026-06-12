@@ -127,6 +127,37 @@ describe('normalizeAdventure', () => {
   });
 });
 
+describe('saveAdventure', () => {
+  it('adventures コンテナに upsert して同じ adventure を返す', async () => {
+    const cosmosService = (await import('../services/cosmosService.js')).default;
+    cosmosService.upsert.mockClear();
+    const adv = { id: 'adv-x', userId: 'u1', isActive: true, dungeons: [] };
+    const out = await adventureService.saveAdventure(adv);
+    expect(out).toBe(adv);
+    expect(cosmosService.upsert).toHaveBeenCalledWith('adventures', adv);
+  });
+});
+
+describe('setActive', () => {
+  it('isActive が変化する冒険のみ upsert する（無駄な書き込みをしない・D-16）', async () => {
+    const cosmosService = (await import('../services/cosmosService.js')).default;
+    cosmosService.query.mockResolvedValueOnce([
+      { id: 'a1', userId: 'u1', isActive: true },
+      { id: 'a2', userId: 'u1', isActive: false },
+      { id: 'a3', userId: 'u1', isActive: false },
+    ]);
+    cosmosService.upsert.mockClear();
+
+    await adventureService.setActive('u1', 'a2');
+
+    // a1(true→false) と a2(false→true) のみ upsert。a3(false→false) は据え置き。
+    const upsertedIds = cosmosService.upsert.mock.calls.map((c) => c[1].id).sort();
+    expect(upsertedIds).toEqual(['a1', 'a2']);
+    const a2call = cosmosService.upsert.mock.calls.find((c) => c[1].id === 'a2');
+    expect(a2call[1].isActive).toBe(true);
+  });
+});
+
 describe('read methods normalize', () => {
   it('getAdventure は locked を含むドキュメントを正規化して返す', async () => {
     const cosmosService = (await import('../services/cosmosService.js')).default;
