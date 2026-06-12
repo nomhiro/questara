@@ -6,6 +6,7 @@ const userService = require('./userService');
 const gamificationService = require('./gamificationService');
 const achievementService = require('./achievementService');
 const questionService = require('./questionService');
+const { percentRate } = require('./scoreUtil');
 
 async function createSession({ userId, certificationId, domainFilter = null, mode = 'all' }) {
   const session = {
@@ -55,7 +56,7 @@ async function completeSession(sessionId, userId) {
   session.completedAt = new Date().toISOString();
   const total = session.answers.length;
   const correct = session.answers.filter((a) => a.isCorrect).length;
-  session.score = total > 0 ? Math.round((correct / total) * 100) : 0;
+  session.score = percentRate(correct, total);
 
   const xpEarned = session.answers.reduce((sum, a) => sum + (a.xpEarned || 0), 0);
   const maxCombo = session.answers.reduce((m, a) => Math.max(m, a.combo || 1), 1);
@@ -82,13 +83,11 @@ async function completeSession(sessionId, userId) {
     cur.correct += correct;
     cur.answered += total;
     cur.sessionsCount += 1;
-    cur.correctRate = cur.answered > 0 ? Math.round((cur.correct / cur.answered) * 100) : 0;
+    cur.correctRate = percentRate(cur.correct, cur.answered);
     cs[session.certificationId] = cur;
     stats.certStats = cs;
 
-    const overall = stats.totalAnswered > 0
-      ? Math.round((stats.totalCorrect / stats.totalAnswered) * 100)
-      : 0;
+    const overall = percentRate(stats.totalCorrect, stats.totalAnswered);
     stats.weeklyCorrectRate = overall;
     stats.monthlyCorrectRate = overall;
 
@@ -226,7 +225,7 @@ async function calcDomainStats(certificationId, userId) {
   }
   for (const d of Object.keys(stats)) {
     const { correct, total } = stats[d];
-    stats[d].rate = total > 0 ? Math.round((correct / total) * 100) : null;
+    stats[d].rate = percentRate(correct, total, null);
   }
   return stats;
 }
@@ -261,7 +260,7 @@ function calcSessionDomainScores(session) {
   }
   for (const d of Object.keys(scores)) {
     const { correct, total } = scores[d];
-    scores[d].rate = total > 0 ? Math.round((correct / total) * 100) : null;
+    scores[d].rate = percentRate(correct, total, null);
   }
   return scores;
 }

@@ -1,6 +1,7 @@
 'use strict';
 
 const cosmosService = require('./cosmosService');
+const { percentRate } = require('./scoreUtil');
 
 function weekStart(date = new Date()) {
   const d = new Date(date);
@@ -56,7 +57,7 @@ async function getRanking({ certificationId, since }) {
     .filter((a) => a.total >= MIN_QUESTIONS)
     .map((a) => ({
       ...a,
-      rate: Math.round((a.correct / a.total) * 100),
+      rate: percentRate(a.correct, a.total),
       user: users[a.userId],
     }))
     .sort((a, b) => b.rate - a.rate || b.total - a.total);
