@@ -34,9 +34,10 @@ router.post('/start', requireAuth, asyncHandler(async (req, res) => {
   if (questions.length === 0) return res.redirect(`/certifications/${certId}?info=no-questions`);
 
   questions = questionService.shuffle(questions);
-  const session = await progressService.createSession({ userId, certificationId: certId, domainFilter, mode });
-  const questionIds = questions.map((q) => q.id).join(',');
-  res.redirect(`/quiz/${session.id}?questions=${encodeURIComponent(questionIds)}&certId=${certId}&idx=0`);
+  const orderedIds = questions.map((q) => q.id);
+  const session = await progressService.createSession({ userId, certificationId: certId, domainFilter, mode, questionIds: orderedIds });
+  // ?questions= は旧セッション互換のため当面残すが、出題順の正典はセッション側 (D-19)
+  res.redirect(`/quiz/${session.id}?questions=${encodeURIComponent(orderedIds.join(','))}&certId=${certId}&idx=0`);
 }));
 
 router.get('/:sessionId', requireAuth, asyncHandler(async (req, res) => {
@@ -53,7 +54,11 @@ router.get('/:sessionId', requireAuth, asyncHandler(async (req, res) => {
     return res.status(404).render('error', { title: '404', message: '資格が見つかりません' });
   }
 
-  const questionIds = questionIdsStr.split(',');
+  // 出題順はセッションを正典とし、URL の ?questions= は session に無い旧データのみ参照 (D-19)。
+  // これにより URL の ?questions= を改ざんしても出題順・問題は変えられない。
+  const questionIds = (Array.isArray(session.questionIds) && session.questionIds.length)
+    ? session.questionIds
+    : (questionIdsStr ? questionIdsStr.split(',') : []);
   const currentIdx = parseInt(idx, 10) || 0;
   if (currentIdx >= questionIds.length) {
     await progressService.completeSession(sessionId, req.user.id);
@@ -74,7 +79,7 @@ router.get('/:sessionId', requireAuth, asyncHandler(async (req, res) => {
     title: `問題 ${currentIdx + 1} / ${questionIds.length}`,
     session, question, currentIdx,
     total: questionIds.length,
-    questionIds: questionIdsStr, certId, answered: null,
+    questionIds: questionIds.join(','), certId, answered: null,
     userName: hudUserName,
     stats: hudStats,
     currentCombo,

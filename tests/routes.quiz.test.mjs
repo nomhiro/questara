@@ -99,4 +99,22 @@ describe('routes/quiz', () => {
     expect(resultRes.status).toBe(200);
     expect(resultRes.text).toContain('100');
   });
+
+  test('?questions= を改ざんしてもセッションの出題順が使われる (D-19)', async () => {
+    const user = await createTestUser();
+    const cert = await createTestCertification({ id: 'quiz-tamper' });
+    const agent = await authedAgent(user);
+
+    const startRes = await agent.post('/quiz/start').type('form').send({ certId: cert.id, mode: 'all' });
+    const startLocation = new URL(`http://localhost${startRes.headers.location}`);
+    const sessionId = startLocation.pathname.split('/')[2];
+    const realFirstId = startLocation.searchParams.get('questions').split(',')[0];
+
+    // クエリの questions= をデタラメに差し替えて idx=0 を要求する
+    const res = await agent.get(`/quiz/${sessionId}?questions=BOGUS-1,BOGUS-2&certId=${cert.id}&idx=0`);
+    expect(res.status).toBe(200);
+    // セッションに保存された実際の最初の問題が表示される（BOGUS は無視される）
+    expect(res.text).toContain(`name="questionId" value="${realFirstId}"`);
+    expect(res.text).not.toContain('BOGUS');
+  });
 });

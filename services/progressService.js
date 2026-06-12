@@ -8,13 +8,15 @@ const achievementService = require('./achievementService');
 const questionService = require('./questionService');
 const { percentRate } = require('./scoreUtil');
 
-async function createSession({ userId, certificationId, domainFilter = null, mode = 'all' }) {
+async function createSession({ userId, certificationId, domainFilter = null, mode = 'all', questionIds = [] }) {
   const session = {
     id: crypto.randomUUID(),
     userId,
     certificationId,
     mode,
     domainFilter,
+    // 出題順をセッションに保存し、URL の ?questions= に依存しない正典にする (D-19)。
+    questionIds,
     startedAt: new Date().toISOString(),
     completedAt: null,
     answers: [],
