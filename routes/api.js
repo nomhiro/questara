@@ -6,9 +6,7 @@ const generationService = require('../services/generationService');
 const questionService = require('../services/questionService');
 const userService = require('../services/userService');
 const { requireAuth } = require('../middleware/auth');
-
-const GITHUB_MODELS_ENDPOINT = 'https://models.inference.ai.azure.com';
-const GITHUB_MODELS_DEFAULT_MODEL = 'gpt-4o-mini';
+const { GITHUB_MODELS_ENDPOINT, GITHUB_MODELS_DEFAULT_MODEL } = require('../services/llmClient');
 
 // SSE: ドメインの問題を再生成
 router.post('/certifications/:certId/domains/:domainId/generate', requireAuth, async (req, res) => {

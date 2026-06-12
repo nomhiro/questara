@@ -4,6 +4,7 @@ const { parse } = require('node-html-parser');
 const { Client } = require('@modelcontextprotocol/sdk/client/index.js');
 const { StreamableHTTPClientTransport } = require('@modelcontextprotocol/sdk/client/streamableHttp.js');
 const OpenAI = require('openai');
+const { LLM_TIMEOUT_MS, extractJsonArray } = require('./llmClient');
 
 const MICROSOFT_LEARN_MCP_URL = 'https://learn.microsoft.com/api/mcp';
 
@@ -89,6 +90,7 @@ async function generateQuestions({ cert, certId, domain, llmConfig, onProgress }
   const openai = new OpenAI({
     baseURL: llmConfig.endpointUrl,
     apiKey: llmConfig.apiKey,
+    timeout: LLM_TIMEOUT_MS,
   });
 
   onProgress?.('LLM に問題生成をリクエスト中...');
@@ -169,12 +171,12 @@ function buildContextSection(guideText, courseText) {
 }
 
 function parseQuestionsFromResponse(text, certId, domainId, idOffset = 0) {
-  const jsonMatch = text.match(/\[[\s\S]*\]/);
-  if (!jsonMatch) throw new Error('LLM のレスポンスから JSON を抽出できませんでした');
+  const json = extractJsonArray(text);
+  if (!json) throw new Error('LLM のレスポンスから JSON を抽出できませんでした');
 
   let questions;
   try {
-    questions = JSON.parse(jsonMatch[0]);
+    questions = JSON.parse(json);
   } catch (e) {
     throw new Error(`JSON のパースに失敗しました: ${e.message}`);
   }
