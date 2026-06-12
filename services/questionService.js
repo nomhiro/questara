@@ -60,6 +60,18 @@ function shuffle(array) {
   return a;
 }
 
+/**
+ * 問題の正解キー配列を返す（複数選択対応の正規化ヘルパー）。
+ * correctAnswers 配列があればそれを、なければ既存データ互換で
+ * correctAnswer 単一キーを配列化して返す。
+ */
+function getCorrectAnswers(question) {
+  if (Array.isArray(question?.correctAnswers) && question.correctAnswers.length > 0) {
+    return question.correctAnswers;
+  }
+  return question?.correctAnswer ? [question.correctAnswer] : [];
+}
+
 async function listCertifications({ includePrivate = false, userId = null } = {}) {
   let querySpec;
   if (includePrivate && userId) {
@@ -143,6 +155,7 @@ module.exports = {
   canAccessCertification,
   buildCertification,
   shuffle,
+  getCorrectAnswers,
   writeCertification,
   listCertifications,
   getDomain,
