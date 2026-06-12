@@ -1,22 +1,7 @@
 'use strict';
 
-const { Client } = require('@modelcontextprotocol/sdk/client/index.js');
-const { StreamableHTTPClientTransport } = require('@modelcontextprotocol/sdk/client/streamableHttp.js');
+const mcpClient = require('./mcpClient');
 const { createLlmClient, GITHUB_MODELS_DEFAULT_MODEL, extractJsonArray } = require('./llmClient');
-
-const LEARN_MCP_URL = 'https://learn.microsoft.com/api/mcp';
-
-async function fetchMarkdown(url) {
-  const client = new Client({ name: 'questara', version: '1.0.0' });
-  const transport = new StreamableHTTPClientTransport(new URL(LEARN_MCP_URL));
-  try {
-    await client.connect(transport);
-    const result = await client.callTool({ name: 'microsoft_docs_fetch', arguments: { url } });
-    return result?.content?.map((c) => c.text).join('\n') || '';
-  } finally {
-    await client.close().catch(() => {});
-  }
-}
 
 /**
  * 現行スキル範囲より後ろのセクション（学習リソース / 変更履歴 / 以前の評価されるスキル）を落とす。
@@ -181,7 +166,7 @@ function normalizeWeightsToSum100(domains) {
  */
 async function extractDomains(studyGuideUrl, { accessToken } = {}) {
   if (!studyGuideUrl) return [];
-  const md = await fetchMarkdown(studyGuideUrl);
+  const md = await mcpClient.callLearnFetch(studyGuideUrl);
   if (!md) throw new Error('学習ガイドのコンテンツを取得できませんでした');
 
   const regexDomains = parseDomainsFromMarkdown(md);

@@ -1,33 +1,21 @@
 'use strict';
 
 const { parse } = require('node-html-parser');
-const { Client } = require('@modelcontextprotocol/sdk/client/index.js');
-const { StreamableHTTPClientTransport } = require('@modelcontextprotocol/sdk/client/streamableHttp.js');
 const OpenAI = require('openai');
+const mcpClient = require('./mcpClient');
 const { LLM_TIMEOUT_MS, extractJsonArray } = require('./llmClient');
-
-const MICROSOFT_LEARN_MCP_URL = 'https://learn.microsoft.com/api/mcp';
 
 /**
  * Microsoft Learn MCP で学習ガイドページを Markdown 取得する
- * 失敗時は null を返す (フォールバック用)
+ * 失敗時は null を返す (フォールバック用)。MCP 接続は mcpClient に集約 (D-12)。
  */
 async function fetchViaLearnMcp(url) {
-  const client = new Client({ name: 'questara', version: '1.0.0' });
-  const transport = new StreamableHTTPClientTransport(new URL(MICROSOFT_LEARN_MCP_URL));
   try {
-    await client.connect(transport);
-    const result = await client.callTool({
-      name: 'microsoft_docs_fetch',
-      arguments: { url },
-    });
-    const text = result?.content?.map((c) => c.text).join('\n') || '';
+    const text = await mcpClient.callLearnFetch(url);
     return text.trim() || null;
   } catch (err) {
     console.warn('[LearnMCP] fetch failed, falling back to HTML scraping:', err.message);
     return null;
-  } finally {
-    await client.close().catch(() => {});
   }
 }
 
