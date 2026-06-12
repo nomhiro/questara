@@ -76,6 +76,7 @@ async function completeSession(sessionId, userId) {
   let previousLevel = 1;
   let newLevel = 1;
   let rankUpgrades = [];
+  let questResult = { newlyCompleted: [], bonus: 0 };
 
   const updatedUser = await userService.updateUserStats(userId, (stats) => {
     stats.totalSessions = (stats.totalSessions || 0) + 1;
@@ -117,7 +118,10 @@ async function completeSession(sessionId, userId) {
     const todayISO = new Date().toISOString().slice(0, 10);
     stats.streak = gamificationService.updateStreak(stats.streak, todayISO);
 
-    const questResult = gamificationService.evaluateDailyQuest({
+    // 外部スコープの questResult に代入し、updater 後で参照する。
+    // （以前は session.__questResult に退避していたが、session は DB に upsert される
+    //   オブジェクトなので一時値の混入リスクがあった・D-11）
+    questResult = gamificationService.evaluateDailyQuest({
       daily: stats.dailyQuest,
       session,
       todayISODate: todayISO,
@@ -129,7 +133,6 @@ async function completeSession(sessionId, userId) {
     };
     stats.xp = (stats.xp || 0) + (questResult.bonus || 0);
     stats.level = gamificationService.recomputeLevel(stats.xp);
-    session.__questResult = questResult; // used outside updater
 
     return stats;
   });
@@ -168,9 +171,6 @@ async function completeSession(sessionId, userId) {
     // Recompute level after achievement XP so result page shows final level
     newLevel = gamificationService.recomputeLevel((updatedUser?.stats?.xp || 0) + achievementXp);
   }
-
-  const questResult = session.__questResult || { newlyCompleted: [], bonus: 0 };
-  delete session.__questResult;
 
   session.gamification = {
     xpEarned: xpEarned + (questResult.bonus || 0) + achievementXp,
