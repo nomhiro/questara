@@ -6,6 +6,7 @@ const generationService = require('../services/generationService');
 const questionService = require('../services/questionService');
 const userService = require('../services/userService');
 const { requireAuth } = require('../middleware/auth');
+const { initSse } = require('../middleware/sse');
 const { GITHUB_MODELS_ENDPOINT, GITHUB_MODELS_DEFAULT_MODEL } = require('../services/llmClient');
 
 // SSE: ドメインの問題を再生成
@@ -32,15 +33,8 @@ router.post('/certifications/:certId/domains/:domainId/generate', requireAuth, a
     modelName: GITHUB_MODELS_DEFAULT_MODEL,
   };
 
-  // SSE レスポンスを開始
-  res.setHeader('Content-Type', 'text/event-stream');
-  res.setHeader('Cache-Control', 'no-cache');
-  res.setHeader('Connection', 'keep-alive');
-  res.flushHeaders();
-
-  const send = (event, data) => {
-    res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
-  };
+  // SSE レスポンスを開始（切断耐性のある send を取得）
+  const { send } = initSse(res);
 
   try {
     send('progress', { message: '学習ガイドとコースコンテンツを取得中...' });
