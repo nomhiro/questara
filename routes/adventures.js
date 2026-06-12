@@ -83,60 +83,17 @@ router.post('/preset', requireAuth, async (req, res) => {
     return res.status(400).render('error', { title: 'Bad Request', message: '少なくとも 1 つの道を選んでください' });
   }
 
-  // 複数プリセットの dungeons を順序保持でマージ（重複は最初の出現位置のみ残す）
-  const seen = new Set();
-  const mergedDungeons = [];
-  for (const p of chosen) {
-    for (const d of p.dungeons) {
-      if (!seen.has(d.certId)) {
-        seen.add(d.certId);
-        mergedDungeons.push(d);
-      }
-    }
-  }
-
   const certs = await questionService.listCertifications({ includePrivate: true, userId: req.user.id });
   const certIds = new Set(certs.map((c) => c.id));
-  const availableDungeons = mergedDungeons.filter((d) => certIds.has(d.certId));
-  if (availableDungeons.length === 0) {
+  const payload = adventureService.buildAdventureFromPresets(chosen, certIds);
+  if (!payload) {
     return res.status(400).render('error', {
       title: 'Bad Request',
       message: '選択した道に含まれる資格がまだシステムに登録されていません。「マイ資格」から先に追加してください。',
     });
   }
 
-  const name = chosen.length === 1
-    ? chosen[0].name
-    : `${chosen.map((p) => p.name).join(' × ')}`;
-  const description = chosen.length === 1
-    ? chosen[0].description
-    : chosen.map((p) => `【${p.name}】${p.description}`).join(' ／ ');
-  const citations = mergedDungeons
-    .map((d) => ({ url: d.url, title: d.name }))
-    .filter((c) => c.url);
-  const rationale = chosen.length === 1
-    ? `Microsoft Learn 公式の「${chosen[0].name}」ラーニングパスに沿って構成（${chosen[0].officialUrl || ''}）。`
-    : `Microsoft Learn 公式の ${chosen.length} 本のラーニングパスを合流させた冒険：${chosen.map((p) => p.name).join('、')}。`;
-
-  const adv = await adventureService.createAdventure({
-    userId: req.user.id,
-    name,
-    description,
-    source: 'preset',
-    presetId: chosen.map((p) => p.id).join(','),
-    userPrompt: null,
-    dungeons: availableDungeons.map((d, i) => ({
-      certificationId: d.certId,
-      order: i + 1,
-      status: 'in-progress',
-      unlockedAt: new Date().toISOString(),
-      clearedAt: null,
-    })),
-    rationale,
-    citations,
-    verificationStatus: 'verified',
-    isActive: true,
-  });
+  const adv = await adventureService.createAdventure({ userId: req.user.id, ...payload });
   await adventureService.setActive(req.user.id, adv.id);
   res.redirect(`/adventures/${adv.id}`);
 });

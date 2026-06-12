@@ -50,6 +50,63 @@ async function getAdventure(id, userId) {
   return normalizeAdventure(adv);
 }
 
+/**
+ * 選択されたプリセット群から冒険の payload を組み立てる（D-09）。
+ * 複数プリセットの dungeons を順序保持でマージ（重複 certId は最初の出現のみ）し、
+ * システムに登録済み(knownCertIds)の資格だけで構成する。利用可能資格が 0 件なら null。
+ * userId は呼び出し側で付与する。
+ * @param {Array} chosenPresets - adventure-presets.json のプリセットオブジェクト配列
+ * @param {Set<string>} knownCertIds - システムに登録済みの certId 集合
+ * @returns {object|null}
+ */
+function buildAdventureFromPresets(chosenPresets, knownCertIds) {
+  const seen = new Set();
+  const mergedDungeons = [];
+  for (const p of chosenPresets) {
+    for (const d of p.dungeons) {
+      if (!seen.has(d.certId)) {
+        seen.add(d.certId);
+        mergedDungeons.push(d);
+      }
+    }
+  }
+
+  const availableDungeons = mergedDungeons.filter((d) => knownCertIds.has(d.certId));
+  if (availableDungeons.length === 0) return null;
+
+  const name = chosenPresets.length === 1
+    ? chosenPresets[0].name
+    : chosenPresets.map((p) => p.name).join(' × ');
+  const description = chosenPresets.length === 1
+    ? chosenPresets[0].description
+    : chosenPresets.map((p) => `【${p.name}】${p.description}`).join(' ／ ');
+  const citations = mergedDungeons
+    .map((d) => ({ url: d.url, title: d.name }))
+    .filter((c) => c.url);
+  const rationale = chosenPresets.length === 1
+    ? `Microsoft Learn 公式の「${chosenPresets[0].name}」ラーニングパスに沿って構成（${chosenPresets[0].officialUrl || ''}）。`
+    : `Microsoft Learn 公式の ${chosenPresets.length} 本のラーニングパスを合流させた冒険：${chosenPresets.map((p) => p.name).join('、')}。`;
+
+  return {
+    name,
+    description,
+    source: 'preset',
+    presetId: chosenPresets.map((p) => p.id).join(','),
+    userPrompt: null,
+    dungeons: availableDungeons.map((d, i) => ({
+      certificationId: d.certId,
+      order: i + 1,
+      status: 'in-progress',
+      unlockedAt: new Date().toISOString(),
+      clearedAt: null,
+    })),
+    rationale,
+    citations,
+    verificationStatus: 'verified',
+    isActive: true,
+  };
+}
+
 // adventures コンテナへの書き込みはこの関数に集約する（progressService からの
 // 直接 upsert も含め、書き込み経路を adventureService に一本化する・D-10）。
 async function saveAdventure(adventure) {
@@ -107,6 +164,7 @@ module.exports = {
   normalizeAdventure,
   checkDungeonUnlocks,
   isDungeonBClearable,
+  buildAdventureFromPresets,
   listAdventures,
   getAdventure,
   createAdventure,
