@@ -32,7 +32,7 @@ router.post('/start', requireAuth, async (req, res) => {
 
   if (questions.length === 0) return res.redirect(`/certifications/${certId}?info=no-questions`);
 
-  questions.sort(() => Math.random() - 0.5);
+  questions = questionService.shuffle(questions);
   const session = await progressService.createSession({ userId, certificationId: certId, domainFilter, mode });
   const questionIds = questions.map((q) => q.id).join(',');
   res.redirect(`/quiz/${session.id}?questions=${encodeURIComponent(questionIds)}&certId=${certId}&idx=0`);

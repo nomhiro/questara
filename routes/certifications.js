@@ -57,21 +57,12 @@ router.post('/new', requireAuth, async (req, res) => {
   }
   let domains = [];
   try { domains = JSON.parse(domainsJson || '[]'); } catch { domains = []; }
-  const cert = {
-    id, name, studyGuideUrl: studyGuideUrl || '', courseUrl: courseUrl || '',
+  const cert = questionService.buildCertification({
+    id, name, studyGuideUrl, courseUrl,
     createdBy: req.user.id,
     creatorName: req.user.username,
-    isPublic: false,
-    publishedAt: null,
-    usedByCount: 0,
-    domains: domains.map((d, i) => ({
-      id: d.id || `domain-${i + 1}`,
-      name: d.name || `Domain ${i + 1}`,
-      weight: Math.round(Number(d.weight) || 0),
-      generatedAt: null,
-      questions: [],
-    })),
-  };
+    domains,
+  });
   await questionService.writeCertification(cert);
   res.redirect('/my/certifications');
 });

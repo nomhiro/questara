@@ -22,6 +22,44 @@ async function writeCertification(certData) {
   await cosmosService.upsert('certifications', certData);
 }
 
+/**
+ * フォーム入力から非公開の資格ドキュメントを組み立てる (D-09)。
+ * domains は id/name/weight を正規化し、generatedAt=null・空 questions で初期化する。
+ */
+function buildCertification({ id, name, studyGuideUrl = '', courseUrl = '', createdBy, creatorName, domains = [] }) {
+  return {
+    id,
+    name,
+    studyGuideUrl: studyGuideUrl || '',
+    courseUrl: courseUrl || '',
+    createdBy,
+    creatorName,
+    isPublic: false,
+    publishedAt: null,
+    usedByCount: 0,
+    domains: domains.map((d, i) => ({
+      id: d.id || `domain-${i + 1}`,
+      name: d.name || `Domain ${i + 1}`,
+      weight: Math.round(Number(d.weight) || 0),
+      generatedAt: null,
+      questions: [],
+    })),
+  };
+}
+
+/**
+ * 配列を Fisher–Yates でシャッフルした新しい配列を返す（非破壊）(D-09)。
+ * 旧実装 `arr.sort(() => Math.random() - 0.5)` は分布が偏るため置き換え。
+ */
+function shuffle(array) {
+  const a = [...array];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
 async function listCertifications({ includePrivate = false, userId = null } = {}) {
   let querySpec;
   if (includePrivate && userId) {
@@ -103,6 +141,8 @@ async function getCertDomainCounts() {
 module.exports = {
   readCertification,
   canAccessCertification,
+  buildCertification,
+  shuffle,
   writeCertification,
   listCertifications,
   getDomain,
