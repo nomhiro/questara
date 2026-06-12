@@ -28,6 +28,10 @@ router.post('/', requireAuth, asyncHandler(async (req, res) => {
   if (!certificationId || !examDate) {
     return res.status(400).send('資格と試験日は必須です');
   }
+  // D-15: 不正な日付文字列は空スケジュールのプランを生むため弾く（過去日は許容）
+  if (Number.isNaN(new Date(examDate).getTime())) {
+    return res.status(400).send('試験日の形式が正しくありません');
+  }
   try {
     await planService.upsertPlan({ userId: req.user.id, certificationId, examDate });
     res.redirect('/plans');

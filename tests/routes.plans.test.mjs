@@ -28,6 +28,14 @@ describe('routes/plans', () => {
     expect(list.text).toContain('今週のタスク');
   });
 
+  test('POST /plans は examDate が不正な日付なら 400 (D-15)', async () => {
+    const user = await createTestUser();
+    await createTestCertification({ id: 'plan-c-bad' });
+    const agent = await authedAgent(user);
+    const res = await agent.post('/plans').type('form').send({ certificationId: 'plan-c-bad', examDate: 'not-a-date' });
+    expect(res.status).toBe(400);
+  });
+
   test('POST /plans/:certId/delete で削除', async () => {
     const user = await createTestUser();
     await createTestCertification({ id: 'plan-c-2' });
