@@ -53,6 +53,10 @@ async function recordAnswer({ sessionId, userId, questionId, domainId, domainWei
 async function completeSession(sessionId, userId) {
   const session = await getSession(sessionId, userId);
   if (!session) throw new Error(`Session not found: ${sessionId}`);
+  // 冪等性ガード(D-18): 既に完了済みのセッションは再集計・再加算しない。
+  // 結果ページ直前 URL のリロード/戻るで completeSession が再呼び出しされても
+  // XP・セッション数を二重計上しないよう、保存済みの結果をそのまま返す。
+  if (session.completedAt) return session;
   session.completedAt = new Date().toISOString();
   const total = session.answers.length;
   const correct = session.answers.filter((a) => a.isCorrect).length;

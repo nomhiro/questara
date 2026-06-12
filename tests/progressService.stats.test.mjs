@@ -6,6 +6,7 @@ import { authedAgent } from './_setup/http.mjs';
 
 const require = createRequire(import.meta.url);
 const userService = require('../services/userService');
+const progressService = require('../services/progressService');
 
 describe('progressService.completeSession stats update', () => {
   beforeAll(async () => { await setupTestDb(); });
@@ -98,5 +99,41 @@ describe('progressService.completeSession stats update', () => {
     expect(updated.stats.totalCorrect).toBe(2);
     expect(updated.stats.certStats[cert.id].sessionsCount).toBe(3);
     expect(updated.stats.certStats[cert.id].correctRate).toBe(67);
+  });
+
+  test('completeSession は二重呼び出しでも stats を一度しか加算しない（冪等・D-18）', async () => {
+    const user = await createTestUser();
+    const cert = await createTestCertification({
+      id: 'idempotent-1',
+      domains: [
+        {
+          id: 'domain-1', name: 'D1', weight: 100, generatedAt: null,
+          questions: [
+            { id: 'q1', question: 'Q1', options: { A: 'a', B: 'b', C: 'c', D: 'd' }, correctAnswer: 'A', explanation: '' },
+          ],
+        },
+      ],
+    });
+
+    const session = await progressService.createSession({ userId: user.id, certificationId: cert.id, mode: 'all' });
+    await progressService.recordAnswer({
+      sessionId: session.id, userId: user.id,
+      questionId: 'q1', domainId: 'domain-1', domainWeight: 100,
+      selectedAnswer: 'A', isCorrect: true,
+    });
+
+    const first = await progressService.completeSession(session.id, user.id);
+    const afterFirst = await userService.getUserById(user.id);
+    const xpAfterFirst = afterFirst.stats.xp;
+
+    // リロード/戻る相当: 完了済みセッションをもう一度完了させる
+    const second = await progressService.completeSession(session.id, user.id);
+    const afterSecond = await userService.getUserById(user.id);
+
+    expect(afterSecond.stats.totalSessions).toBe(1);
+    expect(afterSecond.stats.totalAnswered).toBe(1);
+    expect(afterSecond.stats.totalCorrect).toBe(1);
+    expect(afterSecond.stats.xp).toBe(xpAfterFirst); // XP は二重加算されない
+    expect(second.completedAt).toBe(first.completedAt); // 完了時刻も保持
   });
 });
