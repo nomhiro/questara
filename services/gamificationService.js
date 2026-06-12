@@ -36,6 +36,14 @@ function xpBreakdown(xp) {
   };
 }
 
+/**
+ * HUD/詳細表示用に「生 stats + XP 内訳」をマージしたオブジェクトを返す (D-07)。
+ * index/quiz/profile の各ルートで重複していた `{ ...stats, ...xpBreakdown(stats.xp) }` を集約。
+ */
+function buildHudStats(rawStats = {}) {
+  return { ...rawStats, ...xpBreakdown(rawStats.xp || 0) };
+}
+
 function calcCombo(session) {
   const answers = session?.answers || [];
   if (answers.length === 0) return 1;
@@ -175,6 +183,7 @@ module.exports = {
   xpRequiredForLevelUp,
   recomputeLevel,
   xpBreakdown,
+  buildHudStats,
   calcCombo,
   calcMasteryRank,
   compareRanks,

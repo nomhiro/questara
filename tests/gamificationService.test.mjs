@@ -1,6 +1,20 @@
 import { describe, it, expect } from 'vitest';
 import gamificationService from '../services/gamificationService.js';
 
+describe('buildHudStats', () => {
+  it('生 stats に XP 内訳をマージする', () => {
+    const out = gamificationService.buildHudStats({ xp: 0, level: 1, totalSessions: 3 });
+    expect(out.totalSessions).toBe(3);
+    expect(out.xpIntoLevel).toBe(0);
+    expect(out).toHaveProperty('xpForLevel');
+  });
+  it('空 stats でも XP 内訳フィールドを持つ', () => {
+    const out = gamificationService.buildHudStats();
+    expect(out).toHaveProperty('xpIntoLevel');
+    expect(out).toHaveProperty('xpForLevel');
+  });
+});
+
 describe('calcAnswerXp', () => {
   it('正解時 base 10、combo 1 では +weightBonus のみ', () => {
     expect(gamificationService.calcAnswerXp({ isCorrect: true, combo: 1, domainWeight: 20 })).toBe(12);

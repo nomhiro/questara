@@ -66,10 +66,9 @@ router.get('/:sessionId', requireAuth, asyncHandler(async (req, res) => {
 
   const user = await userService.getUserById(req.user.id);
   const rawStats = user?.stats || {};
-  const xpBreak = gamificationService.xpBreakdown(rawStats.xp || 0);
   const currentCombo = gamificationService.calcCombo(session);
   const hudUserName = user?.displayName || user?.username || 'NoName';
-  const hudStats = { ...rawStats, ...xpBreak };
+  const hudStats = gamificationService.buildHudStats(rawStats);
 
   res.render('quiz', {
     title: `問題 ${currentIdx + 1} / ${questionIds.length}`,

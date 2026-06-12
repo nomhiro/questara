@@ -101,9 +101,8 @@ router.get('/certifications/:certId', requireAuth, asyncHandler(async (req, res)
 
   const user = await userService.getUserById(req.user.id);
   const rawStats = user?.stats || {};
-  const xpBreak = gamificationService.xpBreakdown(rawStats.xp || 0);
   const hudUserName = user?.displayName || user?.username || 'NoName';
-  const hudStats = { ...rawStats, ...xpBreak };
+  const hudStats = gamificationService.buildHudStats(rawStats);
   const masteryRanks = rawStats.masteryRanks || {};
 
   res.render('certification', {

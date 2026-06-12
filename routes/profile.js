@@ -11,7 +11,6 @@ const { asyncHandler } = require('../middleware/asyncHandler');
 router.get('/', requireAuth, asyncHandler(async (req, res) => {
   const user = await userService.getUserById(req.user.id);
   const stats = user?.stats || {};
-  const xpBreak = gamificationService.xpBreakdown(stats.xp || 0);
   const master = achievementService.loadMaster();
   const unlocked = new Set(stats.unlockedAchievements || []);
 
@@ -22,7 +21,7 @@ router.get('/', requireAuth, asyncHandler(async (req, res) => {
       name: user?.displayName || user?.username || 'NoName',
       avatarUrl: user?.avatarUrl || null,
     },
-    stats: { ...stats, ...xpBreak },
+    stats: gamificationService.buildHudStats(stats),
     achievementsMaster: master,
     unlocked,
   });
