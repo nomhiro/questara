@@ -47,11 +47,9 @@ const ALLOWED_UNTESTED = new Map([
   // すでに routes.auth.test でカバー済みの扱い。
   // 必要ならここを外して detailed test を追加可能。
 
-  // 問題再生成 SSE。既存の routes.certifications テストで GET 側はカバー、POST SSE は手動。
-  ['routes/api.js', 'SSE regeneration endpoint, manual verification'],
-  ['routes/domains.js', 'domain edit/delete UI + SSE fallback, indirectly covered by routes.certifications'],
-  // 冒険生成 SSE。LLM + MCP の外部 IO で、ロジックは adventureGeneratorService.test.js で unit 済み。
-  ['routes/api-adventure.js', 'SSE wrapper over external LLM + MCP; logic unit-tested in adventureGeneratorService.test'],
+  // routes/api.js（問題再生成 SSE）, routes/api-adventure.js（冒険生成 SSE）,
+  // routes/domains.js は LLM/MCP をモックした characterization test を追加したため除外不要:
+  //   tests/routes.api.test.mjs, tests/routes.api-adventure.test.mjs, tests/routes.domains.test.mjs
 
   // authContext / requireAuth は全 routes.* テストで間接的に検証されている。
   ['middleware/auth.js', 'exercised by all routes.* tests'],
