@@ -15,6 +15,10 @@
      const xpInto = s.xpIntoLevel || 0; const xpFor = s.xpForLevel || 100;
      const xpPct = Math.min(100, Math.round((xpInto / xpFor) * 100));
      const combo = currentCombo || 1;
+     const correctAnswers = (Array.isArray(question.correctAnswers) && question.correctAnswers.length > 0)
+       ? question.correctAnswers
+       : (question.correctAnswer ? [question.correctAnswer] : []);
+     const isMultiple = question.type === 'multiple' || correctAnswers.length > 1;
   %>
   <%- include('partials/hud', { userEmail: typeof userEmail !== 'undefined' ? userEmail : null, heroHud: typeof heroHud !== 'undefined' ? heroHud : null, combo: typeof currentCombo !== 'undefined' ? currentCombo : null }) %>
 
@@ -29,6 +33,9 @@
 
     <section class="rpg-window is-open">
       <p style="font-family: var(--font-body); font-size: 16px; line-height: 1.6; color: var(--ink); margin: 0 0 20px;"><%= question.question %></p>
+      <% if (isMultiple) { %>
+        <p style="font-family: var(--font-display); font-size: 12px; color: var(--gold); margin: 0 0 12px;">☑ 複数選択 — 該当するものをすべて選んで「回答する」を押してください</p>
+      <% } %>
 
       <form id="answerForm" method="POST" action="/quiz/<%= session.id %>/answer">
         <input type="hidden" name="questionId" value="<%= question.id %>">
@@ -43,13 +50,17 @@
           <% for (const [key, val] of Object.entries(question.options)) { %>
             <button type="button"
                     data-key="<%= key %>"
-                    onclick="selectAnswer('<%= key %>', '<%= question.correctAnswer %>')"
+                    onclick="onOptionClick('<%= key %>')"
                     class="option-btn rpg-btn"
                     style="text-align: left; text-transform: none; letter-spacing: 0; padding: 10px 14px; font-family: var(--font-body);">
               <strong style="font-family: var(--font-display); color: var(--gold); margin-right: 8px;"><%= key %>.</strong><%= val %>
             </button>
           <% } %>
         </div>
+
+        <% if (isMultiple) { %>
+          <button type="button" id="submitMultiple" class="rpg-btn is-gold" style="margin-top: 14px;" onclick="gradeMultiple()">⚔ 回答する</button>
+        <% } %>
       </form>
 
       <div id="explanationBox" style="display: none; margin-top: 22px; padding-top: 18px; border-top: 2px dashed var(--gold);">
@@ -65,33 +76,60 @@
   </main>
 
   <script>
+    const CORRECT = <%- JSON.stringify(correctAnswers) %>;
+    const IS_MULTIPLE = <%- JSON.stringify(isMultiple) %>;
     let answered = false;
-    function selectAnswer(key, correctAnswer) {
+    const selected = new Set();
+
+    function onOptionClick(key) {
       if (answered) return;
+      if (!IS_MULTIPLE) return grade([key]);
+      // 複数選択: トグルで選択状態を切り替える
+      const btn = document.querySelector('.option-btn[data-key="' + key + '"]');
+      if (selected.has(key)) {
+        selected.delete(key);
+        btn.classList.remove('is-gold');
+      } else {
+        selected.add(key);
+        btn.classList.add('is-gold');
+      }
+    }
+
+    function gradeMultiple() {
+      if (answered || selected.size === 0) return;
+      grade([...selected].sort());
+    }
+
+    // keys: ソート済みの選択キー配列。正解集合との完全一致で採点する。
+    function grade(keys) {
       answered = true;
-      const isCorrect = key === correctAnswer;
+      const correctSorted = [...CORRECT].sort();
+      const isCorrect = keys.length === correctSorted.length && keys.every((k, i) => k === correctSorted[i]);
       document.getElementById('isCorrectInput').value = isCorrect;
-      document.getElementById('selectedAnswerInput').value = key;
+      document.getElementById('selectedAnswerInput').value = keys.join(',');
 
       document.querySelectorAll('.option-btn').forEach(btn => {
         const btnKey = btn.dataset.key;
         btn.disabled = true;
-        if (btnKey === correctAnswer) {
+        btn.classList.remove('is-gold');
+        if (CORRECT.includes(btnKey)) {
           btn.classList.add('is-fern');
-        } else if (btnKey === key && !isCorrect) {
-          // keep crimson default; darken a bit
+        } else if (keys.includes(btnKey)) {
+          // 誤って選んだ選択肢: crimson のまま少し暗く
           btn.style.opacity = '0.85';
         } else {
           btn.style.opacity = '0.5';
         }
       });
+      const submitBtn = document.getElementById('submitMultiple');
+      if (submitBtn) submitBtn.style.display = 'none';
 
       const badge = document.getElementById('resultBadge');
       if (isCorrect) {
         badge.textContent = '✅ 正解！';
         badge.style.color = 'var(--fern)';
       } else {
-        badge.textContent = '❌ 不正解（正解: ' + correctAnswer + '）';
+        badge.textContent = '❌ 不正解（正解: ' + CORRECT.join(', ') + '）';
         badge.style.color = 'var(--crimson)';
       }
       document.getElementById('explanationBox').style.display = 'block';

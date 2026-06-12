@@ -103,7 +103,8 @@
           </summary>
           <div style="padding: 0 16px 16px; display:flex; flex-direction:column; gap: 6px;">
             <% for (const [key, val] of Object.entries(q.options)) { %>
-              <% const isAns = key === q.correctAnswer; %>
+              <% const answerKeys = (Array.isArray(q.correctAnswers) && q.correctAnswers.length > 0) ? q.correctAnswers : [q.correctAnswer]; %>
+              <% const isAns = answerKeys.includes(key); %>
               <div style="display:flex; gap:8px; font-family: var(--font-body); font-size: 13px; padding: 4px 8px; color: <%= isAns ? 'var(--fern)' : '#c0c6e0' %>;">
                 <span style="font-family: var(--font-display); color: <%= isAns ? 'var(--fern)' : 'var(--gold)' %>;"><%= key %>.</span>
                 <span><%= val %> <%= isAns ? '✓' : '' %></span>
