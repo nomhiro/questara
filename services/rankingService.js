@@ -16,6 +16,8 @@ function monthStart(date = new Date()) {
   return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), 1)).toISOString();
 }
 
+// ランキング掲載の最低回答数。これ未満のユーザーは集計から除外する。
+// （planService.MIN_QUESTIONS_PER_WEEK は「週あたりの最低出題数」で別概念。統合しないこと）
 const MIN_QUESTIONS = 10;
 
 async function getRanking({ certificationId, since }) {

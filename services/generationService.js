@@ -73,14 +73,6 @@ async function fetchContentForDomain(url, domainName, maxChars = 4000) {
   return fetchViaHtmlScraping(url, domainName);
 }
 
-async function fetchDomainContent(studyGuideUrl, domainName) {
-  return fetchContentForDomain(studyGuideUrl, domainName, 4000);
-}
-
-async function fetchCourseContent(courseUrl, domainName) {
-  return fetchContentForDomain(courseUrl, domainName, 4000);
-}
-
 /**
  * OpenAI 互換 API を使って問題を生成する
  * llmConfig: { endpointUrl, apiKey, modelName }
@@ -88,8 +80,8 @@ async function fetchCourseContent(courseUrl, domainName) {
 async function generateQuestions({ cert, certId, domain, llmConfig, onProgress }) {
   onProgress?.('学習ガイドとコースコンテンツを取得中...');
   const [guideText, courseText] = await Promise.all([
-    fetchDomainContent(cert.studyGuideUrl, domain.name),
-    fetchCourseContent(cert.courseUrl, domain.name),
+    fetchContentForDomain(cert.studyGuideUrl, domain.name),
+    fetchContentForDomain(cert.courseUrl, domain.name),
   ]);
 
   const prompt = buildPrompt(domain, guideText, courseText);
@@ -202,4 +194,4 @@ function parseQuestionsFromResponse(text, certId, domainId, idOffset = 0) {
   }));
 }
 
-module.exports = { fetchDomainContent, fetchCourseContent, generateQuestions };
+module.exports = { generateQuestions };
