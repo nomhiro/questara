@@ -1,27 +1,50 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, beforeAll, afterAll } from 'vitest';
+import { createRequire } from 'node:module';
 
-vi.mock('../services/cosmosService.js', () => {
-  const mock = { upsert: vi.fn(), read: vi.fn(), query: vi.fn() };
-  return { default: mock, ...mock };
+// progressService.js は CJS で各サービスを require するため、vi.mock のファクトリでは
+// 差し替わらない。同一シングルトンのメソッドを vi.fn() に直接置き換え、afterAll で restore する。
+// gamificationService は「実物」を使い、XP/コンボ/ランク/ストリークの計算を本物で検証する。
+const _require = createRequire(import.meta.url);
+
+const _cosmos = _require('../services/cosmosService.js');
+const _userService = _require('../services/userService.js');
+const _achievementService = _require('../services/achievementService.js');
+const _questionService = _require('../services/questionService.js');
+
+const _orig = {
+  cosmosRead: _cosmos.read,
+  cosmosUpsert: _cosmos.upsert,
+  cosmosQuery: _cosmos.query,
+  userUpdateStats: _userService.updateUserStats,
+  userGetById: _userService.getUserById,
+  achievementEvaluate: _achievementService.evaluate,
+  questionGetCounts: _questionService.getCertDomainCounts,
+};
+
+beforeAll(() => {
+  _cosmos.read = vi.fn();
+  _cosmos.upsert = vi.fn();
+  _cosmos.query = vi.fn(async () => []);
+  _userService.updateUserStats = vi.fn();
+  _userService.getUserById = vi.fn(async () => null);
+  _achievementService.evaluate = vi.fn(() => []);
+  _questionService.getCertDomainCounts = vi.fn(async () => ({}));
 });
-vi.mock('../services/userService.js', () => {
-  const mock = { updateUserStats: vi.fn() };
-  return { default: mock, ...mock };
-});
-vi.mock('../services/achievementService.js', () => {
-  const mock = { evaluate: vi.fn(() => []), loadMaster: vi.fn(() => []) };
-  return { default: mock, ...mock };
-});
-vi.mock('../services/questionService.js', () => {
-  const mock = { getCertDomainCounts: vi.fn(async () => ({})) };
-  return { default: mock, ...mock };
+afterAll(() => {
+  _cosmos.read = _orig.cosmosRead;
+  _cosmos.upsert = _orig.cosmosUpsert;
+  _cosmos.query = _orig.cosmosQuery;
+  _userService.updateUserStats = _orig.userUpdateStats;
+  _userService.getUserById = _orig.userGetById;
+  _achievementService.evaluate = _orig.achievementEvaluate;
+  _questionService.getCertDomainCounts = _orig.questionGetCounts;
 });
 
-import cosmos from '../services/cosmosService.js';
-import userService from '../services/userService.js';
-import achievementService from '../services/achievementService.js';
-import questionService from '../services/questionService.js';
-import progressService from '../services/progressService.js';
+const cosmos = _cosmos;
+const userService = _userService;
+const achievementService = _achievementService;
+const questionService = _questionService;
+const progressService = _require('../services/progressService.js');
 
 describe('recordAnswer with gamification', () => {
   beforeEach(() => {

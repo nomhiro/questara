@@ -1,20 +1,36 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, beforeAll, afterAll } from 'vitest';
+import { createRequire } from 'node:module';
 
-// 先に env を stub してから import
+// userService.js は CJS で require('./cosmosService') するため、vi.mock のファクトリでは
+// 差し替わらない。adventureService.test.mjs と同様に、同一シングルトンのメソッドを
+// store ベースの vi.fn() に直接置き換え、afterAll で restore する。
+const _require = createRequire(import.meta.url);
+
+// 暗号化鍵（.env.test でも同値だが自己完結のため明示）
 vi.stubEnv('ENCRYPTION_KEY', 'a'.repeat(64));
 
 const store = new Map();
-vi.mock('../services/cosmosService.js', () => {
-  const mock = {
-    upsert: vi.fn(async (container, doc) => { store.set(`${container}:${doc.id}`, doc); return doc; }),
-    read: vi.fn(async (container, id) => store.get(`${container}:${id}`) || null),
-    query: vi.fn(async () => []),
-    remove: vi.fn(async (container, id) => { store.delete(`${container}:${id}`); }),
-  };
-  return { default: mock, ...mock };
+const _cosmos = _require('../services/cosmosService.js');
+const _origCosmos = {
+  read: _cosmos.read,
+  upsert: _cosmos.upsert,
+  query: _cosmos.query,
+  remove: _cosmos.remove,
+};
+
+vi.mock('../services/cosmosService.js', () => ({ default: _cosmos, ..._cosmos }));
+
+beforeAll(() => {
+  _cosmos.upsert = vi.fn(async (container, doc) => { store.set(`${container}:${doc.id}`, doc); return doc; });
+  _cosmos.read = vi.fn(async (container, id) => store.get(`${container}:${id}`) || null);
+  _cosmos.query = vi.fn(async () => []);
+  _cosmos.remove = vi.fn(async (container, id) => { store.delete(`${container}:${id}`); });
+});
+afterAll(() => {
+  Object.assign(_cosmos, _origCosmos);
 });
 
-const userService = await import('../services/userService.js').then((m) => m.default || m);
+const userService = _require('../services/userService.js');
 
 describe('upsertGithubUser stats initialization', () => {
   beforeEach(() => { store.clear(); });
