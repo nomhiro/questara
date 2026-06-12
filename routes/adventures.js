@@ -8,19 +8,20 @@ const router = express.Router();
 const adventureService = require('../services/adventureService');
 const questionService = require('../services/questionService');
 const { requireAuth } = require('../middleware/auth');
+const { asyncHandler } = require('../middleware/asyncHandler');
 
 const PRESETS = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'data', 'adventure-presets.json'), 'utf8'));
 const CERT_POSITIONS = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'data', 'certification-positions.json'), 'utf8'));
 
-router.get('/', requireAuth, async (req, res) => {
+router.get('/', requireAuth, asyncHandler(async (req, res) => {
   const list = await adventureService.listAdventures(req.user.id);
   if (list.length === 0) return res.redirect('/adventures/new');
   // pick active or first
   const active = list.find((a) => a.isActive) || list[0];
   res.redirect(`/adventures/${active.id}`);
-});
+}));
 
-router.get('/new', requireAuth, async (req, res) => {
+router.get('/new', requireAuth, asyncHandler(async (req, res) => {
   const certs = await questionService.listCertifications({ includePrivate: true, userId: req.user.id });
   const certIds = new Set(certs.map((c) => c.id));
   const presets = PRESETS.map((p) => ({
@@ -67,9 +68,9 @@ router.get('/new', requireAuth, async (req, res) => {
     nodes,
     routes,
   });
-});
+}));
 
-router.post('/preset', requireAuth, async (req, res) => {
+router.post('/preset', requireAuth, asyncHandler(async (req, res) => {
   // presetIds は配列または単一、または旧 presetId を受け入れる
   let presetIds = req.body.presetIds || req.body.presetId || [];
   if (!Array.isArray(presetIds)) presetIds = [presetIds];
@@ -96,9 +97,9 @@ router.post('/preset', requireAuth, async (req, res) => {
   const adv = await adventureService.createAdventure({ userId: req.user.id, ...payload });
   await adventureService.setActive(req.user.id, adv.id);
   res.redirect(`/adventures/${adv.id}`);
-});
+}));
 
-router.get('/:id', requireAuth, async (req, res) => {
+router.get('/:id', requireAuth, asyncHandler(async (req, res) => {
   const adv = await adventureService.getAdventure(req.params.id, req.user.id);
   if (!adv) return res.status(404).render('error', { title: '404', message: '冒険が見つかりません' });
 
@@ -111,16 +112,16 @@ router.get('/:id', requireAuth, async (req, res) => {
     certById,
     recommendedIndex,
   });
-});
+}));
 
-router.post('/:id/activate', requireAuth, async (req, res) => {
+router.post('/:id/activate', requireAuth, asyncHandler(async (req, res) => {
   await adventureService.setActive(req.user.id, req.params.id);
   res.redirect(`/adventures/${req.params.id}`);
-});
+}));
 
-router.post('/:id/delete', requireAuth, async (req, res) => {
+router.post('/:id/delete', requireAuth, asyncHandler(async (req, res) => {
   await adventureService.deleteAdventure(req.params.id, req.user.id);
   res.redirect('/adventures/new');
-});
+}));
 
 module.exports = router;

@@ -5,8 +5,9 @@ const router = express.Router();
 const planService = require('../services/planService');
 const questionService = require('../services/questionService');
 const { requireAuth } = require('../middleware/auth');
+const { asyncHandler } = require('../middleware/asyncHandler');
 
-router.get('/', requireAuth, async (req, res) => {
+router.get('/', requireAuth, asyncHandler(async (req, res) => {
   const plans = await planService.listPlans(req.user.id);
   const allCerts = await questionService.listCertifications({ includePrivate: true, userId: req.user.id });
   const plansWithCert = plans.map((p) => ({
@@ -20,9 +21,9 @@ router.get('/', requireAuth, async (req, res) => {
     allCerts,
     userEmail: res.locals.userEmail,
   });
-});
+}));
 
-router.post('/', requireAuth, async (req, res) => {
+router.post('/', requireAuth, asyncHandler(async (req, res) => {
   const { certificationId, examDate } = req.body;
   if (!certificationId || !examDate) {
     return res.status(400).send('資格と試験日は必須です');
@@ -33,11 +34,11 @@ router.post('/', requireAuth, async (req, res) => {
   } catch (err) {
     res.status(400).send(err.message);
   }
-});
+}));
 
-router.post('/:certId/delete', requireAuth, async (req, res) => {
+router.post('/:certId/delete', requireAuth, asyncHandler(async (req, res) => {
   await planService.deletePlan(req.user.id, req.params.certId);
   res.redirect('/plans');
-});
+}));
 
 module.exports = router;

@@ -6,8 +6,9 @@ const userService = require('../services/userService');
 const achievementService = require('../services/achievementService');
 const gamificationService = require('../services/gamificationService');
 const { requireAuth } = require('../middleware/auth');
+const { asyncHandler } = require('../middleware/asyncHandler');
 
-router.get('/', requireAuth, async (req, res) => {
+router.get('/', requireAuth, asyncHandler(async (req, res) => {
   const user = await userService.getUserById(req.user.id);
   const stats = user?.stats || {};
   const xpBreak = gamificationService.xpBreakdown(stats.xp || 0);
@@ -25,6 +26,6 @@ router.get('/', requireAuth, async (req, res) => {
     achievementsMaster: master,
     unlocked,
   });
-});
+}));
 
 module.exports = router;

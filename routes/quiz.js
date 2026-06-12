@@ -7,8 +7,9 @@ const progressService = require('../services/progressService');
 const { requireAuth } = require('../middleware/auth');
 const userService = require('../services/userService');
 const gamificationService = require('../services/gamificationService');
+const { asyncHandler } = require('../middleware/asyncHandler');
 
-router.post('/start', requireAuth, async (req, res) => {
+router.post('/start', requireAuth, asyncHandler(async (req, res) => {
   const { certId, mode, domainId } = req.body;
   const userId = req.user.id;
   const cert = await questionService.readCertification(certId);
@@ -36,9 +37,9 @@ router.post('/start', requireAuth, async (req, res) => {
   const session = await progressService.createSession({ userId, certificationId: certId, domainFilter, mode });
   const questionIds = questions.map((q) => q.id).join(',');
   res.redirect(`/quiz/${session.id}?questions=${encodeURIComponent(questionIds)}&certId=${certId}&idx=0`);
-});
+}));
 
-router.get('/:sessionId', requireAuth, async (req, res) => {
+router.get('/:sessionId', requireAuth, asyncHandler(async (req, res) => {
   const { sessionId } = req.params;
   const { questions: questionIdsStr, certId, idx } = req.query;
   if (!questionIdsStr || !certId) return res.redirect('/');
@@ -79,9 +80,9 @@ router.get('/:sessionId', requireAuth, async (req, res) => {
     stats: hudStats,
     currentCombo,
   });
-});
+}));
 
-router.post('/:sessionId/answer', requireAuth, async (req, res) => {
+router.post('/:sessionId/answer', requireAuth, asyncHandler(async (req, res) => {
   const { sessionId } = req.params;
   const { questionId, domainId, selectedAnswer, isCorrect, questionIds, certId, currentIdx } = req.body;
   const cert = await questionService.readCertification(certId);
@@ -98,9 +99,9 @@ router.post('/:sessionId/answer', requireAuth, async (req, res) => {
   res.redirect(
     `/quiz/${sessionId}?questions=${encodeURIComponent(questionIds)}&certId=${certId}&idx=${nextIdx}&lastAnswer=${selectedAnswer}&lastCorrect=${isCorrect}&lastQuestionId=${questionId}`
   );
-});
+}));
 
-router.get('/:sessionId/result', requireAuth, async (req, res) => {
+router.get('/:sessionId/result', requireAuth, asyncHandler(async (req, res) => {
   const { sessionId } = req.params;
   const { certId } = req.query;
   const session = await progressService.getSession(sessionId, req.user.id);
@@ -125,9 +126,9 @@ router.get('/:sessionId/result', requireAuth, async (req, res) => {
     domainsWithScores, weakDomains, certId,
     gamification: session.gamification || null,
   });
-});
+}));
 
-router.get('/:sessionId/review', requireAuth, async (req, res) => {
+router.get('/:sessionId/review', requireAuth, asyncHandler(async (req, res) => {
   const { sessionId } = req.params;
   const { certId } = req.query;
   const session = await progressService.getSession(sessionId, req.user.id);
@@ -145,6 +146,6 @@ router.get('/:sessionId/review', requireAuth, async (req, res) => {
   }).filter(Boolean);
 
   res.render('review', { title: '間違い復習', session, wrongQuestions, certId });
-});
+}));
 
 module.exports = router;

@@ -9,6 +9,7 @@ const achievementService = require('../services/achievementService');
 const gamificationService = require('../services/gamificationService');
 const userService = require('../services/userService');
 const { requireAuth } = require('../middleware/auth');
+const { asyncHandler } = require('../middleware/asyncHandler');
 
 router.get('/', (req, res) => {
   const errorKey = typeof req.query.error === 'string' ? req.query.error : null;
@@ -28,7 +29,7 @@ function mapAuthError(key) {
   }
 }
 
-router.get('/adventure', requireAuth, async (req, res) => {
+router.get('/adventure', requireAuth, asyncHandler(async (req, res) => {
   const user = await userService.getUserById(req.user.id);
   const stats = user?.stats || {};
 
@@ -65,10 +66,10 @@ router.get('/adventure', requireAuth, async (req, res) => {
     recentAchievements,
     dailyQuest,
   });
-});
+}));
 
 // 旧ホーム（公開資格一覧）を自由モードとして残す
-router.get('/free-mode', requireAuth, async (req, res) => {
+router.get('/free-mode', requireAuth, asyncHandler(async (req, res) => {
   const publicCerts = await questionService.listCertifications({ includePrivate: false });
   const allForUser = await questionService.listCertifications({ includePrivate: true, userId: req.user.id });
   const myCerts = allForUser.filter((c) => c.createdBy === req.user.id && !c.isPublic);
@@ -78,9 +79,9 @@ router.get('/free-mode', requireAuth, async (req, res) => {
     myCerts,
     userEmail: res.locals.userEmail,
   });
-});
+}));
 
-router.get('/certifications/:certId', requireAuth, async (req, res) => {
+router.get('/certifications/:certId', requireAuth, asyncHandler(async (req, res) => {
   const cert = await questionService.readCertification(req.params.certId);
   if (!cert || !questionService.canAccessCertification(cert, req.user.id)) {
     return res.status(404).render('error', { title: '404', message: '資格が見つかりません' });
@@ -117,6 +118,6 @@ router.get('/certifications/:certId', requireAuth, async (req, res) => {
     hudStats,
     masteryRanks,
   });
-});
+}));
 
 module.exports = router;
