@@ -38,9 +38,6 @@ const ALLOWED_UNTESTED = new Map([
   ['services/cosmosService.js', 'thin Cosmos wrapper, integration-only'],
   // JWT 署名検証。routes.auth テストでエンドツーエンド検証済み。
   ['services/jwtService.js', 'covered end-to-end by routes.auth tests'],
-  // 問題生成（Copilot/OpenAI + Microsoft Learn MCP）は外部 IO が重く、
-  // ユニット化しにくい。上位 routes/api.js 経由で手動確認。
-  ['services/generationService.js', 'heavy external IO (LLM + MCP), manual verification'],
   // MCP クライアントは外部 SSE/HTTP 依存。adventureGeneratorService が mock 越しに使う。
   ['services/mcpClient.js', 'external MCP transport, mocked in adventureGeneratorService.test'],
   // GitHub OAuth callback を実機に飛ばさず検証するのは高コスト。routes.auth.test で cookie 挙動のみ確認。
