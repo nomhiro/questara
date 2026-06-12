@@ -93,7 +93,6 @@ async function generateFromPrompt({ userPrompt, accessToken, onProgress = () => 
         { role: 'system', content: systemPrompt },
         { role: 'user', content: prompt },
       ],
-      temperature: 0.4,
     });
   } catch (err) {
     throw new Error(`LLM 呼び出しに失敗: ${err.message}`);

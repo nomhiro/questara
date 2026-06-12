@@ -106,7 +106,6 @@ ${truncated}`;
   const response = await openai.chat.completions.create({
     model: GITHUB_MODELS_DEFAULT_MODEL,
     messages: [{ role: 'user', content: prompt }],
-    temperature: 0.1,
   });
 
   const text = response.choices[0]?.message?.content || '';
