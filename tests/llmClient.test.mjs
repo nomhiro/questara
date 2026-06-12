@@ -6,6 +6,7 @@ const llmClient = _require('../services/llmClient');
 const {
   GITHUB_MODELS_ENDPOINT,
   GITHUB_MODELS_DEFAULT_MODEL,
+  GENERATION_DEFAULT_MODEL,
   LLM_TIMEOUT_MS,
   createLlmClient,
   extractJsonObject,
@@ -14,8 +15,9 @@ const {
 
 describe('llmClient 定数', () => {
   it('GitHub Models のエンドポイント・モデル・タイムアウトを公開する', () => {
-    expect(GITHUB_MODELS_ENDPOINT).toBe('https://models.inference.ai.azure.com');
-    expect(GITHUB_MODELS_DEFAULT_MODEL).toBe('gpt-4o-mini');
+    expect(GITHUB_MODELS_ENDPOINT).toBe('https://models.github.ai/inference');
+    expect(GITHUB_MODELS_DEFAULT_MODEL).toBe('openai/gpt-5-mini');
+    expect(GENERATION_DEFAULT_MODEL).toBe('openai/gpt-5');
     expect(LLM_TIMEOUT_MS).toBe(120000);
   });
 });

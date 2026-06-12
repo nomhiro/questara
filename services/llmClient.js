@@ -4,8 +4,15 @@ const OpenAI = require('openai');
 
 // GitHub Models API（OpenAI 互換エンドポイント）。認証はユーザーの GitHub アクセストークン。
 // これらの定数・クライアント生成・JSON 抽出は複数サービスで重複していたため一元化する。
-const GITHUB_MODELS_ENDPOINT = 'https://models.inference.ai.azure.com';
-const GITHUB_MODELS_DEFAULT_MODEL = 'gpt-4o-mini';
+// モデル ID は {publisher}/{model} 形式（例: openai/gpt-5）。
+// 呼び出し規約は gpt-5 系をベースとする: temperature 等のサンプリングパラメータは送らない
+// （gpt-5 系は非対応）。トークン上限を指定する場合は max_tokens ではなく max_completion_tokens。
+// gpt-4 系はサポート対象外（フォールバックにも含めない）。
+const GITHUB_MODELS_ENDPOINT = 'https://models.github.ai/inference';
+// 補助タスク（資格抽出・アドベンチャー生成）用の既定モデル。高速・低レート消費。
+const GITHUB_MODELS_DEFAULT_MODEL = 'openai/gpt-5-mini';
+// 問題生成用の既定モデル。品質優先（UI で変更可能）。
+const GENERATION_DEFAULT_MODEL = 'openai/gpt-5';
 const LLM_TIMEOUT_MS = 120000;
 
 /**
@@ -35,6 +42,7 @@ function extractJsonArray(text) {
 module.exports = {
   GITHUB_MODELS_ENDPOINT,
   GITHUB_MODELS_DEFAULT_MODEL,
+  GENERATION_DEFAULT_MODEL,
   LLM_TIMEOUT_MS,
   createLlmClient,
   extractJsonObject,
