@@ -13,7 +13,9 @@ router.post('/certifications/:certId/domains/:domainId/generate', requireAuth, a
   const { certId, domainId } = req.params;
 
   const cert = await questionService.readCertification(certId);
-  if (!cert) return res.status(404).json({ error: '資格が見つかりません' });
+  if (!cert || !questionService.canAccessCertification(cert, req.user.id)) {
+    return res.status(404).json({ error: '資格が見つかりません' });
+  }
 
   const domain = cert.domains.find((d) => d.id === domainId);
   if (!domain) return res.status(404).json({ error: 'ドメインが見つかりません' });

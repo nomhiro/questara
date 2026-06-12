@@ -82,7 +82,9 @@ router.get('/free-mode', requireAuth, async (req, res) => {
 
 router.get('/certifications/:certId', requireAuth, async (req, res) => {
   const cert = await questionService.readCertification(req.params.certId);
-  if (!cert) return res.status(404).render('error', { title: '404', message: '資格が見つかりません' });
+  if (!cert || !questionService.canAccessCertification(cert, req.user.id)) {
+    return res.status(404).render('error', { title: '404', message: '資格が見つかりません' });
+  }
   const domainStats = await progressService.calcDomainStats(cert.id, req.user.id);
   const wrongIds = await progressService.getWrongQuestionIds(cert.id, req.user.id);
 

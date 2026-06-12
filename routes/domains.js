@@ -9,7 +9,9 @@ const { requireAuth } = require('../middleware/auth');
 router.get('/:certId/domains/:domainId', requireAuth, async (req, res) => {
   const { certId, domainId } = req.params;
   const cert = await questionService.readCertification(certId);
-  if (!cert) return res.status(404).render('error', { title: '404', message: '資格が見つかりません' });
+  if (!cert || !questionService.canAccessCertification(cert, req.user.id)) {
+    return res.status(404).render('error', { title: '404', message: '資格が見つかりません' });
+  }
 
   const domain = cert.domains.find((d) => d.id === domainId);
   if (!domain) return res.status(404).render('error', { title: '404', message: 'ドメインが見つかりません' });

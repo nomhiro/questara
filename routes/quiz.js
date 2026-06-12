@@ -12,7 +12,9 @@ router.post('/start', requireAuth, async (req, res) => {
   const { certId, mode, domainId } = req.body;
   const userId = req.user.id;
   const cert = await questionService.readCertification(certId);
-  if (!cert) return res.status(404).render('error', { title: '404', message: '資格が見つかりません' });
+  if (!cert || !questionService.canAccessCertification(cert, userId)) {
+    return res.status(404).render('error', { title: '404', message: '資格が見つかりません' });
+  }
 
   let questions;
   let domainFilter = null;
@@ -43,6 +45,12 @@ router.get('/:sessionId', requireAuth, async (req, res) => {
 
   const session = await progressService.getSession(sessionId, req.user.id);
   if (!session) return res.status(404).render('error', { title: '404', message: 'セッションが見つかりません' });
+
+  // D-17: クエリの certId が非公開資格に差し替えられていないか確認（IDOR 防止）
+  const accessCert = await questionService.readCertification(certId);
+  if (!accessCert || !questionService.canAccessCertification(accessCert, req.user.id)) {
+    return res.status(404).render('error', { title: '404', message: '資格が見つかりません' });
+  }
 
   const questionIds = questionIdsStr.split(',');
   const currentIdx = parseInt(idx, 10) || 0;
@@ -77,7 +85,10 @@ router.post('/:sessionId/answer', requireAuth, async (req, res) => {
   const { sessionId } = req.params;
   const { questionId, domainId, selectedAnswer, isCorrect, questionIds, certId, currentIdx } = req.body;
   const cert = await questionService.readCertification(certId);
-  const domain = cert?.domains?.find((d) => d.id === domainId);
+  if (!cert || !questionService.canAccessCertification(cert, req.user.id)) {
+    return res.status(404).render('error', { title: '404', message: '資格が見つかりません' });
+  }
+  const domain = cert.domains.find((d) => d.id === domainId);
   await progressService.recordAnswer({
     sessionId, userId: req.user.id, questionId, domainId, selectedAnswer,
     domainWeight: domain?.weight || 0,
@@ -96,6 +107,9 @@ router.get('/:sessionId/result', requireAuth, async (req, res) => {
   if (!session) return res.status(404).render('error', { title: '404', message: 'セッションが見つかりません' });
 
   const cert = await questionService.readCertification(certId);
+  if (!cert || !questionService.canAccessCertification(cert, req.user.id)) {
+    return res.status(404).render('error', { title: '404', message: '資格が見つかりません' });
+  }
   const domainScores = progressService.calcSessionDomainScores(session);
   const total = session.answers.length;
   const correct = session.answers.filter((a) => a.isCorrect).length;
@@ -119,6 +133,10 @@ router.get('/:sessionId/review', requireAuth, async (req, res) => {
   const session = await progressService.getSession(sessionId, req.user.id);
   if (!session) return res.status(404).render('error', { title: '404', message: 'セッションが見つかりません' });
 
+  const cert = await questionService.readCertification(certId);
+  if (!cert || !questionService.canAccessCertification(cert, req.user.id)) {
+    return res.status(404).render('error', { title: '404', message: '資格が見つかりません' });
+  }
   const wrongAnswers = session.answers.filter((a) => !a.isCorrect);
   const allQuestions = await questionService.getAllQuestions(certId);
   const wrongQuestions = wrongAnswers.map((a) => {

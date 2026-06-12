@@ -6,6 +6,18 @@ async function readCertification(certId) {
   return cosmosService.read('certifications', certId, certId);
 }
 
+/**
+ * 資格にアクセスしてよいか判定する (D-17)。
+ * 公開資格は全員、非公開資格は作成者のみ。cert が null の場合は false。
+ * @param {object|null} cert - readCertification の戻り値
+ * @param {string} userId
+ * @returns {boolean}
+ */
+function canAccessCertification(cert, userId) {
+  if (!cert) return false;
+  return cert.isPublic === true || cert.createdBy === userId;
+}
+
 async function writeCertification(certData) {
   await cosmosService.upsert('certifications', certData);
 }
@@ -90,6 +102,7 @@ async function getCertDomainCounts() {
 
 module.exports = {
   readCertification,
+  canAccessCertification,
   writeCertification,
   listCertifications,
   getDomain,
