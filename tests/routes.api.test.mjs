@@ -113,14 +113,14 @@ describe('routes/api モデル選択', () => {
     expect(callArg.llmConfig.modelName).toBe('openai/gpt-5-mini');
   });
 
-  test('POST generate: model 未指定なら既定モデル openai/gpt-5', async () => {
+  test('POST generate: model 未指定なら既定モデル openai/gpt-4.1', async () => {
     const user = await createTestUser();
     const cert = await createTestCertification({ id: 'cert-api-model-2' });
     const agent = await authedAgent(user);
     const res = await agent.post(`/api/certifications/${cert.id}/domains/domain-1/generate`);
     expect(res.status).toBe(200);
     const callArg = generationService.generateQuestions.mock.calls.at(-1)[0];
-    expect(callArg.llmConfig.modelName).toBe('openai/gpt-5');
+    expect(callArg.llmConfig.modelName).toBe('openai/gpt-4.1');
   });
 
   test('POST generate: model 形式不正は 400', async () => {

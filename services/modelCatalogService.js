@@ -5,26 +5,33 @@
 const CATALOG_URL = 'https://models.github.ai/catalog/models';
 const CACHE_TTL_MS = 10 * 60 * 1000;
 
-// カタログ取得失敗時のフォールバック（gpt-5 系のみ。4 系へのフォールバックはしない）
+// 無料ティアで推論可能なモデルの rate_limit_tier。custom（gpt-5系/o系/deepseek-r1 等の
+// 有料・プレビュー専用。unavailable_model になる）と embeddings は除外する。
+const INFERABLE_TIERS = new Set(['high', 'low']);
+
+// カタログ取得失敗時のフォールバック（推論可能=実測200のモデルのみ）
 const FALLBACK_MODELS = [
-  { id: 'openai/gpt-5', name: 'OpenAI GPT-5', publisher: 'OpenAI' },
-  { id: 'openai/gpt-5-mini', name: 'OpenAI GPT-5 mini', publisher: 'OpenAI' },
-  { id: 'openai/gpt-5-nano', name: 'OpenAI GPT-5 nano', publisher: 'OpenAI' },
+  { id: 'openai/gpt-4.1', name: 'OpenAI GPT-4.1', publisher: 'OpenAI' },
+  { id: 'openai/gpt-4o', name: 'OpenAI GPT-4o', publisher: 'OpenAI' },
+  { id: 'openai/gpt-4o-mini', name: 'OpenAI GPT-4o mini', publisher: 'OpenAI' },
 ];
 
 let cache = { at: 0, models: null };
 
-/** text 入力 → text 出力のチャット系モデルのみ対象にする */
+/**
+ * 無料ティアで推論可能なチャットモデルのみ対象にする。
+ * text→text かつ rate_limit_tier が high/low（custom・embeddings を除外）。
+ */
 function isChatModel(m) {
   const inputs = m.supported_input_modalities || [];
   const outputs = m.supported_output_modalities || [];
-  return inputs.includes('text') && outputs.includes('text');
+  return inputs.includes('text') && outputs.includes('text') && INFERABLE_TIERS.has(m.rate_limit_tier);
 }
 
-/** openai/gpt-5 系 → openai 系 → その他 の順、同順位は id 昇順 */
+/** openai/gpt-4.1 系 → openai 系 → その他 の順、同順位は id 昇順 */
 function sortModels(models) {
   const score = (m) =>
-    m.id.startsWith('openai/gpt-5') ? 0 : m.id.startsWith('openai/') ? 1 : 2;
+    m.id.startsWith('openai/gpt-4.1') ? 0 : m.id.startsWith('openai/') ? 1 : 2;
   return [...models].sort((a, b) => score(a) - score(b) || a.id.localeCompare(b.id));
 }
 

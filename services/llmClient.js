@@ -4,15 +4,16 @@ const OpenAI = require('openai');
 
 // GitHub Models API（OpenAI 互換エンドポイント）。認証はユーザーの GitHub アクセストークン。
 // これらの定数・クライアント生成・JSON 抽出は複数サービスで重複していたため一元化する。
-// モデル ID は {publisher}/{model} 形式（例: openai/gpt-5）。
-// 呼び出し規約は gpt-5 系をベースとする: temperature 等のサンプリングパラメータは送らない
-// （gpt-5 系は非対応）。トークン上限を指定する場合は max_tokens ではなく max_completion_tokens。
-// gpt-4 系はサポート対象外（フォールバックにも含めない）。
+// モデル ID は {publisher}/{model} 形式（例: openai/gpt-4.1）。
+// 既定は無料ティアで推論可能なモデル（カタログ rate_limit_tier = high/low）を使う。
+// gpt-5 系・o 系・deepseek-r1（rate_limit_tier = custom）はカタログに載るが
+// 無料ティアでは推論できない（unavailable_model）ため既定・フォールバックに含めない。
+// temperature 等のサンプリングパラメータは送らない（将来 custom 系を許可しても安全なため統一）。
 const GITHUB_MODELS_ENDPOINT = 'https://models.github.ai/inference';
 // 補助タスク（資格抽出・アドベンチャー生成）用の既定モデル。高速・低レート消費。
-const GITHUB_MODELS_DEFAULT_MODEL = 'openai/gpt-5-mini';
+const GITHUB_MODELS_DEFAULT_MODEL = 'openai/gpt-4o-mini';
 // 問題生成用の既定モデル。品質優先（UI で変更可能）。
-const GENERATION_DEFAULT_MODEL = 'openai/gpt-5';
+const GENERATION_DEFAULT_MODEL = 'openai/gpt-4.1';
 const LLM_TIMEOUT_MS = 120000;
 
 /**

@@ -76,7 +76,7 @@
         <label for="modelSelect" style="font-family: var(--font-display); color: var(--gold); font-size: 12px; display: block; margin-bottom: 6px;">生成モデル</label>
         <select id="modelSelect"
                 style="font-family: var(--font-body); font-size: 13px; padding: 8px 12px; background: var(--window); color: var(--ink); border: 2px solid var(--gold); min-width: 240px;">
-          <option value="openai/gpt-5">openai/gpt-5</option>
+          <option value="openai/gpt-4.1">openai/gpt-4.1</option>
         </select>
       </div>
       <button id="generateBtn" class="rpg-btn is-gold"
@@ -133,7 +133,7 @@
           const opt = document.createElement('option');
           opt.value = m.id;
           opt.textContent = m.id;
-          if (m.id === 'openai/gpt-5') opt.selected = true;
+          if (m.id === 'openai/gpt-4.1') opt.selected = true;
           select.appendChild(opt);
         }
       } catch { /* ネットワークエラー時はフォールバック表示のまま */ }
