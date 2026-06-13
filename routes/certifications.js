@@ -9,11 +9,25 @@ const { requireAuth } = require('../middleware/auth');
 const { asyncHandler } = require('../middleware/asyncHandler');
 
 router.get('/', requireAuth, asyncHandler(async (req, res) => {
-  const all = await questionService.listCertifications({ includePrivate: true, userId: req.user.id });
-  const myCerts = all.filter((c) => c.createdBy === req.user.id);
+  const userId = req.user.id;
+  const user = await userService.getUserById(userId);
+  let stats = user?.stats || {};
+
+  if (!stats.favoritesInitialized) {
+    const all = await questionService.listCertifications({ includePrivate: true, userId });
+    const ownIds = all.filter((c) => c.createdBy === userId).map((c) => c.id);
+    const updated = await userService.initializeFavorites(userId, ownIds);
+    stats = updated?.stats || stats;
+  }
+
+  const favorites = await questionService.listCertificationsByIds(stats.favoriteCertifications || [], userId);
+  const passedIds = new Set((stats.passedCertifications || []).map((p) => p.certId));
+
   res.render('my-certifications', {
     title: 'マイ資格',
-    certs: myCerts,
+    favorites,
+    passedIds,
+    currentUserId: userId,
     userEmail: res.locals.userEmail,
   });
 }));

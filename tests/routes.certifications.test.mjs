@@ -10,12 +10,12 @@ describe('routes/certifications', () => {
   beforeAll(async () => { await setupTestDb(); });
   beforeEach(async () => { await truncateAll(); });
 
-  test('GET /my/certifications → 空リスト', async () => {
+  test('GET /my/certifications → 空状態メッセージ', async () => {
     const user = await createTestUser();
     const agent = await authedAgent(user);
     const res = await agent.get('/my/certifications');
     expect(res.status).toBe(200);
-    expect(res.text).toContain('まだ資格を作成していません');
+    expect(res.text).toContain('まだお気に入りの資格がありません');
   });
 
   test('POST /my/certifications/new で新規作成', async () => {
@@ -125,5 +125,32 @@ describe('routes/certifications', () => {
     const u = await userService.getUserById(user.id);
     expect(u.stats.favoriteCertifications).not.toContain('del-fav');
     expect(u.stats.passedCertifications.map((p) => p.certId)).not.toContain('del-fav');
+  });
+
+  test('お気に入り登録した公開資格がマイ資格に表示される', async () => {
+    const user = await createTestUser();
+    await createTestCertification({ id: 'gh-seed', name: 'GHシード資格', createdBy: 'system', isPublic: true });
+    const agent = await authedAgent(user);
+    await agent.post('/my/certifications/gh-seed/favorite').type('form').send({ returnTo: '/my/certifications' });
+    const res = await agent.get('/my/certifications');
+    expect(res.text).toContain('GHシード資格');
+  });
+
+  test('既存の自作資格は初回ロードでバックフィルされマイ資格に出る', async () => {
+    const user = await createTestUser();
+    await createTestCertification({ id: 'own-bf', name: '自作バックフィル資格', createdBy: user.id, creatorName: user.username, isPublic: false });
+    const agent = await authedAgent(user);
+    const res = await agent.get('/my/certifications');
+    expect(res.text).toContain('自作バックフィル資格');
+  });
+
+  test('合格済みの資格には🎓バッジが付く', async () => {
+    const user = await createTestUser();
+    await createTestCertification({ id: 'pass-badge', name: '合格バッジ資格', isPublic: true });
+    const agent = await authedAgent(user);
+    await agent.post('/my/certifications/pass-badge/favorite').type('form').send({ returnTo: '/my/certifications' });
+    await agent.post('/my/certifications/pass-badge/pass').type('form').send({ returnTo: '/my/certifications' });
+    const res = await agent.get('/my/certifications');
+    expect(res.text).toContain('🎓');
   });
 });
