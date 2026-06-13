@@ -86,6 +86,18 @@ describe('mapLlmError', () => {
     expect(mapped.message).toContain('openai/gpt-5-mini');
   });
 
+  test('tokens_limit_reached（err.code）は無料枠上限の案内に変換する', () => {
+    const mapped = mapLlmError({ code: 'tokens_limit_reached', status: 413, message: 'Request body too large for gpt-5 model. Max size: 4000 tokens.' }, 'openai/gpt-5');
+    expect(mapped).toBeInstanceOf(Error);
+    expect(mapped.message).toContain('openai/gpt-5');
+    expect(mapped.message).toContain('リクエストサイズ');
+  });
+
+  test('status 413 のみでも上限案内に変換する', () => {
+    const mapped = mapLlmError({ status: 413, message: 'too large' }, 'openai/gpt-5-mini');
+    expect(mapped.message).toContain('openai/gpt-5-mini');
+  });
+
   test('それ以外のエラーはそのまま返す', () => {
     const orig = new Error('network timeout');
     expect(mapLlmError(orig, 'openai/gpt-4.1')).toBe(orig);

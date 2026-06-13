@@ -321,11 +321,18 @@ ${JSON.stringify(rawQuestions, null, 2)}`;
  */
 function mapLlmError(err, modelName) {
   const code = err?.code || err?.error?.code || '';
+  const status = err?.status;
   const msg = String(err?.message || '');
   if (code === 'unavailable_model' || /unavailable[_ ]model/i.test(msg)) {
     return new Error(
       `モデル「${modelName}」はお使いの GitHub Models プランでは利用できません。` +
         '別のモデル（openai/gpt-4.1 など「標準」グループのモデル）を選んでください。'
+    );
+  }
+  if (code === 'tokens_limit_reached' || status === 413 || /too large|tokens?[_ ]limit/i.test(msg)) {
+    return new Error(
+      `モデル「${modelName}」は無料枠のリクエストサイズ上限が小さく、参照資料を含む問題生成には使えません。` +
+        '標準グループのモデル（openai/gpt-4.1 など）を選んでください。'
     );
   }
   return err;
