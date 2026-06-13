@@ -31,8 +31,6 @@ function createApp() {
   const rankingRouter = require('./routes/ranking');
   const plansRouter = require('./routes/plans');
   const profileRouter = require('./routes/profile');
-  const adventuresRouter = require('./routes/adventures');
-  const apiAdventureRouter = require('./routes/api-adventure');
   const { authContext } = require('./middleware/auth');
   const { heroHudMiddleware } = require('./middleware/hud');
 
@@ -57,8 +55,6 @@ function createApp() {
   app.use('/ranking', rankingRouter);
   app.use('/plans', plansRouter);
   app.use('/my/profile', profileRouter);
-  app.use('/adventures', adventuresRouter);
-  app.use('/api/adventures', apiAdventureRouter);
 
   app.use((req, res) => {
     res.status(404).render('error', { title: '404 Not Found', message: 'ページが見つかりません' });

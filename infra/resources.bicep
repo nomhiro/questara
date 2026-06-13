@@ -90,7 +90,6 @@ var cosmosContainers = [
   { id: 'certifications', partitionKey: '/id' }
   { id: 'sessions', partitionKey: '/userId' }
   { id: 'studyPlans', partitionKey: '/userId' }
-  { id: 'adventures', partitionKey: '/userId' }
 ]
 
 resource cosmosContainerResources 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers@2024-05-15' = [for c in cosmosContainers: {

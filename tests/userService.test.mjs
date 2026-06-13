@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach, beforeAll, afterAll } from 'vites
 import { createRequire } from 'node:module';
 
 // userService.js は CJS で require('./cosmosService') するため、vi.mock のファクトリでは
-// 差し替わらない。adventureService.test.mjs と同様に、同一シングルトンのメソッドを
+// 差し替わらない。同一シングルトンのメソッドを
 // store ベースの vi.fn() に直接置き換え、afterAll で restore する。
 const _require = createRequire(import.meta.url);
 
@@ -46,7 +46,6 @@ describe('upsertGithubUser stats initialization', () => {
     expect(user.stats.masteryRanks).toEqual({});
     expect(user.stats.unlockedAchievements).toEqual([]);
     expect(user.stats.equippedTitle).toBeNull();
-    expect(user.stats.activeAdventureId).toBeNull();
     expect(user.stats.dailyQuest).toEqual({ date: null, completed: [], xpClaimed: 0 });
   });
 

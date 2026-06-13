@@ -52,7 +52,6 @@ const CONTAINERS = [
   { id: 'certifications', partitionKey: '/id' },
   { id: 'sessions', partitionKey: '/userId' },
   { id: 'studyPlans', partitionKey: '/userId' },
-  { id: 'adventures', partitionKey: '/userId' },
 ];
 
 function az(...argv) {

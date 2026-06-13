@@ -179,8 +179,8 @@ npm run deploy
 ### 3.10 動作確認
 
 1. URL にアクセス → ランディングが表示される
-2. 「GitHub でログインして始める」→ OAuth 認可 → `/adventure` に遷移
-3. 冒険未作成なら `/adventures/new` から作成
+2. 「GitHub でログインして始める」→ OAuth 認可 → `/my/certifications`（マイ資格）に遷移
+3. `/free-mode`（資格一覧）から公開資格を選ぶ、または `/my/certifications/new` で独自資格を追加
 
 ### 3.11 GitHub Actions OIDC セットアップ（初回 1 回のみ）
 

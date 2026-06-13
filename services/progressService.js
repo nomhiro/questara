@@ -188,25 +188,6 @@ async function completeSession(sessionId, userId) {
     dailyQuestsNewlyCompleted: questResult.newlyCompleted || [],
   };
 
-  // Adventure dungeon unlocks (if user has an active adventure)
-  try {
-    const adventureService = require('./adventureService');
-    const activeAdv = await adventureService.getActiveAdventure(userId);
-    if (activeAdv) {
-      const masteryRanks = (updatedUser?.stats?.masteryRanks) || {};
-      const next = adventureService.checkDungeonUnlocks(activeAdv, masteryRanks, certDomainCounts);
-      const changed = JSON.stringify(next.dungeons) !== JSON.stringify(activeAdv.dungeons);
-      if (changed) {
-        await adventureService.saveAdventure(next);
-        session.gamification.adventureDungeonChanges = next.dungeons
-          .map((d, i) => (d.status !== activeAdv.dungeons[i]?.status ? { certificationId: d.certificationId, from: activeAdv.dungeons[i]?.status, to: d.status } : null))
-          .filter(Boolean);
-      }
-    }
-  } catch (err) {
-    console.warn('[completeSession] adventure unlock check failed:', err.message);
-  }
-
   await cosmosService.upsert('sessions', session);
   return session;
 }

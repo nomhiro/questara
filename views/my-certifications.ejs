@@ -12,9 +12,15 @@
 <body>
   <%- include('partials/hud', { userEmail: typeof userEmail !== 'undefined' ? userEmail : null, heroHud: typeof heroHud !== 'undefined' ? heroHud : null, combo: null }) %>
   <main class="main">
-    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:24px;">
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;">
       <h1 class="rpg-title" style="font-size: 24px;">マイ資格</h1>
       <a href="/my/certifications/new" class="rpg-btn is-gold">＋ 新規追加</a>
+    </div>
+
+    <div style="display:flex; gap:12px; margin-bottom:24px; flex-wrap:wrap;">
+      <a href="/free-mode" class="rpg-btn">資格一覧</a>
+      <a href="/ranking" class="rpg-btn">ランキング</a>
+      <a href="/plans" class="rpg-btn">学習計画</a>
     </div>
     <% if (certs.length === 0) { %>
       <div class="rpg-window" style="text-align:center;">
