@@ -187,6 +187,26 @@
   .field:focus { outline: none; border-color: var(--accent); }
   .field::placeholder { color: var(--ink-3); }
 
+  /* --- クイズ選択肢ボタン --- */
+  .opt {
+    display: flex; align-items: flex-start; gap: 0.6rem; width: 100%;
+    padding: 0.75rem 0.9rem; text-align: left;
+    font-size: 0.9375rem; line-height: 1.5;
+    background: var(--surface-2); color: var(--ink);
+    border: 1px solid var(--line); border-radius: 0.625rem;
+    cursor: pointer; transition: border-color .15s ease, background-color .15s ease, opacity .15s ease;
+  }
+  .opt:hover:not(:disabled) { border-color: var(--line-strong); }
+  .opt:disabled { cursor: default; }
+  .opt .opt-key { font-family: var(--font-mono); font-weight: 600; color: var(--ink-3); }
+  .opt.is-selected { border-color: var(--accent); background: var(--accent-soft); }
+  .opt.is-selected .opt-key { color: var(--accent); }
+  .opt.is-correct { border-color: var(--success); background: var(--success-soft); color: var(--success); }
+  .opt.is-correct .opt-key { color: var(--success); }
+  .opt.is-wrong { border-color: var(--danger); background: var(--danger-soft); color: var(--danger); }
+  .opt.is-wrong .opt-key { color: var(--danger); }
+  .opt.is-muted { opacity: .5; }
+
   /* --- レベルアップトースト（RPGの全画面フラッシュを置換） --- */
   .toast {
     position: fixed; top: 1.25rem; left: 50%; z-index: 100;
