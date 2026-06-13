@@ -16,8 +16,8 @@ const {
 describe('llmClient 定数', () => {
   it('GitHub Models のエンドポイント・モデル・タイムアウトを公開する', () => {
     expect(GITHUB_MODELS_ENDPOINT).toBe('https://models.github.ai/inference');
-    expect(GITHUB_MODELS_DEFAULT_MODEL).toBe('openai/gpt-5-mini');
-    expect(GENERATION_DEFAULT_MODEL).toBe('openai/gpt-5');
+    expect(GITHUB_MODELS_DEFAULT_MODEL).toBe('openai/gpt-4o-mini');
+    expect(GENERATION_DEFAULT_MODEL).toBe('openai/gpt-4.1');
     expect(LLM_TIMEOUT_MS).toBe(120000);
   });
 });

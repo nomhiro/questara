@@ -2,7 +2,7 @@ import { describe, test, expect } from 'vitest';
 import { createRequire } from 'node:module';
 
 const _require = createRequire(import.meta.url);
-const { extractDomainSection, normalizeQuestions, buildPrompt } = _require('../services/generationService');
+const { extractDomainSection, normalizeQuestions, buildPrompt, mapLlmError } = _require('../services/generationService');
 
 describe('extractDomainSection', () => {
   const markdown = [
@@ -70,5 +70,36 @@ describe('buildPrompt', () => {
     const existing = [{ question: '既存問題ですよこれは' }];
     const prompt = buildPrompt(domain, 'ctx', existing);
     expect(prompt).toContain('既存問題ですよこれは');
+  });
+});
+
+describe('mapLlmError', () => {
+  test('unavailable_model（err.code）は利用者向けメッセージに変換しモデル名を含める', () => {
+    const mapped = mapLlmError({ code: 'unavailable_model', message: 'Unavailable model: gpt-5' }, 'openai/gpt-5');
+    expect(mapped).toBeInstanceOf(Error);
+    expect(mapped.message).toContain('openai/gpt-5');
+    expect(mapped.message).toContain('利用できません');
+  });
+
+  test('unavailable model（メッセージ本文）でも変換する', () => {
+    const mapped = mapLlmError({ message: '400 Unavailable model: gpt-5-mini' }, 'openai/gpt-5-mini');
+    expect(mapped.message).toContain('openai/gpt-5-mini');
+  });
+
+  test('tokens_limit_reached（err.code）は無料枠上限の案内に変換する', () => {
+    const mapped = mapLlmError({ code: 'tokens_limit_reached', status: 413, message: 'Request body too large for gpt-5 model. Max size: 4000 tokens.' }, 'openai/gpt-5');
+    expect(mapped).toBeInstanceOf(Error);
+    expect(mapped.message).toContain('openai/gpt-5');
+    expect(mapped.message).toContain('リクエストサイズ');
+  });
+
+  test('status 413 のみでも上限案内に変換する', () => {
+    const mapped = mapLlmError({ status: 413, message: 'too large' }, 'openai/gpt-5-mini');
+    expect(mapped.message).toContain('openai/gpt-5-mini');
+  });
+
+  test('それ以外のエラーはそのまま返す', () => {
+    const orig = new Error('network timeout');
+    expect(mapLlmError(orig, 'openai/gpt-4.1')).toBe(orig);
   });
 });

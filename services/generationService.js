@@ -139,10 +139,15 @@ async function generateQuestions({ cert, certId, domain, llmConfig, onProgress }
   });
 
   onProgress?.(`LLM (${llmConfig.modelName}) に問題生成をリクエスト中...`);
-  const response = await openai.chat.completions.create({
-    model: llmConfig.modelName,
-    messages: [{ role: 'user', content: prompt }],
-  });
+  let response;
+  try {
+    response = await openai.chat.completions.create({
+      model: llmConfig.modelName,
+      messages: [{ role: 'user', content: prompt }],
+    });
+  } catch (err) {
+    throw mapLlmError(err, llmConfig.modelName);
+  }
 
   const text = response.choices[0]?.message?.content || '';
   const raw = extractRawQuestions(text);
@@ -309,6 +314,30 @@ ${JSON.stringify(rawQuestions, null, 2)}`;
   }
 }
 
+/**
+ * LLM 呼び出しエラーを利用者向けの分かりやすいメッセージに変換する。
+ * GitHub Models で custom ティア（gpt-5系/o系/deepseek-r1 等）を無料枠で使うと
+ * unavailable_model になるため、別モデルを選ぶよう案内する。それ以外は原エラーを返す。
+ */
+function mapLlmError(err, modelName) {
+  const code = err?.code || err?.error?.code || '';
+  const status = err?.status;
+  const msg = String(err?.message || '');
+  if (code === 'unavailable_model' || /unavailable[_ ]model/i.test(msg)) {
+    return new Error(
+      `モデル「${modelName}」はお使いの GitHub Models プランでは利用できません。` +
+        '別のモデル（openai/gpt-4.1 など「標準」グループのモデル）を選んでください。'
+    );
+  }
+  if (code === 'tokens_limit_reached' || status === 413 || /too large|tokens?[_ ]limit/i.test(msg)) {
+    return new Error(
+      `モデル「${modelName}」は無料枠のリクエストサイズ上限が小さく、参照資料を含む問題生成には使えません。` +
+        '標準グループのモデル（openai/gpt-4.1 など）を選んでください。'
+    );
+  }
+  return err;
+}
+
 /** LLM レスポンステキストから問題の生配列（id 付与前）を取り出す */
 function extractRawQuestions(text) {
   const json = extractJsonArray(text);
@@ -357,4 +386,5 @@ module.exports = {
   extractRawQuestions,
   normalizeQuestions,
   buildPrompt,
+  mapLlmError,
 };

@@ -76,7 +76,7 @@
         <label for="modelSelect" style="font-family: var(--font-display); color: var(--gold); font-size: 12px; display: block; margin-bottom: 6px;">生成モデル</label>
         <select id="modelSelect"
                 style="font-family: var(--font-body); font-size: 13px; padding: 8px 12px; background: var(--window); color: var(--ink); border: 2px solid var(--gold); min-width: 240px;">
-          <option value="openai/gpt-5">openai/gpt-5</option>
+          <option value="openai/gpt-4.1">openai/gpt-4.1</option>
         </select>
       </div>
       <button id="generateBtn" class="rpg-btn is-gold"
@@ -125,17 +125,28 @@
     async function loadModels() {
       try {
         const res = await fetch('/api/models');
-        if (!res.ok) return; // フォールバック表示（openai/gpt-5）のまま
+        if (!res.ok) return; // フォールバック表示（openai/gpt-4.1）のまま
         const data = await res.json();
         const select = document.getElementById('modelSelect');
         select.innerHTML = '';
-        for (const m of data.models) {
+        const addOption = (group, m) => {
           const opt = document.createElement('option');
           opt.value = m.id;
           opt.textContent = m.id;
-          if (m.id === 'openai/gpt-5') opt.selected = true;
-          select.appendChild(opt);
-        }
+          if (m.id === 'openai/gpt-4.1') opt.selected = true;
+          group.appendChild(opt);
+        };
+        const addGroup = (label, models) => {
+          if (!models.length) return;
+          const g = document.createElement('optgroup');
+          g.label = label;
+          models.forEach((m) => addOption(g, m));
+          select.appendChild(g);
+        };
+        // custom ティア（gpt-5系・o系・deepseek-r1 等）は有料プラン/プレビュー専用で
+        // 無料枠では unavailable_model になるため、別グループに分けて注意喚起する。
+        addGroup('標準（GitHub Models 無料枠で利用可）', data.models.filter((m) => m.tier !== 'custom'));
+        addGroup('有料プラン/プレビュー（利用不可の場合あり）', data.models.filter((m) => m.tier === 'custom'));
       } catch { /* ネットワークエラー時はフォールバック表示のまま */ }
     }
     loadModels();
@@ -177,26 +188,30 @@
             if (line.startsWith('event: ')) {
               eventType = line.slice(7).trim();
             } else if (line.startsWith('data: ')) {
+              // JSON パースの失敗（ストリーム途中の不完全な行）だけを無視する。
+              // イベント処理の throw をここで握り潰さないため、パースとハンドリングを分離する。
+              let data;
               try {
-                const data = JSON.parse(line.slice(6));
-                if (eventType === 'progress') {
-                  progressMsg.textContent = '▸ ' + data.message;
-                } else if (eventType === 'done') {
-                  progress.classList.add('hidden');
-                  result.classList.remove('hidden');
-                  result.style.background = '#1f4a18';
-                  result.style.border = '2px solid var(--fern)';
-                  result.style.color = 'var(--fern)';
-                  result.textContent = `✅ ${data.message} ページを再読み込みして確認してください。`;
-                  btn.textContent = '🔄 再読み込み';
-                  btn.disabled = false;
-                  btn.onclick = () => location.reload();
-                  return;
-                } else if (eventType === 'error') {
-                  throw new Error(data.message);
-                }
+                data = JSON.parse(line.slice(6));
               } catch (e) {
-                // JSON parse error - ignore
+                continue; // 不完全/不正な data 行はスキップ
+              }
+              if (eventType === 'progress') {
+                progressMsg.textContent = '▸ ' + data.message;
+              } else if (eventType === 'done') {
+                progress.classList.add('hidden');
+                result.classList.remove('hidden');
+                result.style.background = '#1f4a18';
+                result.style.border = '2px solid var(--fern)';
+                result.style.color = 'var(--fern)';
+                result.textContent = `✅ ${data.message} ページを再読み込みして確認してください。`;
+                btn.textContent = '🔄 再読み込み';
+                btn.disabled = false;
+                btn.onclick = () => location.reload();
+                return;
+              } else if (eventType === 'error') {
+                // 外側 catch(err) に届けてエラー表示する（握り潰さない）
+                throw new Error(data.message);
               }
             }
           }

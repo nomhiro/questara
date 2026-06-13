@@ -5,26 +5,31 @@
 const CATALOG_URL = 'https://models.github.ai/catalog/models';
 const CACHE_TTL_MS = 10 * 60 * 1000;
 
-// カタログ取得失敗時のフォールバック（gpt-5 系のみ。4 系へのフォールバックはしない）
+// カタログ取得失敗時のフォールバック（推論可能=実測200の標準ティアモデル）
 const FALLBACK_MODELS = [
-  { id: 'openai/gpt-5', name: 'OpenAI GPT-5', publisher: 'OpenAI' },
-  { id: 'openai/gpt-5-mini', name: 'OpenAI GPT-5 mini', publisher: 'OpenAI' },
-  { id: 'openai/gpt-5-nano', name: 'OpenAI GPT-5 nano', publisher: 'OpenAI' },
+  { id: 'openai/gpt-4.1', name: 'OpenAI GPT-4.1', publisher: 'OpenAI', tier: 'high' },
+  { id: 'openai/gpt-4o', name: 'OpenAI GPT-4o', publisher: 'OpenAI', tier: 'high' },
+  { id: 'openai/gpt-4o-mini', name: 'OpenAI GPT-4o mini', publisher: 'OpenAI', tier: 'low' },
 ];
 
 let cache = { at: 0, models: null };
 
-/** text 入力 → text 出力のチャット系モデルのみ対象にする */
+/**
+ * チャット補完が可能なモデルのみ対象にする（text→text）。
+ * embeddings は除外。custom ティア（gpt-5系/o系/deepseek-r1 等の有料・プレビュー専用）も
+ * 含めて返し、利用可否は呼び出し時のエラー（unavailable_model）で扱う。
+ * tier 情報は UI のグルーピング（標準 / 有料プラン）に用いる。
+ */
 function isChatModel(m) {
   const inputs = m.supported_input_modalities || [];
   const outputs = m.supported_output_modalities || [];
   return inputs.includes('text') && outputs.includes('text');
 }
 
-/** openai/gpt-5 系 → openai 系 → その他 の順、同順位は id 昇順 */
+/** openai/gpt-4.1 系 → openai 系 → その他 の順、同順位は id 昇順 */
 function sortModels(models) {
   const score = (m) =>
-    m.id.startsWith('openai/gpt-5') ? 0 : m.id.startsWith('openai/') ? 1 : 2;
+    m.id.startsWith('openai/gpt-4.1') ? 0 : m.id.startsWith('openai/') ? 1 : 2;
   return [...models].sort((a, b) => score(a) - score(b) || a.id.localeCompare(b.id));
 }
 
@@ -49,7 +54,7 @@ async function listModels(accessToken) {
     const models = sortModels(
       (Array.isArray(data) ? data : [])
         .filter(isChatModel)
-        .map((m) => ({ id: m.id, name: m.name || m.id, publisher: m.publisher || '' }))
+        .map((m) => ({ id: m.id, name: m.name || m.id, publisher: m.publisher || '', tier: m.rate_limit_tier || '' }))
     );
     if (models.length === 0) return FALLBACK_MODELS;
     cache = { at: Date.now(), models };
