@@ -14,7 +14,7 @@
 
 ## サービス概要
 
-**Questara（クエスターラ）** — Microsoft/GitHub 認定資格（GH-100, AI-102 等）の学習を RPG 風に楽しめる Web アプリ。
+**Questara（クエスターラ）** — Microsoft/GitHub 認定資格（GH-100, AI-102 等）の学習を、レベル・ランク・実績などのゲーミフィケーションで楽しめる Web アプリ。UI はモダンミニマル（Tailwind CSS・ライト/ダーク両対応）。
 Node.js + Express + EJS による SSR で、ストレージは **Azure Cosmos DB**（ローカル開発は `vnext-preview` エミュレータ）。
 GitHub OAuth でログインし、ユーザー単位で学習セッション・ランク・アチーブメントを記録する。
 
@@ -42,11 +42,14 @@ docker compose up -d cosmos-emulator
 # Cosmos にシードデータ（data/certifications/*.json）を投入
 npm run seed
 
-# 開発サーバー（ホットリロード、http://localhost:3000）
+# 開発サーバー（CSS watch + Express ホットリロードを concurrently で並行起動、http://localhost:3000）
 npm run dev
 
 # 本番起動
 npm start
+
+# Tailwind CSS を public/app.css にビルド（本番は Docker の cssbuild ステージで自動実行）
+npm run build:css
 
 # テスト
 npm test                              # vitest run
@@ -122,15 +125,17 @@ routes/ → services/ → cosmosService → Cosmos DB containers
 │   ├── modelCatalogService.js      # GitHub Models カタログ API からモデル一覧を動的取得（10分キャッシュ）
 │   ├── questionValidator.js        # 生成問題の機械検証（選択肢・正解キー・解説・重複）
 │   └── mcpClient.js                # Microsoft Learn MCP 呼び出し共通ラッパー
-├── views/                          # EJS（layout.ejs を partials で include）
+├── views/                          # EJS（partials/head・foot・hud を各 view で include）
 │   ├── index.ejs / landing.ejs
 │   ├── certification.ejs / certification-form.ejs / my-certifications.ejs
 │   ├── quiz.ejs / result.ejs / review.ejs
 │   ├── domain.ejs
 │   ├── plan.ejs / ranking.ejs / profile.ejs / error.ejs
-│   └── partials/                   # 共通 HUD・ナビ等
+│   └── partials/                   # head.ejs・foot.ejs・hud.ejs（共通レイアウト/ナビ）
+├── src/
+│   └── styles.css                  # Tailwind v4 入力（デザイントークン・ライト/ダーク・コンポーネント）
 ├── public/
-│   ├── theme.css                   # RPG テーマのカスタム CSS
+│   ├── app.css                     # Tailwind ビルド成果物（src/styles.css から生成・gitignore）
 │   └── mocks/                      # 開発用モック画像
 ├── scripts/
 │   ├── seed-certifications.js      # data/certifications/*.json を Cosmos に投入
@@ -163,13 +168,14 @@ routes/ → services/ → cosmosService → Cosmos DB containers
 
 ### ビュー層
 
-EJS。共通ヘッダ/ナビ/HUD は `views/partials/` に切り出し、各 view から `<%- include('partials/...') %>` で取り込む。`public/theme.css` が RPG 風のスタイル。Tailwind 非使用。
+EJS。共通の `<head>`・フッター・HUD ナビは `views/partials/`（`head.ejs`・`foot.ejs`・`hud.ejs`）に切り出し、各 view から `<%- include('partials/...') %>` で取り込む。スタイルは **Tailwind CSS v4**（`src/styles.css` を `public/app.css` にビルド）。モダンミニマルのデザイントークンとライト/ダーク両対応（`middleware/theme.js` が cookie `theme` を読み `res.locals.theme` 注入 → `<html class="dark">` を SSR、`head.ejs` の FOUC 回避スクリプトが描画前にテーマ確定、HUD のトグルボタンが cookie を書き換え）。再利用プリミティブ（`.card`/`.btn`/`.badge`/`.progress`/`.rank-*`/`.tab`/`.field`/`.opt`）は `@layer components` に定義。
 
 ## Tech Stack
 
 - **Runtime**: Node.js >= 20
 - **Framework**: Express 4
 - **Template engine**: EJS 3（SSR）
+- **Styling**: Tailwind CSS v4（`@tailwindcss/cli` で `src/styles.css` → `public/app.css` をビルド。`@theme` でトークン定義、`@custom-variant dark` でクラス方式のライト/ダーク。`concurrently` は `npm run dev` の CSS watch 用）
 - **Storage**: Azure Cosmos DB（ローカル: `mcr.microsoft.com/cosmosdb/linux/azure-cosmos-emulator:vnext-preview`）
 - **AI**:
   - `openai` — OpenAI SDK を GitHub Models API（`https://models.github.ai/inference`、モデル ID は `openai/gpt-4.1` 形式、認証はユーザーの GitHub アクセストークン）に向けて使用。問題生成（既定 `openai/gpt-4.1`、UI で変更可）・資格抽出。`temperature` 等のサンプリングパラメータは送らない。モデル一覧は `modelCatalogService` がカタログ API から動的取得し、**無料ティアで推論可能なモデル（`rate_limit_tier` = high/low）のみ**を返す。gpt-5 系・o 系・deepseek-r1 は `rate_limit_tier` = custom でカタログに載るが無料ティアでは推論不可（`unavailable_model`）のため除外

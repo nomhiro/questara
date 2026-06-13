@@ -3,7 +3,7 @@
   const pageTitle = (typeof title !== 'undefined' && title) ? title : 'Questara';
   const themeMode = (typeof theme !== 'undefined') ? theme : (locals.theme || null);
 %><!DOCTYPE html>
-<html lang="ja"<%= themeMode === 'dark' ? ' class="dark"' : '' %>>
+<html lang="ja"<%- themeMode === 'dark' ? ' class="dark"' : '' %>>
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
