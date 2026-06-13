@@ -34,6 +34,7 @@ function createApp() {
   const profileRouter = require('./routes/profile');
   const { authContext } = require('./middleware/auth');
   const { heroHudMiddleware } = require('./middleware/hud');
+  const { themeMiddleware } = require('./middleware/theme');
 
   const app = express();
 
@@ -43,6 +44,7 @@ function createApp() {
   app.use(express.json());
   app.use(express.urlencoded({ extended: false }));
   app.use(cookieParser());
+  app.use(themeMiddleware);
   app.use(authContext);
   app.use(heroHudMiddleware);
   app.use(express.static(path.join(__dirname, 'public')));

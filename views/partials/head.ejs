@@ -1,0 +1,27 @@
+<%
+  // head パーシャル。title / theme はローカル変数または res.locals から解決する。
+  const pageTitle = (typeof title !== 'undefined' && title) ? title : 'Questara';
+  const themeMode = (typeof theme !== 'undefined') ? theme : (locals.theme || null);
+%><!DOCTYPE html>
+<html lang="ja"<%= themeMode === 'dark' ? ' class="dark"' : '' %>>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light dark">
+  <title><%= pageTitle %></title>
+  <%# FOUC 回避: app.css 読込み前に theme を確定する（cookie 未設定時は OS 設定に従う） %>
+  <script>
+    (function () {
+      var el = document.documentElement;
+      if (el.classList.contains('dark')) return; // SSR で確定済み
+      var m = document.cookie.match(/(?:^|;\s*)theme=(dark|light)/);
+      if (m) { if (m[1] === 'dark') el.classList.add('dark'); return; }
+      try { if (matchMedia('(prefers-color-scheme: dark)').matches) el.classList.add('dark'); } catch (e) {}
+    })();
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/app.css">
+</head>
+<body class="min-h-screen bg-surface text-ink">
