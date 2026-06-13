@@ -53,4 +53,28 @@ describe('heroHudMiddleware (integration)', () => {
     const res = await agent.get('/my/profile');
     expect(res.status).toBe(200);
   });
+
+  test('GET /my/profile では「ステータス」タブが現在地ハイライトされる', async () => {
+    const user = await createTestUser();
+    const agent = await authedAgent(user);
+    const res = await agent.get('/my/profile');
+    expect(res.status).toBe(200);
+    expect(res.text).toMatch(/href="\/my\/profile"[^>]*aria-current="page"/);
+  });
+
+  test('GET /home では「ホーム」タブが現在地ハイライトされる', async () => {
+    const user = await createTestUser();
+    const agent = await authedAgent(user);
+    const res = await agent.get('/home');
+    expect(res.status).toBe(200);
+    expect(res.text).toMatch(/href="\/home"[^>]*aria-current="page"/);
+  });
+
+  test('GET /certifications では「資格」タブが現在地ハイライトされる', async () => {
+    const user = await createTestUser();
+    const agent = await authedAgent(user);
+    const res = await agent.get('/certifications');
+    expect(res.status).toBe(200);
+    expect(res.text).toMatch(/href="\/certifications"[^>]*aria-current="page"/);
+  });
 });

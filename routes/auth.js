@@ -66,7 +66,7 @@ router.get('/github/callback', async (req, res) => {
       username: user.username,
     });
     res.cookie(jwtService.COOKIE_NAME, token, jwtService.getCookieOptions());
-    res.redirect('/my/certifications');
+    res.redirect('/home');
   } catch (err) {
     console.error('GitHub OAuth error:', err);
     const key = err.message?.includes('アクセストークン') ? 'token_failed' : 'auth_failed';

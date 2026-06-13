@@ -106,6 +106,36 @@ body::before {
 .hud-cell.fern    .value { color: var(--fern); }
 .hud-spacer { flex: 1; }
 
+/* ---------- 2段ナビ（上段=ステータス, 下段=目的地タブ） ---------- */
+.hud-wrap {
+  position: sticky; top: 0; z-index: 50;
+  background: rgba(0,0,0,0.85);
+  border-bottom: 3px solid var(--gold);
+}
+.hud-status {
+  display: flex; gap: 10px; flex-wrap: wrap; align-items: center;
+  padding: 8px 16px;
+  font-family: var(--font-display); font-size: 14px;
+}
+.hud-brand { white-space: nowrap; }
+.hud-tabs {
+  display: flex; gap: 2px; flex-wrap: wrap;
+  padding: 0 12px;
+  border-top: 1px solid rgba(255,255,255,0.12);
+}
+.hud-tab {
+  padding: 8px 14px;
+  font-family: var(--font-display); font-size: 12px;
+  color: #c0c6e0; text-decoration: none;
+  border-bottom: 3px solid transparent;
+  white-space: nowrap;
+}
+.hud-tab:hover { color: var(--ink); }
+.hud-tab.is-active {
+  color: var(--gold);
+  border-bottom-color: var(--gold);
+}
+
 /* ---------- Combo badge ---------- */
 .combo-badge {
   font-family: var(--font-display); font-size: 16px;
