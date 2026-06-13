@@ -1,157 +1,120 @@
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title><%= title %></title>
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=DotGothic16&family=M+PLUS+1+Code:wght@400;500;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/theme.css">
-  <script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body>
-  <%- include('partials/hud', { userEmail: typeof userEmail !== 'undefined' ? userEmail : null, heroHud: typeof heroHud !== 'undefined' ? heroHud : null, combo: null }) %>
-  <main class="main">
+<%- include('partials/head', { title: title }) %>
+<%- include('partials/hud', { heroHud: typeof heroHud !== 'undefined' ? heroHud : null, combo: null }) %>
 
-    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;">
-      <h1 class="rpg-title" style="font-size: 24px;">資格</h1>
-      <a href="/my/certifications/new" class="rpg-btn is-gold">＋ 新規追加</a>
-    </div>
+<main class="mx-auto max-w-4xl px-5 py-8 sm:px-8">
+  <div class="mb-6 flex items-center justify-between">
+    <h1 class="text-2xl font-semibold tracking-tight">資格</h1>
+    <a href="/my/certifications/new" class="btn btn-primary btn-sm">＋ 新規追加</a>
+  </div>
 
-    <% const allCount = publicCerts.length + myCerts.length; %>
-    <div style="display:flex; gap:4px; margin-bottom:16px; border-bottom:2px solid var(--window-lt);">
-      <button onclick="showTab('learning')" id="tab-learning"
-              style="padding:8px 16px; background:transparent; border:none; border-bottom:3px solid var(--gold); font-family: var(--font-display); color: var(--ink); cursor:pointer;">
-        学習中 (<%= favorites.length %>)
-      </button>
-      <button onclick="showTab('all')" id="tab-all"
-              style="padding:8px 16px; background:transparent; border:none; border-bottom:3px solid transparent; font-family: var(--font-display); color:#c0c6e0; cursor:pointer;">
-        すべて (<%= allCount %>)
-      </button>
-    </div>
+  <% const allCount = publicCerts.length + myCerts.length; %>
+  <div class="mb-6 flex gap-6 border-b border-line">
+    <button onclick="showTab('learning')" id="tab-learning" class="tab is-active">学習中 (<%= favorites.length %>)</button>
+    <button onclick="showTab('all')" id="tab-all" class="tab">すべて (<%= allCount %>)</button>
+  </div>
 
-    <!-- 学習中タブ：お気に入り＋合格（自分が学習している資格） -->
-    <div id="panel-learning">
-      <% if (favorites.length === 0) { %>
-        <div class="rpg-window" style="text-align:center;">
-          <p style="color:#c0c6e0; font-family: var(--font-body);">まだお気に入りの資格がありません。</p>
-          <button type="button" onclick="showTab('all')" class="rpg-btn" style="margin-top:16px;">すべての資格から ★ で登録する →</button>
-        </div>
-      <% } else { %>
-        <div style="display:flex; flex-direction:column; gap:12px;">
-          <% for (const c of favorites) { const isOwner = c.createdBy === currentUserId; %>
-            <div class="rpg-window" style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
-              <div style="flex:1; min-width:0;">
-                <h2 class="rpg-title" style="font-size: 16px;">
-                  <%= c.name %>
-                  <% if (passedIds.has(c.id)) { %><span class="pill" style="color: var(--fern); border-color: var(--fern);">🎓 合格</span><% } %>
-                </h2>
-                <p style="color:#c0c6e0; font-family: var(--font-body); margin-top:4px; font-size: 12px;">
-                  <%= c.domainCount %> ドメイン · <%= c.questionCount %> 問
-                  <% if (isOwner) { %>
-                    · <% if (c.isPublic) { %><span style="color: var(--fern);">公開中</span><% } else { %><span style="color:#c0c6e0;">非公開</span><% } %>
-                  <% } %>
-                </p>
-              </div>
-              <div style="display:flex; align-items:center; gap:8px; flex-shrink:0;">
-                <a href="/certifications/<%= c.id %>" class="rpg-btn is-gold">開く</a>
+  <div id="panel-learning">
+    <% if (favorites.length === 0) { %>
+      <div class="card text-center text-ink-2">
+        <p>まだお気に入りの資格がありません。</p>
+        <button type="button" onclick="showTab('all')" class="btn btn-subtle btn-sm mt-4">すべての資格から ☆ で登録する →</button>
+      </div>
+    <% } else { %>
+      <div class="grid gap-3">
+        <% for (const c of favorites) { const isOwner = c.createdBy === currentUserId; %>
+          <div class="card flex flex-wrap items-center justify-between gap-3">
+            <div class="min-w-0 flex-1">
+              <h2 class="flex items-center gap-2 font-medium">
+                <span class="truncate"><%= c.name %></span>
+                <% if (passedIds.has(c.id)) { %><span class="badge badge-success shrink-0">🎓 合格</span><% } %>
+              </h2>
+              <p class="mt-1 text-sm text-ink-2">
+                <span class="nums"><%= c.domainCount %></span> ドメイン · <span class="nums"><%= c.questionCount %></span> 問
                 <% if (isOwner) { %>
-                  <% if (c.isPublic) { %>
-                    <form method="POST" action="/my/certifications/<%= c.id %>/unpublish" style="margin:0;">
-                      <button class="rpg-btn">非公開にする</button>
-                    </form>
-                  <% } else { %>
-                    <form method="POST" action="/my/certifications/<%= c.id %>/publish" style="margin:0;">
-                      <button class="rpg-btn is-fern">公開する</button>
-                    </form>
-                  <% } %>
-                  <form method="POST" action="/my/certifications/<%= c.id %>/delete" style="margin:0;"
-                        onsubmit="return confirm('削除しますか？');">
-                    <button class="rpg-btn">削除</button>
-                  </form>
+                  · <% if (c.isPublic) { %><span class="text-success">公開中</span><% } else { %><span class="text-ink-3">非公開</span><% } %>
                 <% } %>
-                <form method="POST" action="/my/certifications/<%= c.id %>/unfavorite" style="margin:0;">
-                  <input type="hidden" name="returnTo" value="/certifications">
-                  <button class="rpg-btn" title="お気に入り解除">★ 解除</button>
-                </form>
-              </div>
+              </p>
+            </div>
+            <div class="flex shrink-0 items-center gap-2">
+              <a href="/certifications/<%= c.id %>" class="btn btn-primary btn-sm">開く</a>
+              <% if (isOwner) { %>
+                <% if (c.isPublic) { %>
+                  <form method="POST" action="/my/certifications/<%= c.id %>/unpublish" class="m-0"><button class="btn btn-subtle btn-sm">非公開にする</button></form>
+                <% } else { %>
+                  <form method="POST" action="/my/certifications/<%= c.id %>/publish" class="m-0"><button class="btn btn-subtle btn-sm">公開する</button></form>
+                <% } %>
+                <form method="POST" action="/my/certifications/<%= c.id %>/delete" class="m-0" onsubmit="return confirm('削除しますか？');"><button class="btn btn-ghost btn-sm text-danger">削除</button></form>
+              <% } %>
+              <form method="POST" action="/my/certifications/<%= c.id %>/unfavorite" class="m-0">
+                <input type="hidden" name="returnTo" value="/certifications">
+                <button class="btn btn-ghost btn-sm" title="お気に入り解除">★ 解除</button>
+              </form>
+            </div>
+          </div>
+        <% } %>
+      </div>
+    <% } %>
+  </div>
+
+  <div id="panel-all" class="hidden">
+    <% if (allCount === 0) { %>
+      <p class="text-ink-2">資格がありません。<a href="/my/certifications/new" class="text-accent">新規作成</a></p>
+    <% } else { %>
+      <% if (publicCerts.length > 0) { %>
+        <h2 class="mb-2 mt-1 text-xs font-medium uppercase tracking-wide text-ink-3">公開資格</h2>
+        <div class="mb-8 grid gap-3">
+          <% for (const cert of publicCerts) { %>
+            <div class="card flex items-center justify-between gap-3">
+              <a href="/certifications/<%= cert.id %>" class="block min-w-0 flex-1">
+                <h2 class="flex items-center gap-2 font-medium">
+                  <span class="truncate"><%= cert.name %></span>
+                  <% if (passedIds.has(cert.id)) { %><span class="badge badge-success shrink-0">🎓 合格</span><% } %>
+                </h2>
+                <p class="mt-1 text-sm text-ink-2">
+                  <span class="nums"><%= cert.domainCount %></span> ドメイン · <span class="nums"><%= cert.questionCount %></span> 問
+                  <% if (cert.createdBy !== 'system') { %> · 作成者: <%= cert.creatorName %><% } %>
+                </p>
+              </a>
+              <form method="POST" action="/my/certifications/<%= cert.id %>/<%= favoriteIds.has(cert.id) ? 'unfavorite' : 'favorite' %>" class="m-0 shrink-0">
+                <input type="hidden" name="returnTo" value="/certifications">
+                <button class="btn btn-ghost btn-sm" title="お気に入り"><%= favoriteIds.has(cert.id) ? '★' : '☆' %></button>
+              </form>
             </div>
           <% } %>
         </div>
       <% } %>
-    </div>
-
-    <!-- すべてタブ：公開資格＋自作の非公開資格（探す） -->
-    <div id="panel-all" class="hidden">
-      <% if (allCount === 0) { %>
-        <p style="color:#c0c6e0; font-family: var(--font-body);">資格がありません。<a href="/my/certifications/new" style="color: var(--gold);">新規作成</a></p>
-      <% } else { %>
-        <% if (publicCerts.length > 0) { %>
-          <h2 class="rpg-title" style="font-size: 14px; margin: 4px 0 8px; color: var(--gold);">公開資格</h2>
-          <div style="display:flex; flex-direction:column; gap:12px; margin-bottom:24px;">
-            <% for (const cert of publicCerts) { %>
-              <div class="rpg-window" style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
-                <a href="/certifications/<%= cert.id %>" style="display:block; text-decoration:none; flex:1; min-width:0;">
-                  <h2 class="rpg-title" style="font-size: 16px;">
-                    <%= cert.name %>
-                    <% if (passedIds.has(cert.id)) { %><span class="pill" style="color: var(--fern); border-color: var(--fern);">🎓 合格</span><% } %>
-                  </h2>
-                  <p style="color:#c0c6e0; font-family: var(--font-body); margin-top:4px; font-size: 13px;">
-                    <%= cert.domainCount %> ドメイン &nbsp;·&nbsp; <%= cert.questionCount %> 問
-                    <% if (cert.createdBy !== 'system') { %>&nbsp;·&nbsp; 作成者: <%= cert.creatorName %><% } %>
-                  </p>
-                </a>
-                <form method="POST" action="/my/certifications/<%= cert.id %>/<%= favoriteIds.has(cert.id) ? 'unfavorite' : 'favorite' %>" style="margin:0; flex-shrink:0;">
-                  <input type="hidden" name="returnTo" value="/certifications">
-                  <button class="rpg-btn" title="お気に入り"><%= favoriteIds.has(cert.id) ? '★' : '☆' %></button>
-                </form>
-              </div>
-            <% } %>
-          </div>
-        <% } %>
-        <% if (myCerts.length > 0) { %>
-          <h2 class="rpg-title" style="font-size: 14px; margin: 4px 0 8px; color: var(--gold);">自分の非公開資格</h2>
-          <div style="display:flex; flex-direction:column; gap:12px;">
-            <% for (const cert of myCerts) { %>
-              <div class="rpg-window" style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
-                <a href="/certifications/<%= cert.id %>" style="display:block; text-decoration:none; flex:1; min-width:0;">
-                  <h2 class="rpg-title" style="font-size: 16px;">
-                    <%= cert.name %>
-                    <% if (passedIds.has(cert.id)) { %><span class="pill" style="color: var(--fern); border-color: var(--fern);">🎓 合格</span><% } %>
-                  </h2>
-                  <p style="color:#c0c6e0; font-family: var(--font-body); margin-top:4px; font-size: 13px;">
-                    <%= cert.domainCount %> ドメイン &nbsp;·&nbsp; <%= cert.questionCount %> 問 &nbsp;·&nbsp; 非公開
-                  </p>
-                </a>
-                <form method="POST" action="/my/certifications/<%= cert.id %>/<%= favoriteIds.has(cert.id) ? 'unfavorite' : 'favorite' %>" style="margin:0; flex-shrink:0;">
-                  <input type="hidden" name="returnTo" value="/certifications">
-                  <button class="rpg-btn" title="お気に入り"><%= favoriteIds.has(cert.id) ? '★' : '☆' %></button>
-                </form>
-              </div>
-            <% } %>
-          </div>
-        <% } %>
+      <% if (myCerts.length > 0) { %>
+        <h2 class="mb-2 mt-1 text-xs font-medium uppercase tracking-wide text-ink-3">自分の非公開資格</h2>
+        <div class="grid gap-3">
+          <% for (const cert of myCerts) { %>
+            <div class="card flex items-center justify-between gap-3">
+              <a href="/certifications/<%= cert.id %>" class="block min-w-0 flex-1">
+                <h2 class="flex items-center gap-2 font-medium">
+                  <span class="truncate"><%= cert.name %></span>
+                  <% if (passedIds.has(cert.id)) { %><span class="badge badge-success shrink-0">🎓 合格</span><% } %>
+                </h2>
+                <p class="mt-1 text-sm text-ink-2">
+                  <span class="nums"><%= cert.domainCount %></span> ドメイン · <span class="nums"><%= cert.questionCount %></span> 問 · 非公開
+                </p>
+              </a>
+              <form method="POST" action="/my/certifications/<%= cert.id %>/<%= favoriteIds.has(cert.id) ? 'unfavorite' : 'favorite' %>" class="m-0 shrink-0">
+                <input type="hidden" name="returnTo" value="/certifications">
+                <button class="btn btn-ghost btn-sm" title="お気に入り"><%= favoriteIds.has(cert.id) ? '★' : '☆' %></button>
+              </form>
+            </div>
+          <% } %>
+        </div>
       <% } %>
-    </div>
+    <% } %>
+  </div>
 
-    <script>
-      function showTab(key) {
-        for (const t of ['learning', 'all']) {
-          const btn = document.getElementById('tab-' + t);
-          const panel = document.getElementById('panel-' + t);
-          if (t === key) {
-            btn.style.borderBottomColor = 'var(--gold)';
-            btn.style.color = 'var(--ink)';
-            panel.classList.remove('hidden');
-          } else {
-            btn.style.borderBottomColor = 'transparent';
-            btn.style.color = '#c0c6e0';
-            panel.classList.add('hidden');
-          }
-        }
+  <script>
+    function showTab(key) {
+      for (const t of ['learning', 'all']) {
+        document.getElementById('tab-' + t).classList.toggle('is-active', t === key);
+        document.getElementById('panel-' + t).classList.toggle('hidden', t !== key);
       }
-    </script>
-
-  </main>
-</body>
-</html>
+    }
+  </script>
+</main>
+<%- include('partials/foot') %>

@@ -5,7 +5,9 @@
   "main": "app.js",
   "scripts": {
     "start": "node --env-file=.env app.js",
-    "dev": "node --env-file=.env --watch app.js",
+    "dev": "concurrently -k -n css,app -c blue,green \"npm:watch:css\" \"node --env-file=.env --watch app.js\"",
+    "build:css": "tailwindcss -i src/styles.css -o public/app.css --minify",
+    "watch:css": "tailwindcss -i src/styles.css -o public/app.css --watch",
     "setup": "node -e \"const c=require('crypto');const fs=require('fs');if(fs.existsSync('.env')){console.log('.env already exists');process.exit(0)}const t=fs.readFileSync('.env.example','utf8').replace('change-me-to-a-random-32-byte-hex-string',c.randomBytes(32).toString('hex')).replace('0000000000000000000000000000000000000000000000000000000000000000',c.randomBytes(32).toString('hex'));fs.writeFileSync('.env',t);console.log('✅ .env created');console.log('');console.log('⚠️  .env の GITHUB_CLIENT_ID と GITHUB_CLIENT_SECRET を設定してください');console.log('   https://github.com/settings/developers → OAuth Apps → New OAuth App');console.log('   Callback URL: http://localhost:3000/auth/github/callback');\"",
     "seed": "node --env-file=.env scripts/seed-certifications.js",
     "test": "vitest run",
@@ -30,10 +32,13 @@
     "node": ">=20.0.0"
   },
   "devDependencies": {
+    "@tailwindcss/cli": "^4.3.1",
     "@vitest/ui": "^2.1.9",
+    "concurrently": "^10.0.3",
     "eslint": "^9.39.4",
     "globals": "^15.15.0",
     "supertest": "^7.2.2",
+    "tailwindcss": "^4.3.1",
     "vitest": "^2.1.9"
   }
 }

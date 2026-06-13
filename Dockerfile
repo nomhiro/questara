@@ -5,6 +5,16 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci --omit=dev && npm cache clean --force
 
+# CSS ビルド専用ステージ（devDependencies の Tailwind CLI が必要）。
+# 成果物 public/app.css のみを runtime へ持ち込み、CLI は本番イメージに混入させない。
+FROM node:20-alpine AS cssbuild
+WORKDIR /app
+COPY package.json package-lock.json ./
+RUN npm ci
+COPY src ./src
+COPY views ./views
+RUN npm run build:css
+
 FROM node:20-alpine AS runtime
 WORKDIR /app
 ENV NODE_ENV=production \
@@ -16,6 +26,7 @@ COPY services ./services
 COPY middleware ./middleware
 COPY views ./views
 COPY public ./public
+COPY --from=cssbuild /app/public/app.css ./public/app.css
 COPY data ./data
 COPY scripts ./scripts
 USER node

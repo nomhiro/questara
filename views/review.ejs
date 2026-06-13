@@ -1,90 +1,60 @@
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title><%= title %></title>
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=DotGothic16&family=M+PLUS+1+Code:wght@400;500;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/theme.css">
-  <script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body>
-  <%- include('partials/hud', { userEmail: typeof userEmail !== 'undefined' ? userEmail : null, heroHud: typeof heroHud !== 'undefined' ? heroHud : null, combo: null }) %>
+<%- include('partials/head', { title: title }) %>
+<%- include('partials/hud', { heroHud: typeof heroHud !== 'undefined' ? heroHud : null, combo: null }) %>
 
-  <main class="main">
+<main class="mx-auto max-w-3xl px-5 py-8 sm:px-8">
+  <nav class="mb-4 flex items-center gap-2 text-sm text-ink-3" aria-label="パンくず">
+    <a href="/home" class="text-ink-2 hover:text-ink">ホーム</a>
+    <span aria-hidden="true">/</span>
+    <a href="/certifications/<%= certId %>" class="text-ink-2 hover:text-ink"><%= certId.toUpperCase() %></a>
+    <span aria-hidden="true">/</span>
+    <span class="text-ink">間違い復習</span>
+  </nav>
 
-    <div style="font-family: var(--font-body); font-size: 12px; color: #c0c6e0; margin-bottom: 8px;">
-      <a href="/" style="color: var(--gold); text-decoration:none;">🏰 ホーム</a>
-      <span style="opacity:.6; margin: 0 6px;">▸</span>
-      <a href="/certifications/<%= certId %>" style="color: var(--gold); text-decoration:none;"><%= certId.toUpperCase() %></a>
-      <span style="opacity:.6; margin: 0 6px;">▸</span>
-      <span>間違い復習</span>
-    </div>
+  <h1 class="text-xl font-semibold tracking-tight">間違えた問題の復習</h1>
+  <p class="mb-6 mt-2 text-sm text-ink-2"><span class="badge badge-danger">✗ <span class="nums"><%= wrongQuestions.length %></span> 問</span> を間違えました</p>
 
-    <h1 class="rpg-title" style="font-size: 24px; margin-bottom: 4px;">📜 間違えた問題の復習</h1>
-    <p style="font-family: var(--font-body); color: #c0c6e0; font-size: 13px; margin-bottom: 24px;">
-      <span class="pill" style="color: var(--crimson);">✗ <%= wrongQuestions.length %> 問</span> を間違えました
-    </p>
+  <% if (wrongQuestions.length === 0) { %>
+    <section class="card text-center">
+      <div class="mb-2 text-4xl">🎉</div>
+      <p class="font-medium text-success">このセッションでは間違えた問題はありませんでした！</p>
+    </section>
+  <% } %>
 
-    <% if (wrongQuestions.length === 0) { %>
-      <section class="rpg-window is-open" style="text-align:center;">
-        <div style="font-size: 40px; margin-bottom: 8px;">🎉</div>
-        <p style="font-family: var(--font-display); color: var(--fern); font-size: 16px; text-shadow: 2px 2px 0 var(--shadow); margin: 0;">
-          このセッションでは間違えた問題はありませんでした！
-        </p>
+  <div class="flex flex-col gap-4">
+    <% for (let i = 0; i < wrongQuestions.length; i++) { %>
+      <% const q = wrongQuestions[i]; %>
+      <section class="card">
+        <span class="badge badge-danger mb-3"><%= q.domainName %></span>
+        <p class="mb-4 leading-relaxed">Q<%= i + 1 %>. <%= q.question %></p>
+        <div class="mb-4 flex flex-col gap-2">
+          <% for (const [key, val] of Object.entries(q.options)) { %>
+            <% const answerKeys = (Array.isArray(q.correctAnswers) && q.correctAnswers.length > 0) ? q.correctAnswers : [q.correctAnswer]; %>
+            <% const pickedKeys = String(q.selectedAnswer || '').split(','); %>
+            <% const isCorrect = answerKeys.includes(key); %>
+            <% const isPicked = pickedKeys.includes(key); %>
+            <% const cls = isCorrect ? 'border-success bg-success-soft text-success' : (isPicked ? 'border-danger bg-danger-soft text-danger' : 'border-line text-ink-2'); %>
+            <div class="flex items-start gap-2.5 rounded-lg border px-3 py-2 text-sm <%= cls %>">
+              <span class="font-mono font-semibold"><%= key %>.</span>
+              <span class="flex-1"><%= val %></span>
+              <% if (isCorrect) { %><span class="shrink-0 text-xs">✓ 正解</span>
+              <% } else if (isPicked) { %><span class="shrink-0 text-xs">← あなたの回答</span><% } %>
+            </div>
+          <% } %>
+        </div>
+        <div class="border-t border-line pt-3 text-sm leading-relaxed text-ink-2">
+          <span class="font-medium text-ink">解説:</span> <%= q.explanation %>
+        </div>
       </section>
     <% } %>
+  </div>
 
-    <div style="display:flex; flex-direction:column; gap: 18px;">
-      <% for (let i = 0; i < wrongQuestions.length; i++) { %>
-        <% const q = wrongQuestions[i]; %>
-        <section class="rpg-window is-open" style="border-color: var(--crimson); box-shadow: inset 0 0 0 3px var(--window), inset 0 0 0 6px #7a1320, 4px 4px 0 var(--shadow);">
-          <div class="pill" style="color: var(--crimson); border-color: var(--crimson); margin-bottom: 10px;">
-            <%= q.domainName %>
-          </div>
-          <p style="font-family: var(--font-body); font-size: 15px; line-height: 1.7; color: var(--ink); margin: 0 0 16px;">
-            Q<%= i + 1 %>. <%= q.question %>
-          </p>
-
-          <div style="display:flex; flex-direction:column; gap: 8px; margin-bottom: 16px;">
-            <% for (const [key, val] of Object.entries(q.options)) { %>
-              <% const answerKeys = (Array.isArray(q.correctAnswers) && q.correctAnswers.length > 0) ? q.correctAnswers : [q.correctAnswer]; %>
-              <% const pickedKeys = String(q.selectedAnswer || '').split(','); %>
-              <% const isCorrect = answerKeys.includes(key); %>
-              <% const isPicked = pickedKeys.includes(key); %>
-              <% const bg = isCorrect ? '#1f4a18' : (isPicked ? '#3a0a12' : '#000a'); %>
-              <% const border = isCorrect ? 'var(--fern)' : (isPicked ? 'var(--crimson)' : 'var(--ink)'); %>
-              <% const color = isCorrect ? 'var(--fern)' : (isPicked ? 'var(--crimson)' : 'var(--ink)'); %>
-              <div style="display:flex; gap: 10px; align-items:flex-start; padding: 8px 12px; background: <%= bg %>; border: 2px solid <%= border %>; font-family: var(--font-body); font-size: 13px; color: <%= color %>;">
-                <span style="font-family: var(--font-display); font-weight: bold; flex-shrink:0; color: var(--gold);"><%= key %>.</span>
-                <span style="flex:1;"><%= val %></span>
-                <% if (isCorrect) { %>
-                  <span style="font-family: var(--font-display); font-size: 11px;">✓ 正解</span>
-                <% } else if (isPicked) { %>
-                  <span style="font-family: var(--font-display); font-size: 11px;">← あなたの回答</span>
-                <% } %>
-              </div>
-            <% } %>
-          </div>
-
-          <div style="padding-top: 12px; border-top: 2px dashed var(--gold); font-family: var(--font-body); font-size: 13px; line-height: 1.7; color: #dadde6;">
-            <span style="font-family: var(--font-display); color: var(--gold); margin-right: 6px;">📖 解説:</span>
-            <%= q.explanation %>
-          </div>
-        </section>
-      <% } %>
-    </div>
-
-    <div style="margin-top: 28px; display:flex; flex-wrap:wrap; gap: 12px;">
-      <form method="POST" action="/quiz/start" style="margin:0;">
-        <input type="hidden" name="certId" value="<%= certId %>">
-        <input type="hidden" name="mode" value="wrong-only">
-        <button class="rpg-btn" type="submit">❌ 間違えた問題で再挑戦</button>
-      </form>
-      <a href="/certifications/<%= certId %>" class="rpg-btn is-gold">← 資格ページへ</a>
-    </div>
-
-  </main>
-</body>
-</html>
+  <div class="mt-7 flex flex-wrap gap-2">
+    <form method="POST" action="/quiz/start" class="m-0">
+      <input type="hidden" name="certId" value="<%= certId %>">
+      <input type="hidden" name="mode" value="wrong-only">
+      <button class="btn btn-subtle" type="submit">間違えた問題で再挑戦</button>
+    </form>
+    <a href="/certifications/<%= certId %>" class="btn btn-primary">← 資格ページへ</a>
+  </div>
+</main>
+<%- include('partials/foot') %>

@@ -1,110 +1,98 @@
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title><%= title %></title>
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=DotGothic16&family=M+PLUS+1+Code:wght@400;500;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/theme.css">
-  <script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body>
-  <%- include('partials/hud', { userEmail: typeof userEmail !== 'undefined' ? userEmail : null, heroHud: typeof heroHud !== 'undefined' ? heroHud : null, combo: null }) %>
+<%- include('partials/head', { title: title }) %>
+<%- include('partials/hud', { heroHud: typeof heroHud !== 'undefined' ? heroHud : null, combo: null }) %>
 
-  <% if (gamification && gamification.leveledUp) { %>
-    <div class="level-up-flash">LEVEL UP!</div>
+<% if (gamification && gamification.leveledUp) { %>
+  <div class="toast"><span aria-hidden="true">🎉</span> <span class="font-medium">LEVEL UP! Lv.<%= gamification.newLevel %></span></div>
+<% } %>
+
+<main class="mx-auto max-w-3xl px-5 py-8 sm:px-8">
+  <h1 class="mb-5 text-xl font-semibold tracking-tight">セッション結果</h1>
+
+  <% const passed = overallRate >= 70; %>
+  <section class="card rise text-center">
+    <div class="nums text-6xl font-bold <%= passed ? 'text-success' : 'text-danger' %>"><%= overallRate %>%</div>
+    <p class="mt-1 text-sm text-ink-2"><span class="nums"><%= correct %> / <%= total %></span> 問正解</p>
+    <% if (gamification) { %>
+      <div class="mt-4 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-sm text-ink-2">
+        <span>取得EXP <span class="nums font-medium text-ink">+<%= gamification.xpEarned %></span></span>
+        <span class="text-ink-3">·</span>
+        <span>最大COMBO <span class="nums font-medium text-ink">×<%= gamification.maxCombo %></span></span>
+        <span class="text-ink-3">·</span>
+        <span>Lv.<%= gamification.previousLevel %> → <strong class="nums font-semibold <%= gamification.leveledUp ? 'text-success' : 'text-ink' %>">Lv.<%= gamification.newLevel %></strong></span>
+      </div>
+    <% } %>
+  </section>
+
+  <% if (gamification && gamification.rankUpgrades && gamification.rankUpgrades.length) { %>
+    <section class="card mt-4">
+      <h2 class="mb-3 text-base font-semibold tracking-tight">マスタリー昇格</h2>
+      <ul class="flex flex-col gap-2">
+        <% for (const up of gamification.rankUpgrades) { %>
+          <li class="flex items-center gap-2 text-sm">
+            <span class="badge"><%= up.key %></span>
+            <span class="rank-badge rank-<%= up.from === '未挑戦' ? 'D' : up.from %>"><%= up.from %></span>
+            <span class="text-ink-3">→</span>
+            <span class="rank-badge rank-<%= up.to %>"><%= up.to %></span>
+          </li>
+        <% } %>
+      </ul>
+    </section>
   <% } %>
 
-  <main class="main">
-    <h1 class="rpg-title" style="font-size: 28px; margin-bottom: 16px;">⚔ セッション結果</h1>
+  <% if (gamification && gamification.newAchievements && gamification.newAchievements.length) { %>
+    <section class="card mt-4">
+      <h2 class="mb-3 text-base font-semibold tracking-tight">🏅 新しい実績</h2>
+      <ul class="flex flex-col gap-2">
+        <% for (const a of gamification.newAchievements) { %>
+          <li class="flex items-center gap-2"><span class="text-xl"><%= a.icon || '🏅' %></span><span class="font-medium"><%= a.name %></span></li>
+        <% } %>
+      </ul>
+    </section>
+  <% } %>
 
-    <section class="rpg-window is-open" style="text-align: center;">
-      <div style="font-family: var(--font-display); font-size: 56px; color: <%= overallRate >= 70 ? 'var(--fern)' : 'var(--crimson)' %>; text-shadow: 3px 3px 0 var(--shadow);">
-        <%= overallRate %>%
-      </div>
-      <p style="font-family: var(--font-display); color: var(--ink);"><%= correct %> / <%= total %> 問正解</p>
-      <% if (gamification) { %>
-        <div style="margin-top: 14px; font-family: var(--font-display); font-size: 14px; color: var(--gold);">
-          取得EXP <span style="color: var(--ink);"><%= gamification.xpEarned %></span>
-          &nbsp;·&nbsp; 最大COMBO <span style="color: var(--ink);">×<%= gamification.maxCombo %></span>
-          &nbsp;·&nbsp; Lv.<%= gamification.previousLevel %> → <strong style="color: <%= gamification.leveledUp ? 'var(--fern)' : 'var(--ink)' %>;">Lv.<%= gamification.newLevel %></strong>
+  <% if (domainsWithScores && domainsWithScores.length) { %>
+    <h2 class="mb-3 mt-6 text-base font-semibold tracking-tight">ドメイン別スコア</h2>
+    <div class="grid gap-2.5">
+      <% for (const d of domainsWithScores) { const p = d.score.rate >= 70; %>
+        <div class="card flex items-center justify-between gap-3 py-3">
+          <div class="min-w-0 flex-1 text-sm font-medium"><%= d.name %></div>
+          <div class="nums text-lg font-semibold <%= p ? 'text-success' : 'text-danger' %>">
+            <%= d.score.rate %>% <span class="text-xs font-normal text-ink-3">(<%= d.score.correct %>/<%= d.score.total %>)</span>
+          </div>
         </div>
       <% } %>
-    </section>
-
-    <% if (gamification && gamification.rankUpgrades && gamification.rankUpgrades.length) { %>
-      <section class="rpg-window is-open" style="margin-top: 18px;">
-        <h2 class="rpg-title" style="font-size: 18px;">⚔ マスタリー昇格</h2>
-        <ul style="list-style: none; padding: 0; margin: 10px 0 0; display: flex; flex-direction: column; gap: 6px; font-family: var(--font-display);">
-          <% for (const up of gamification.rankUpgrades) { %>
-            <li>
-              <span class="pill"><%= up.key %></span>
-              <span class="rank-badge rank-<%= up.from === '未挑戦' ? 'D' : up.from %>"><%= up.from %></span>
-              →
-              <span class="rank-badge rank-<%= up.to %>"><%= up.to %></span>
-            </li>
-          <% } %>
-        </ul>
-      </section>
-    <% } %>
-
-    <% if (gamification && gamification.newAchievements && gamification.newAchievements.length) { %>
-      <section class="rpg-window is-open" style="margin-top: 18px;">
-        <h2 class="rpg-title" style="font-size: 18px;">🏅 新しい報い</h2>
-        <ul style="list-style: none; padding: 0; margin: 10px 0 0; display: flex; flex-direction: column; gap: 4px; font-family: var(--font-display);">
-          <% for (const a of gamification.newAchievements) { %>
-            <li><span style="font-size: 20px;"><%= a.icon || '🏅' %></span> <span style="color: var(--gold); margin-left: 6px;"><%= a.name %></span></li>
-          <% } %>
-        </ul>
-      </section>
-    <% } %>
-
-    <% if (domainsWithScores && domainsWithScores.length) { %>
-      <h2 class="rpg-title" style="font-size: 18px; margin: 22px 0 8px;">📊 ドメイン別スコア</h2>
-      <div style="display: flex; flex-direction: column; gap: 10px;">
-        <% for (const d of domainsWithScores) { %>
-          <div class="rpg-window" style="display: flex; justify-content: space-between; align-items: center;">
-            <div style="flex: 1; font-family: var(--font-display); font-size: 14px; color: var(--ink);"><%= d.name %></div>
-            <div style="font-family: var(--font-display); color: <%= d.score.rate >= 70 ? 'var(--fern)' : 'var(--crimson)' %>; font-size: 18px;">
-              <%= d.score.rate %>%
-              <span style="font-size: 11px; color: var(--ink); opacity: .7;">(<%= d.score.correct %>/<%= d.score.total %>)</span>
-            </div>
-          </div>
-        <% } %>
-      </div>
-    <% } %>
-
-    <% if (weakDomains && weakDomains.length) { %>
-      <section class="rpg-window is-open" style="margin-top: 18px; border-color: var(--crimson); box-shadow: inset 0 0 0 3px var(--window), inset 0 0 0 6px var(--window-lt), 4px 4px 0 var(--shadow);">
-        <h2 class="rpg-title" style="font-size: 16px; color: var(--crimson);">📌 強化が必要なドメイン</h2>
-        <ul style="list-style: none; padding: 0; margin: 10px 0 0; display: flex; flex-direction: column; gap: 8px; font-family: var(--font-display);">
-          <% for (const d of weakDomains) { %>
-            <li style="display: flex; justify-content: space-between; align-items: center; gap: 10px;">
-              <span><%= d.name %></span>
-              <form method="POST" action="/quiz/start" style="margin:0;">
-                <input type="hidden" name="certId" value="<%= certId %>">
-                <input type="hidden" name="mode" value="domain">
-                <input type="hidden" name="domainId" value="<%= d.id %>">
-                <button class="rpg-btn">このドメインで再挑戦</button>
-              </form>
-            </li>
-          <% } %>
-        </ul>
-      </section>
-    <% } %>
-
-    <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 24px;">
-      <% if (cert) { %>
-        <form method="POST" action="/quiz/start" style="margin:0;">
-          <input type="hidden" name="certId" value="<%= certId %>">
-          <input type="hidden" name="mode" value="all">
-          <button class="rpg-btn is-gold">🔄 もう一度全問</button>
-        </form>
-        <a href="/quiz/<%= session.id %>/review?certId=<%= certId %>" class="rpg-btn">❌ 間違えた問題を確認</a>
-        <a href="/certifications/<%= certId %>" class="rpg-btn">← 資格ページへ</a>
-      <% } %>
     </div>
-  </main>
-</body>
-</html>
+  <% } %>
+
+  <% if (weakDomains && weakDomains.length) { %>
+    <section class="card mt-6 border-danger/40">
+      <h2 class="mb-3 text-base font-semibold tracking-tight text-danger">強化が必要なドメイン</h2>
+      <ul class="flex flex-col gap-2.5">
+        <% for (const d of weakDomains) { %>
+          <li class="flex items-center justify-between gap-3">
+            <span class="text-sm"><%= d.name %></span>
+            <form method="POST" action="/quiz/start" class="m-0">
+              <input type="hidden" name="certId" value="<%= certId %>">
+              <input type="hidden" name="mode" value="domain">
+              <input type="hidden" name="domainId" value="<%= d.id %>">
+              <button class="btn btn-subtle btn-sm">再挑戦</button>
+            </form>
+          </li>
+        <% } %>
+      </ul>
+    </section>
+  <% } %>
+
+  <div class="mt-6 flex flex-wrap gap-2">
+    <% if (cert) { %>
+      <form method="POST" action="/quiz/start" class="m-0">
+        <input type="hidden" name="certId" value="<%= certId %>">
+        <input type="hidden" name="mode" value="all">
+        <button class="btn btn-primary">もう一度全問</button>
+      </form>
+      <a href="/quiz/<%= session.id %>/review?certId=<%= certId %>" class="btn btn-subtle">間違えた問題を確認</a>
+      <a href="/certifications/<%= certId %>" class="btn btn-ghost">← 資格ページへ</a>
+    <% } %>
+  </div>
+</main>
+<%- include('partials/foot') %>

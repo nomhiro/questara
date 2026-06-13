@@ -1,4 +1,8 @@
 node_modules/
+
+# Tailwind ビルド成果物（src/styles.css から生成。Docker/CI でビルドする）
+public/app.css
+
 data/progress.json
 data/app.db
 data/app.db-shm

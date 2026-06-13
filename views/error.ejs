@@ -1,32 +1,17 @@
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-  <meta charset="UTF-8">
-  <title><%= title %></title>
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=DotGothic16&family=M+PLUS+1+Code:wght@400;500;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/theme.css">
-  <script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body>
-  <nav class="hud">
-    <a class="rpg-btn is-gold" href="/" style="font-size:11px;padding:6px 12px;">🗺️ ホーム</a>
-    <div class="hud-spacer"></div>
-  </nav>
+<%- include('partials/head', { title: title }) %>
+<header class="border-b border-line">
+  <div class="mx-auto flex max-w-5xl items-center px-5 py-3 sm:px-8">
+    <a href="/" class="flex items-center gap-2 font-semibold tracking-tight">
+      <span class="grid h-6 w-6 place-items-center rounded-md bg-accent text-[13px] font-bold text-accent-ink">Q</span>
+      <span class="text-[15px]">Questara</span>
+    </a>
+  </div>
+</header>
 
-  <main class="main" style="text-align:center;">
-    <div style="font-size:64px; margin: 40px 0 12px; text-shadow: 4px 4px 0 var(--shadow);">⚠️</div>
-    <h1 class="rpg-title" style="font-size: 28px; margin-bottom: 12px;"><%= title %></h1>
-
-    <section class="rpg-window is-open" style="display:inline-block; max-width: 560px; text-align:left;">
-      <p style="font-family: var(--font-body); color: var(--ink); line-height: 1.7; margin: 0;">
-        <%= message %>
-      </p>
-    </section>
-
-    <div style="margin-top: 28px;">
-      <a href="/" class="rpg-btn is-gold">← ホームに戻る</a>
-    </div>
-  </main>
-</body>
-</html>
+<main class="mx-auto flex max-w-2xl flex-col items-center px-5 py-20 text-center sm:px-8">
+  <div class="mb-4 text-5xl" aria-hidden="true">⚠️</div>
+  <h1 class="mb-3 text-2xl font-semibold tracking-tight"><%= title %></h1>
+  <p class="max-w-md leading-relaxed text-ink-2"><%= message %></p>
+  <a href="/" class="btn btn-primary mt-8">← ホームに戻る</a>
+</main>
+<%- include('partials/foot') %>

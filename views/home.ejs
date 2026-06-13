@@ -1,82 +1,93 @@
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title><%= title %></title>
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=DotGothic16&family=M+PLUS+1+Code:wght@400;500;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/theme.css">
-  <script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body>
-  <%- include('partials/hud', { userEmail: typeof userEmail !== 'undefined' ? userEmail : null, heroHud: typeof heroHud !== 'undefined' ? heroHud : null, combo: null }) %>
-  <main class="main">
+<%- include('partials/head', { title: title }) %>
+<%- include('partials/hud', { heroHud: typeof heroHud !== 'undefined' ? heroHud : null, combo: null }) %>
 
-    <h1 class="rpg-title" style="font-size: 22px; margin-bottom: 4px;">ようこそ、<%= userName %> の冒険へ</h1>
-    <p style="font-family: var(--font-body); color:#c0c6e0; font-size:13px; margin:0 0 20px;">今日も一歩、合格へ。</p>
+<main class="mx-auto max-w-4xl px-5 py-8 sm:px-8">
+  <header class="mb-8 rise">
+    <h1 class="text-2xl font-semibold tracking-tight">ようこそ、<%= userName %> さん</h1>
+    <p class="mt-1 text-sm text-ink-2">今日も一歩、合格へ。</p>
+  </header>
 
-    <!-- ステータスサマリ -->
-    <div class="rpg-window" style="margin-bottom:24px; display:flex; flex-wrap:wrap; gap:16px; align-items:center;">
-      <div><span style="color:var(--gold); font-family:var(--font-display);">Lv.</span> <span style="font-family:var(--font-display); font-size:20px;"><%= heroStats.level || 1 %></span></div>
-      <div style="font-family:var(--font-body); font-size:12px; color:#c0c6e0;">EXP <%= heroStats.xpIntoLevel %>/<%= heroStats.xpForLevel %></div>
-      <div style="font-family:var(--font-body); font-size:12px; color:var(--crimson);">🔥 <%= heroStats.streak?.current || 0 %>日</div>
-      <div style="font-family:var(--font-body); font-size:12px; color:var(--fern);">🏅 <%= (heroStats.unlockedAchievements || []).length %></div>
-      <div style="flex:1;"></div>
-      <a href="/my/profile" class="rpg-btn">🧙 ステータス詳細</a>
+  <%
+    const lv = (heroStats && heroStats.level) || 1;
+    const xpInto = (heroStats && heroStats.xpIntoLevel) || 0;
+    const xpFor = (heroStats && heroStats.xpForLevel) || 100;
+    const xpPct = Math.min(100, Math.round((xpInto / xpFor) * 100));
+    const streak = (heroStats && heroStats.streak && heroStats.streak.current) || 0;
+    const achv = (heroStats && (heroStats.unlockedAchievements || []).length) || 0;
+  %>
+  <section class="card mb-8 rise" style="animation-delay:.04s">
+    <div class="flex flex-wrap items-center gap-x-8 gap-y-4">
+      <div>
+        <div class="text-xs text-ink-3">レベル</div>
+        <div class="mt-0.5 flex items-baseline gap-1"><span class="text-sm text-ink-3">Lv.</span><span class="nums text-2xl font-semibold"><%= lv %></span></div>
+      </div>
+      <div class="min-w-[180px] flex-1">
+        <div class="mb-1.5 flex items-center justify-between text-xs text-ink-3"><span>EXP</span><span class="nums"><%= xpInto %> / <%= xpFor %></span></div>
+        <span class="progress block"><i style="width:<%= xpPct %>%"></i></span>
+      </div>
+      <div>
+        <div class="text-xs text-ink-3">連続学習</div>
+        <div class="mt-0.5"><span aria-hidden="true">🔥</span> <span class="nums text-lg font-semibold"><%= streak %></span><span class="text-sm text-ink-2">日</span></div>
+      </div>
+      <div>
+        <div class="text-xs text-ink-3">実績</div>
+        <div class="mt-0.5"><span aria-hidden="true">🏅</span> <span class="nums text-lg font-semibold"><%= achv %></span></div>
+      </div>
+      <a href="/my/profile" class="btn btn-subtle btn-sm ml-auto">ステータス詳細</a>
     </div>
+  </section>
 
-    <!-- 学習中の資格 -->
-    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
-      <h2 class="rpg-title" style="font-size:18px;">📖 学習中の資格</h2>
-      <a href="/certifications" class="rpg-btn is-gold">資格をさがす →</a>
+  <section class="mb-8">
+    <div class="mb-3 flex items-center justify-between">
+      <h2 class="text-lg font-semibold tracking-tight">学習中の資格</h2>
+      <a href="/certifications" class="btn btn-primary btn-sm">資格をさがす</a>
     </div>
     <% if (learningCerts.length === 0) { %>
-      <div class="rpg-window" style="text-align:center; margin-bottom:24px;">
-        <p style="color:#c0c6e0; font-family:var(--font-body);">まだ学習中の資格がありません。</p>
-        <a href="/certifications" style="display:inline-block; margin-top:12px; color:var(--gold); font-family:var(--font-body);">資格をさがして ★ で登録する →</a>
+      <div class="card text-center text-ink-2">
+        <p>まだ学習中の資格がありません。</p>
+        <a href="/certifications" class="mt-3 inline-block font-medium text-accent">資格をさがして ☆ で登録する →</a>
       </div>
     <% } else { %>
-      <div style="display:flex; flex-direction:column; gap:12px; margin-bottom:24px;">
+      <div class="grid gap-3">
         <% for (const c of learningCerts) { %>
-          <div class="rpg-window" style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
-            <div style="flex:1; min-width:0;">
-              <h3 class="rpg-title" style="font-size:16px;">
-                <%= c.name %>
-                <% if (c.passed) { %><span class="pill" style="color:var(--fern); border-color:var(--fern);">🎓 合格</span><% } %>
+          <a href="/certifications/<%= c.id %>" class="card card-hover flex items-center justify-between gap-4">
+            <div class="min-w-0">
+              <h3 class="flex items-center gap-2 font-medium">
+                <span class="truncate"><%= c.name %></span>
+                <% if (c.passed) { %><span class="badge badge-success shrink-0">🎓 合格</span><% } %>
               </h3>
-              <p style="color:#c0c6e0; font-family:var(--font-body); margin-top:4px; font-size:12px;">
-                <%= c.domainCount %> ドメイン · <%= c.questionCount %> 問
+              <p class="mt-1 text-sm text-ink-2">
+                <span class="nums"><%= c.domainCount %></span> ドメイン · <span class="nums"><%= c.questionCount %></span> 問
                 <% if (c.correctRate !== null && c.correctRate !== undefined) { %>
-                  · 正答率 <span style="color:<%= c.correctRate >= 70 ? 'var(--fern)' : 'var(--gold)' %>;"><%= c.correctRate %>%</span>
+                  · 正答率 <span class="nums font-medium <%= c.correctRate >= 70 ? 'text-success' : 'text-ink' %>"><%= c.correctRate %>%</span>
                 <% } else { %>
-                  · <span style="color:#8a90aa;">未挑戦</span>
+                  · <span class="text-ink-3">未挑戦</span>
                 <% } %>
               </p>
             </div>
-            <a href="/certifications/<%= c.id %>" class="rpg-btn is-gold" style="flex-shrink:0;">続ける</a>
-          </div>
+            <span class="btn btn-subtle btn-sm shrink-0">続ける →</span>
+          </a>
         <% } %>
       </div>
     <% } %>
+  </section>
 
-    <!-- メニュー（主要導線） -->
-    <h2 class="rpg-title" style="font-size:18px; margin-bottom:12px;">⚔ メニュー</h2>
-    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:12px;">
-      <a href="/certifications" class="rpg-window" style="text-decoration:none; display:block;">
-        <h3 class="rpg-title" style="font-size:14px; margin-bottom:4px;">📖 資格をさがす</h3>
-        <p style="color:#c0c6e0; font-family:var(--font-body); font-size:12px; margin:0;">学習中の資格と、公開・自作の全資格。</p>
+  <section>
+    <h2 class="mb-3 text-lg font-semibold tracking-tight">メニュー</h2>
+    <div class="grid gap-3 sm:grid-cols-3">
+      <a href="/certifications" class="card card-hover">
+        <h3 class="font-medium">資格をさがす</h3>
+        <p class="mt-1 text-sm text-ink-2">学習中・公開・自作の全資格。</p>
       </a>
-      <a href="/ranking" class="rpg-window" style="text-decoration:none; display:block;">
-        <h3 class="rpg-title" style="font-size:14px; margin-bottom:4px;">🏆 ランキング</h3>
-        <p style="color:#c0c6e0; font-family:var(--font-body); font-size:12px; margin:0;">みんなの正答率ランキング。</p>
+      <a href="/ranking" class="card card-hover">
+        <h3 class="font-medium">ランキング</h3>
+        <p class="mt-1 text-sm text-ink-2">みんなの正答率ランキング。</p>
       </a>
-      <a href="/plans" class="rpg-window" style="text-decoration:none; display:block;">
-        <h3 class="rpg-title" style="font-size:14px; margin-bottom:4px;">📅 学習計画</h3>
-        <p style="color:#c0c6e0; font-family:var(--font-body); font-size:12px; margin:0;">目標日に向けた学習プラン。</p>
+      <a href="/plans" class="card card-hover">
+        <h3 class="font-medium">学習計画</h3>
+        <p class="mt-1 text-sm text-ink-2">目標日に向けた学習プラン。</p>
       </a>
     </div>
-
-  </main>
-</body>
-</html>
+  </section>
+</main>
+<%- include('partials/foot') %>

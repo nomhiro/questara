@@ -1,37 +1,55 @@
 <% const hud = (typeof heroHud !== 'undefined' && heroHud) ? heroHud : null; %>
 <% const comboVal = (typeof combo !== 'undefined') ? combo : null; %>
 <% const active = (locals.activeNav || null); %>
-<nav class="hud-wrap">
-  <div class="hud-status">
-    <a class="hud-brand" href="/home" style="color:var(--gold); text-decoration:none;">⚔ Questara</a>
-    <% if (hud) { %>
-      <div class="hud-cell">🛡️ <span class="value"><%= hud.userName %></span></div>
-      <div class="hud-cell"><span class="label">Lv.</span><span class="value"><%= hud.level %></span></div>
-      <%
-        const xpPct = hud.xpForLevel > 0
-          ? Math.min(100, Math.round((hud.xpIntoLevel / hud.xpForLevel) * 100))
-          : 0;
-        const remaining = Math.max(0, hud.xpForLevel - hud.xpIntoLevel);
-      %>
-      <div class="hud-cell" title="残り <%= remaining %> EXP で Lv.<%= hud.level + 1 %>">
-        <span class="label">EXP</span>
-        <span class="xp-bar" aria-label="EXP <%= hud.xpIntoLevel %>/<%= hud.xpForLevel %>"><i style="width: <%= xpPct %>%"></i></span>
-        <span class="value"><%= hud.xpIntoLevel %>/<%= hud.xpForLevel %></span>
+<header class="sticky top-0 z-50 border-b border-line bg-surface/80 backdrop-blur-md">
+  <%# 上段: ブランド / ステータス / テーマトグル / ログアウト %>
+  <div class="mx-auto flex max-w-5xl items-center gap-3 px-5 py-2.5 sm:px-8">
+    <a href="/home" class="flex shrink-0 items-center gap-2 font-semibold tracking-tight">
+      <span class="grid h-6 w-6 place-items-center rounded-md bg-accent text-[13px] font-bold text-accent-ink">Q</span>
+      <span class="text-[15px]">Questara</span>
+    </a>
+
+    <div class="flex-1"></div>
+
+    <% if (hud) {
+      const xpPct = hud.xpForLevel > 0 ? Math.min(100, Math.round((hud.xpIntoLevel / hud.xpForLevel) * 100)) : 0;
+      const remaining = Math.max(0, hud.xpForLevel - hud.xpIntoLevel);
+    %>
+      <div class="hidden items-center gap-2.5 sm:flex">
+        <span class="badge"><span class="text-ink-3">Lv.</span><span class="nums font-medium text-ink"><%= hud.level %></span></span>
+        <div class="flex items-center gap-2" title="残り <%= remaining %> EXP で Lv.<%= hud.level + 1 %>">
+          <span class="text-xs text-ink-3">EXP</span>
+          <span class="progress w-20" aria-label="EXP <%= hud.xpIntoLevel %>/<%= hud.xpForLevel %>"><i style="width: <%= xpPct %>%"></i></span>
+        </div>
+        <span class="badge" title="連続学習日数"><span aria-hidden="true">🔥</span><span class="nums"><%= hud.streakCurrent %></span>日</span>
+        <span class="badge" title="獲得実績数"><span aria-hidden="true">🏅</span><span class="nums"><%= hud.achievementsCount %></span></span>
+        <% if (comboVal !== null) { %>
+          <span class="badge badge-accent">COMBO <span class="nums"><%= comboVal > 1 ? '×' + comboVal : '-' %></span></span>
+        <% } %>
       </div>
-      <div class="hud-cell crimson"><span class="label">🔥</span><span class="value"><%= hud.streakCurrent %>日</span></div>
-      <div class="hud-cell fern"><span class="label">🏅</span><span class="value"><%= hud.achievementsCount %></span></div>
+      <span class="hidden text-sm text-ink-2 md:inline"><%= hud.userName %></span>
     <% } %>
-    <% if (comboVal !== null) { %>
-      <div class="hud-cell"><span class="label">COMBO</span><span class="value"><%= comboVal > 1 ? '×' + comboVal : '-' %></span></div>
-    <% } %>
-    <div class="hud-spacer"></div>
-    <form method="POST" action="/auth/logout" style="margin:0;"><button type="submit" class="rpg-btn" style="font-size:11px;padding:6px 12px;">ログアウト</button></form>
+
+    <button type="button" onclick="toggleTheme()" class="btn btn-ghost btn-sm shrink-0" aria-label="テーマを切り替え" title="ライト / ダーク切替">
+      <svg class="h-4 w-4 dark:hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+      <svg class="hidden h-4 w-4 dark:block" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+    </button>
+
+    <form method="POST" action="/auth/logout" class="m-0 shrink-0"><button type="submit" class="btn btn-ghost btn-sm">ログアウト</button></form>
   </div>
-  <div class="hud-tabs">
-    <a href="/home" class="hud-tab<%= active === 'home' ? ' is-active' : '' %>"<% if (active === 'home') { %> aria-current="page"<% } %>>🏠 ホーム</a>
-    <a href="/certifications" class="hud-tab<%= active === 'certs' ? ' is-active' : '' %>"<% if (active === 'certs') { %> aria-current="page"<% } %>>📖 資格</a>
-    <a href="/ranking" class="hud-tab<%= active === 'ranking' ? ' is-active' : '' %>"<% if (active === 'ranking') { %> aria-current="page"<% } %>>🏆 ランキング</a>
-    <a href="/plans" class="hud-tab<%= active === 'plans' ? ' is-active' : '' %>"<% if (active === 'plans') { %> aria-current="page"<% } %>>📅 学習計画</a>
-    <a href="/my/profile" class="hud-tab<%= active === 'status' ? ' is-active' : '' %>"<% if (active === 'status') { %> aria-current="page"<% } %>>🧙 ステータス</a>
-  </div>
-</nav>
+
+  <%# 下段: 目的地タブ（下線でアクティブ表示） %>
+  <nav class="mx-auto flex max-w-5xl items-center gap-6 overflow-x-auto px-5 sm:px-8" aria-label="メインナビゲーション">
+    <a href="/home" class="tab<%= active === 'home' ? ' is-active' : '' %>"<% if (active === 'home') { %> aria-current="page"<% } %>>ホーム</a>
+    <a href="/certifications" class="tab<%= active === 'certs' ? ' is-active' : '' %>"<% if (active === 'certs') { %> aria-current="page"<% } %>>資格</a>
+    <a href="/ranking" class="tab<%= active === 'ranking' ? ' is-active' : '' %>"<% if (active === 'ranking') { %> aria-current="page"<% } %>>ランキング</a>
+    <a href="/plans" class="tab<%= active === 'plans' ? ' is-active' : '' %>"<% if (active === 'plans') { %> aria-current="page"<% } %>>学習計画</a>
+    <a href="/my/profile" class="tab<%= active === 'status' ? ' is-active' : '' %>"<% if (active === 'status') { %> aria-current="page"<% } %>>ステータス</a>
+  </nav>
+</header>
+<script>
+  function toggleTheme() {
+    var dark = document.documentElement.classList.toggle('dark');
+    document.cookie = 'theme=' + (dark ? 'dark' : 'light') + '; path=/; max-age=31536000; samesite=lax';
+  }
+</script>

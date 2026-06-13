@@ -1,139 +1,105 @@
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title><%= title %></title>
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=DotGothic16&family=M+PLUS+1+Code:wght@400;500;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/theme.css">
-  <script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body>
-  <% const s = stats || {}; const streak = (s.streak && s.streak.current) || 0;
-     const lv = s.level || 1;
-     const xpInto = s.xpIntoLevel || 0; const xpFor = s.xpForLevel || 100;
-     const xpPct = Math.min(100, Math.round((xpInto / xpFor) * 100));
-     const combo = currentCombo || 1;
-     const correctAnswers = (Array.isArray(question.correctAnswers) && question.correctAnswers.length > 0)
-       ? question.correctAnswers
-       : (question.correctAnswer ? [question.correctAnswer] : []);
-     const isMultiple = question.type === 'multiple' || correctAnswers.length > 1;
-  %>
-  <%- include('partials/hud', { userEmail: typeof userEmail !== 'undefined' ? userEmail : null, heroHud: typeof heroHud !== 'undefined' ? heroHud : null, combo: typeof currentCombo !== 'undefined' ? currentCombo : null }) %>
+<%- include('partials/head', { title: title }) %>
+<%
+  const correctAnswers = (Array.isArray(question.correctAnswers) && question.correctAnswers.length > 0)
+    ? question.correctAnswers
+    : (question.correctAnswer ? [question.correctAnswer] : []);
+  const isMultiple = question.type === 'multiple' || correctAnswers.length > 1;
+%>
+<%- include('partials/hud', { heroHud: typeof heroHud !== 'undefined' ? heroHud : null, combo: typeof currentCombo !== 'undefined' ? currentCombo : null }) %>
 
-  <main class="main">
-    <div style="margin-bottom: 16px; display: flex; justify-content: space-between; font-family: var(--font-display); color: var(--ink);">
-      <span>問題 <%= currentIdx + 1 %> / <%= total %></span>
-      <% if (question.domainName) { %><span class="pill"><%= question.domainName %></span><% } %>
-    </div>
-    <div style="height: 10px; background: #000; border: 2px solid var(--ink); margin-bottom: 20px;">
-      <div style="height: 100%; background: repeating-linear-gradient(90deg, var(--gold) 0 6px, #a87a00 6px 8px); width: <%= Math.round(((currentIdx) / total) * 100) %>%;"></div>
-    </div>
+<main class="mx-auto max-w-3xl px-5 py-8 sm:px-8">
+  <div class="mb-3 flex items-center justify-between text-sm">
+    <span class="text-ink-2">問題 <%= currentIdx + 1 %> / <%= total %></span>
+    <% if (question.domainName) { %><span class="badge"><%= question.domainName %></span><% } %>
+  </div>
+  <span class="progress mb-7 block"><i style="width:<%= Math.round(((currentIdx) / total) * 100) %>%"></i></span>
 
-    <section class="rpg-window is-open">
-      <p style="font-family: var(--font-body); font-size: 16px; line-height: 1.6; color: var(--ink); margin: 0 0 20px;"><%= question.question %></p>
-      <% if (isMultiple) { %>
-        <p style="font-family: var(--font-display); font-size: 12px; color: var(--gold); margin: 0 0 12px;">☑ 複数選択 — 該当するものをすべて選んで「回答する」を押してください</p>
-      <% } %>
+  <section class="card rise">
+    <p class="text-base leading-relaxed"><%= question.question %></p>
+    <% if (isMultiple) { %>
+      <p class="mt-3 text-sm text-accent">☑ 複数選択 — 該当するものをすべて選んで「回答する」を押してください</p>
+    <% } %>
 
-      <form id="answerForm" method="POST" action="/quiz/<%= session.id %>/answer">
-        <input type="hidden" name="questionId" value="<%= question.id %>">
-        <input type="hidden" name="domainId" value="<%= question.domainId %>">
-        <input type="hidden" name="questionIds" value="<%= questionIds %>">
-        <input type="hidden" name="certId" value="<%= certId %>">
-        <input type="hidden" name="currentIdx" value="<%= currentIdx %>">
-        <input type="hidden" name="isCorrect" id="isCorrectInput" value="">
-        <input type="hidden" name="selectedAnswer" id="selectedAnswerInput" value="">
+    <form id="answerForm" method="POST" action="/quiz/<%= session.id %>/answer" class="mt-5">
+      <input type="hidden" name="questionId" value="<%= question.id %>">
+      <input type="hidden" name="domainId" value="<%= question.domainId %>">
+      <input type="hidden" name="questionIds" value="<%= questionIds %>">
+      <input type="hidden" name="certId" value="<%= certId %>">
+      <input type="hidden" name="currentIdx" value="<%= currentIdx %>">
+      <input type="hidden" name="isCorrect" id="isCorrectInput" value="">
+      <input type="hidden" name="selectedAnswer" id="selectedAnswerInput" value="">
 
-        <div id="optionsContainer" style="display: flex; flex-direction: column; gap: 10px;">
-          <% for (const [key, val] of Object.entries(question.options)) { %>
-            <button type="button"
-                    data-key="<%= key %>"
-                    onclick="onOptionClick('<%= key %>')"
-                    class="option-btn rpg-btn"
-                    style="text-align: left; text-transform: none; letter-spacing: 0; padding: 10px 14px; font-family: var(--font-body);">
-              <strong style="font-family: var(--font-display); color: var(--gold); margin-right: 8px;"><%= key %>.</strong><%= val %>
-            </button>
-          <% } %>
-        </div>
-
-        <% if (isMultiple) { %>
-          <button type="button" id="submitMultiple" class="rpg-btn is-gold" style="margin-top: 14px;" onclick="gradeMultiple()">⚔ 回答する</button>
-        <% } %>
-      </form>
-
-      <div id="explanationBox" style="display: none; margin-top: 22px; padding-top: 18px; border-top: 2px dashed var(--gold);">
-        <div id="resultBadge" style="font-family: var(--font-display); font-size: 20px; margin-bottom: 10px;"></div>
-        <p style="font-family: var(--font-body); color: var(--ink); line-height: 1.6;"><%= question.explanation %></p>
-        <div style="margin-top: 16px;">
-          <button onclick="document.getElementById('answerForm').submit()" class="rpg-btn is-gold">
-            次の問題 →
+      <div id="optionsContainer" class="flex flex-col gap-2.5">
+        <% for (const [key, val] of Object.entries(question.options)) { %>
+          <button type="button" data-key="<%= key %>" onclick="onOptionClick('<%= key %>')" class="opt option-btn">
+            <span class="opt-key"><%= key %>.</span><span class="flex-1"><%= val %></span>
           </button>
-        </div>
+        <% } %>
       </div>
-    </section>
-  </main>
 
-  <script>
-    const CORRECT = <%- JSON.stringify(correctAnswers) %>;
-    const IS_MULTIPLE = <%- JSON.stringify(isMultiple) %>;
-    let answered = false;
-    const selected = new Set();
+      <% if (isMultiple) { %>
+        <button type="button" id="submitMultiple" class="btn btn-primary mt-4" onclick="gradeMultiple()">回答する</button>
+      <% } %>
+    </form>
 
-    function onOptionClick(key) {
-      if (answered) return;
-      if (!IS_MULTIPLE) return grade([key]);
-      // 複数選択: トグルで選択状態を切り替える
-      const btn = document.querySelector('.option-btn[data-key="' + key + '"]');
-      if (selected.has(key)) {
-        selected.delete(key);
-        btn.classList.remove('is-gold');
-      } else {
-        selected.add(key);
-        btn.classList.add('is-gold');
-      }
+    <div id="explanationBox" class="mt-6 hidden border-t border-line pt-5">
+      <div id="resultBadge" class="mb-2 font-semibold"></div>
+      <p class="leading-relaxed text-ink-2"><%= question.explanation %></p>
+      <div class="mt-4">
+        <button onclick="document.getElementById('answerForm').submit()" class="btn btn-primary">次の問題 →</button>
+      </div>
+    </div>
+  </section>
+</main>
+
+<script>
+  const CORRECT = <%- JSON.stringify(correctAnswers) %>;
+  const IS_MULTIPLE = <%- JSON.stringify(isMultiple) %>;
+  let answered = false;
+  const selected = new Set();
+
+  function onOptionClick(key) {
+    if (answered) return;
+    if (!IS_MULTIPLE) return grade([key]);
+    // 複数選択: トグルで選択状態を切り替える
+    const btn = document.querySelector('.option-btn[data-key="' + key + '"]');
+    if (selected.has(key)) { selected.delete(key); btn.classList.remove('is-selected'); }
+    else { selected.add(key); btn.classList.add('is-selected'); }
+  }
+
+  function gradeMultiple() {
+    if (answered || selected.size === 0) return;
+    grade([...selected].sort());
+  }
+
+  // keys: ソート済みの選択キー配列。正解集合との完全一致で採点する。
+  function grade(keys) {
+    answered = true;
+    const correctSorted = [...CORRECT].sort();
+    const isCorrect = keys.length === correctSorted.length && keys.every((k, i) => k === correctSorted[i]);
+    document.getElementById('isCorrectInput').value = isCorrect;
+    document.getElementById('selectedAnswerInput').value = keys.join(',');
+
+    document.querySelectorAll('.option-btn').forEach(btn => {
+      const btnKey = btn.dataset.key;
+      btn.disabled = true;
+      btn.classList.remove('is-selected');
+      if (CORRECT.includes(btnKey)) btn.classList.add('is-correct');
+      else if (keys.includes(btnKey)) btn.classList.add('is-wrong');
+      else btn.classList.add('is-muted');
+    });
+    const submitBtn = document.getElementById('submitMultiple');
+    if (submitBtn) submitBtn.style.display = 'none';
+
+    const badge = document.getElementById('resultBadge');
+    if (isCorrect) {
+      badge.textContent = '✅ 正解！';
+      badge.style.color = 'var(--success)';
+    } else {
+      badge.textContent = '❌ 不正解（正解: ' + CORRECT.join(', ') + '）';
+      badge.style.color = 'var(--danger)';
     }
-
-    function gradeMultiple() {
-      if (answered || selected.size === 0) return;
-      grade([...selected].sort());
-    }
-
-    // keys: ソート済みの選択キー配列。正解集合との完全一致で採点する。
-    function grade(keys) {
-      answered = true;
-      const correctSorted = [...CORRECT].sort();
-      const isCorrect = keys.length === correctSorted.length && keys.every((k, i) => k === correctSorted[i]);
-      document.getElementById('isCorrectInput').value = isCorrect;
-      document.getElementById('selectedAnswerInput').value = keys.join(',');
-
-      document.querySelectorAll('.option-btn').forEach(btn => {
-        const btnKey = btn.dataset.key;
-        btn.disabled = true;
-        btn.classList.remove('is-gold');
-        if (CORRECT.includes(btnKey)) {
-          btn.classList.add('is-fern');
-        } else if (keys.includes(btnKey)) {
-          // 誤って選んだ選択肢: crimson のまま少し暗く
-          btn.style.opacity = '0.85';
-        } else {
-          btn.style.opacity = '0.5';
-        }
-      });
-      const submitBtn = document.getElementById('submitMultiple');
-      if (submitBtn) submitBtn.style.display = 'none';
-
-      const badge = document.getElementById('resultBadge');
-      if (isCorrect) {
-        badge.textContent = '✅ 正解！';
-        badge.style.color = 'var(--fern)';
-      } else {
-        badge.textContent = '❌ 不正解（正解: ' + CORRECT.join(', ') + '）';
-        badge.style.color = 'var(--crimson)';
-      }
-      document.getElementById('explanationBox').style.display = 'block';
-    }
-  </script>
-</body>
-</html>
+    document.getElementById('explanationBox').classList.remove('hidden');
+  }
+</script>
+<%- include('partials/foot') %>
