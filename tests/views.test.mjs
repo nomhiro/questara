@@ -64,6 +64,8 @@ describe('views render without 500', () => {
     const quizRes = await agent.get(startRes.headers.location);
     expect(quizRes.status).toBe(200);
     expect(quizRes.text).toContain('問題 1');
+    // 単一選択でも「選択 → 回答する」のワンクッションを挟むため、回答ボタンを常時描画する
+    expect(quizRes.text).toContain('回答する');
   });
 
   test('views/quiz.ejs（複数選択問題は回答ボタンと正解配列を埋め込む）', async () => {
