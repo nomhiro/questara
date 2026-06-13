@@ -1,6 +1,6 @@
 import { describe, test, expect, beforeAll, beforeEach } from 'vitest';
 import { setupTestDb, truncateAll } from './_setup/db.mjs';
-import { createTestUser } from './_setup/fixtures.mjs';
+import { createTestUser, createTestCertification } from './_setup/fixtures.mjs';
 import { authedAgent, anonAgent } from './_setup/http.mjs';
 
 describe('routes/profile', () => {
@@ -33,5 +33,16 @@ describe('routes/profile', () => {
     expect(res.text).toContain('旅立ち');
     expect(res.text).toContain('七日修行');
     expect(res.text).toContain('連撃の極意');
+  });
+
+  test('合格した資格がステータスの合格資格セクションに表示される', async () => {
+    const user = await createTestUser();
+    await createTestCertification({ id: 'prof-pass', name: '合格資格X', isPublic: true });
+    const agent = await authedAgent(user);
+    await agent.post('/my/certifications/prof-pass/pass').type('form').send({ returnTo: '/certifications/prof-pass' });
+    const res = await agent.get('/my/profile');
+    expect(res.status).toBe(200);
+    expect(res.text).toContain('🎓 合格資格');
+    expect(res.text).toContain('合格資格X');
   });
 });

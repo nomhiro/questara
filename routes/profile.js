@@ -5,6 +5,7 @@ const router = express.Router();
 const userService = require('../services/userService');
 const achievementService = require('../services/achievementService');
 const gamificationService = require('../services/gamificationService');
+const questionService = require('../services/questionService');
 const { requireAuth } = require('../middleware/auth');
 const { asyncHandler } = require('../middleware/asyncHandler');
 
@@ -13,6 +14,14 @@ router.get('/', requireAuth, asyncHandler(async (req, res) => {
   const stats = user?.stats || {};
   const master = achievementService.loadMaster();
   const unlocked = new Set(stats.unlockedAchievements || []);
+
+  const passedRaw = stats.passedCertifications || [];
+  const passedSummaries = await questionService.listCertificationsByIds(passedRaw.map((p) => p.certId), req.user.id);
+  const nameById = Object.fromEntries(passedSummaries.map((s) => [s.id, s.name]));
+  const passedCerts = passedRaw
+    .filter((p) => nameById[p.certId])
+    .map((p) => ({ name: nameById[p.certId], passedAt: p.passedAt.slice(0, 10) }))
+    .sort((a, b) => b.passedAt.localeCompare(a.passedAt));
 
   res.render('profile', {
     title: '勇者プロフィール',
@@ -24,6 +33,7 @@ router.get('/', requireAuth, asyncHandler(async (req, res) => {
     stats: gamificationService.buildHudStats(stats),
     achievementsMaster: master,
     unlocked,
+    passedCerts,
   });
 }));
 
