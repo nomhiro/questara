@@ -32,10 +32,14 @@ router.get('/free-mode', requireAuth, asyncHandler(async (req, res) => {
   const publicCerts = await questionService.listCertifications({ includePrivate: false });
   const allForUser = await questionService.listCertifications({ includePrivate: true, userId: req.user.id });
   const myCerts = allForUser.filter((c) => c.createdBy === req.user.id && !c.isPublic);
+  const user = await userService.getUserById(req.user.id);
+  const stats = user?.stats || {};
   res.render('index', {
     title: '資格一覧',
     publicCerts,
     myCerts,
+    favoriteIds: new Set(stats.favoriteCertifications || []),
+    passedIds: new Set((stats.passedCertifications || []).map((p) => p.certId)),
     userEmail: res.locals.userEmail,
   });
 }));
@@ -60,6 +64,8 @@ router.get('/certifications/:certId', requireAuth, asyncHandler(async (req, res)
 
   const user = await userService.getUserById(req.user.id);
   const rawStats = user?.stats || {};
+  const isFavorite = (rawStats.favoriteCertifications || []).includes(cert.id);
+  const isPassed = (rawStats.passedCertifications || []).some((p) => p.certId === cert.id);
   const hudUserName = user?.displayName || user?.username || 'NoName';
   const hudStats = gamificationService.buildHudStats(rawStats);
   const masteryRanks = rawStats.masteryRanks || {};
@@ -75,6 +81,8 @@ router.get('/certifications/:certId', requireAuth, asyncHandler(async (req, res)
     userName: hudUserName,
     hudStats,
     masteryRanks,
+    isFavorite,
+    isPassed,
   });
 }));
 

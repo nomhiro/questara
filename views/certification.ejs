@@ -23,6 +23,16 @@
       <span class="pill"><%= totalQuestions %> 問</span>
       <span class="pill"><%= domains.length %> ドメイン</span>
     </p>
+    <div style="display:flex; gap:10px; flex-wrap:wrap; margin: 0 0 22px;">
+      <form method="POST" action="/my/certifications/<%= cert.id %>/<%= isFavorite ? 'unfavorite' : 'favorite' %>" style="margin:0;">
+        <input type="hidden" name="returnTo" value="/certifications/<%= cert.id %>">
+        <button class="rpg-btn"><%= isFavorite ? '★ お気に入り解除' : '☆ お気に入り登録' %></button>
+      </form>
+      <form method="POST" action="/my/certifications/<%= cert.id %>/<%= isPassed ? 'unpass' : 'pass' %>" style="margin:0;">
+        <input type="hidden" name="returnTo" value="/certifications/<%= cert.id %>">
+        <button class="rpg-btn <%= isPassed ? 'is-fern' : '' %>"><%= isPassed ? '🎓 合格を取り消す' : '🎓 合格した' %></button>
+      </form>
+    </div>
 
     <!-- アクションボタン -->
     <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 28px;">

@@ -40,15 +40,24 @@
       <% } else { %>
         <div style="display:flex; flex-direction:column; gap:12px;">
           <% for (const cert of publicCerts) { %>
-            <a href="/certifications/<%= cert.id %>" class="rpg-window" style="display:block; text-decoration:none;">
-              <h2 class="rpg-title" style="font-size: 16px;"><%= cert.name %></h2>
-              <p style="color:#c0c6e0; font-family: var(--font-body); margin-top:4px; font-size: 13px;">
-                <%= cert.domainCount %> ドメイン &nbsp;·&nbsp; <%= cert.questionCount %> 問
-                <% if (cert.createdBy !== 'system') { %>
-                  &nbsp;·&nbsp; 作成者: <%= cert.creatorName %>
-                <% } %>
-              </p>
-            </a>
+            <div class="rpg-window" style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
+              <a href="/certifications/<%= cert.id %>" style="display:block; text-decoration:none; flex:1; min-width:0;">
+                <h2 class="rpg-title" style="font-size: 16px;">
+                  <%= cert.name %>
+                  <% if (passedIds.has(cert.id)) { %><span class="pill" style="color: var(--fern); border-color: var(--fern);">🎓 合格</span><% } %>
+                </h2>
+                <p style="color:#c0c6e0; font-family: var(--font-body); margin-top:4px; font-size: 13px;">
+                  <%= cert.domainCount %> ドメイン &nbsp;·&nbsp; <%= cert.questionCount %> 問
+                  <% if (cert.createdBy !== 'system') { %>
+                    &nbsp;·&nbsp; 作成者: <%= cert.creatorName %>
+                  <% } %>
+                </p>
+              </a>
+              <form method="POST" action="/my/certifications/<%= cert.id %>/<%= favoriteIds.has(cert.id) ? 'unfavorite' : 'favorite' %>" style="margin:0; flex-shrink:0;">
+                <input type="hidden" name="returnTo" value="/free-mode">
+                <button class="rpg-btn" title="お気に入り"><%= favoriteIds.has(cert.id) ? '★' : '☆' %></button>
+              </form>
+            </div>
           <% } %>
         </div>
       <% } %>
@@ -63,12 +72,21 @@
       <% } else { %>
         <div style="display:flex; flex-direction:column; gap:12px;">
           <% for (const cert of myCerts) { %>
-            <a href="/certifications/<%= cert.id %>" class="rpg-window" style="display:block; text-decoration:none;">
-              <h2 class="rpg-title" style="font-size: 16px;"><%= cert.name %></h2>
-              <p style="color:#c0c6e0; font-family: var(--font-body); margin-top:4px; font-size: 13px;">
-                <%= cert.domainCount %> ドメイン &nbsp;·&nbsp; <%= cert.questionCount %> 問 &nbsp;·&nbsp; 非公開
-              </p>
-            </a>
+            <div class="rpg-window" style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
+              <a href="/certifications/<%= cert.id %>" style="display:block; text-decoration:none; flex:1; min-width:0;">
+                <h2 class="rpg-title" style="font-size: 16px;">
+                  <%= cert.name %>
+                  <% if (passedIds.has(cert.id)) { %><span class="pill" style="color: var(--fern); border-color: var(--fern);">🎓 合格</span><% } %>
+                </h2>
+                <p style="color:#c0c6e0; font-family: var(--font-body); margin-top:4px; font-size: 13px;">
+                  <%= cert.domainCount %> ドメイン &nbsp;·&nbsp; <%= cert.questionCount %> 問 &nbsp;·&nbsp; 非公開
+                </p>
+              </a>
+              <form method="POST" action="/my/certifications/<%= cert.id %>/<%= favoriteIds.has(cert.id) ? 'unfavorite' : 'favorite' %>" style="margin:0; flex-shrink:0;">
+                <input type="hidden" name="returnTo" value="/free-mode">
+                <button class="rpg-btn" title="お気に入り"><%= favoriteIds.has(cert.id) ? '★' : '☆' %></button>
+              </form>
+            </div>
           <% } %>
         </div>
       <% } %>
