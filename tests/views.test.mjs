@@ -43,6 +43,15 @@ describe('views render without 500', () => {
     expect(res.text).toContain('マイ資格');
   });
 
+  test('資格フォームに合計%表示と正規化ボタンがある', async () => {
+    const user = await createTestUser();
+    const agent = await authedAgent(user);
+    const res = await agent.get('/my/certifications/new');
+    expect(res.status).toBe(200);
+    expect(res.text).toContain('id="weightTotal"');
+    expect(res.text).toContain('id="normalizeBtn"');
+  });
+
   test('views/domain.ejs', async () => {
     const user = await createTestUser();
     const cert = await createTestCertification({ id: 'v-domain-1' });

@@ -123,8 +123,10 @@
         <label class="rpg-label" style="font-size: 14px;">🗺 ドメイン一覧</label>
         <div id="domainsList" style="display:flex; flex-direction:column; gap: 6px; margin-top: 8px;"></div>
         <input type="hidden" name="domainsJson" id="domainsJson" value="<%- JSON.stringify(cert.domains) %>">
-        <div style="margin-top: 10px;">
+        <div style="margin-top: 10px; display:flex; align-items:center; gap: 12px; flex-wrap:wrap;">
           <button type="button" id="addDomainBtn" class="rpg-btn" style="font-size: 11px; padding: 6px 12px;">＋ ドメインを手動追加</button>
+          <button type="button" id="normalizeBtn" class="rpg-btn" style="font-size: 11px; padding: 6px 12px;">⚖ 100%に正規化</button>
+          <span id="weightTotal" style="font-family: var(--font-display); font-size: 12px;"></span>
         </div>
       </section>
 
@@ -177,12 +179,53 @@
 
       function sync() {
         document.getElementById('domainsJson').value = JSON.stringify(domains);
+        renderWeightTotal();
+      }
+
+      // ドメイン割合の合計を表示する。100% なら緑、それ以外は警告色。
+      function renderWeightTotal() {
+        const el = document.getElementById('weightTotal');
+        if (domains.length === 0) { el.textContent = ''; return; }
+        const total = domains.reduce((a, d) => a + (Number(d.weight) || 0), 0);
+        if (total === 100) {
+          el.textContent = '合計: 100% ✓';
+          el.style.color = 'var(--fern)';
+        } else {
+          el.textContent = `⚠ 合計: ${total}%（100% になっていません）`;
+          el.style.color = 'var(--crimson)';
+        }
+      }
+
+      // normalizeWeightsToSum100（サーバー側）と同じロジックをクライアントで適用する。
+      // 合計0なら均等配分、それ以外は比例配分して余剰/不足を最大ウェイトのドメインで調整。
+      function normalizeWeights() {
+        if (domains.length === 0) return;
+        const sum = domains.reduce((a, d) => a + (Number(d.weight) || 0), 0);
+        if (sum === 0) {
+          const base = Math.floor(100 / domains.length);
+          const remainder = 100 - base * domains.length;
+          domains = domains.map((d, i) => ({ ...d, weight: base + (i < remainder ? 1 : 0) }));
+        } else {
+          domains = domains.map((d) => ({ ...d, weight: Math.round(((Number(d.weight) || 0) * 100) / sum) }));
+          const newSum = domains.reduce((a, d) => a + d.weight, 0);
+          const diff = 100 - newSum;
+          if (diff !== 0) {
+            let maxIdx = 0;
+            for (let i = 1; i < domains.length; i++) {
+              if (domains[i].weight > domains[maxIdx].weight) maxIdx = i;
+            }
+            domains[maxIdx].weight += diff;
+          }
+        }
+        renderDomains(); sync();
       }
 
       document.getElementById('addDomainBtn').addEventListener('click', () => {
         domains.push({ id: `domain-${domains.length + 1}`, name: '', weight: 0 });
         renderDomains(); sync();
       });
+
+      document.getElementById('normalizeBtn').addEventListener('click', normalizeWeights);
 
       document.getElementById('extractBtn').addEventListener('click', async () => {
         const url = document.getElementById('studyGuideUrl').value;
@@ -209,6 +252,7 @@
       });
 
       renderDomains();
+      renderWeightTotal();
     </script>
   </main>
 </body>
