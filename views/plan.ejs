@@ -1,79 +1,59 @@
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title><%= title %></title>
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=DotGothic16&family=M+PLUS+1+Code:wght@400;500;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/theme.css">
-  <script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body>
-  <%- include('partials/hud', { userEmail: typeof userEmail !== 'undefined' ? userEmail : null, heroHud: typeof heroHud !== 'undefined' ? heroHud : null, combo: null }) %>
-  <main class="main">
-    <h1 class="rpg-title" style="font-size: 24px; margin-bottom: 24px;">📅 学習計画</h1>
+<%- include('partials/head', { title: title }) %>
+<%- include('partials/hud', { heroHud: typeof heroHud !== 'undefined' ? heroHud : null, combo: null }) %>
 
-    <div class="rpg-window" style="margin-bottom: 24px;">
-      <h2 class="rpg-title" style="font-size: 16px; margin-bottom: 12px;">新しい計画を作成</h2>
-      <form method="POST" action="/plans" style="display:flex; gap:8px; align-items:end; flex-wrap:wrap;">
-        <div>
-          <label style="display:block; font-size:12px; color:#c0c6e0; font-family: var(--font-body); margin-bottom:4px;">資格</label>
-          <select name="certificationId" required style="background:#000; color: var(--ink); border:2px solid var(--ink); padding:6px 10px; font-family: var(--font-body); border-radius:0;">
-            <% if (allCerts.length === 0) { %>
-              <option value="">（利用可能な資格がありません）</option>
-            <% } %>
-            <% for (const c of allCerts) { %>
-              <option value="<%= c.id %>"><%= c.name %></option>
-            <% } %>
-          </select>
-        </div>
-        <div>
-          <label style="display:block; font-size:12px; color:#c0c6e0; font-family: var(--font-body); margin-bottom:4px;">試験予定日</label>
-          <input name="examDate" type="date" required style="background:#000; color: var(--ink); border:2px solid var(--ink); padding:6px 10px; font-family: var(--font-body); border-radius:0;">
-        </div>
-        <button class="rpg-btn is-gold">作成</button>
-      </form>
-    </div>
+<main class="mx-auto max-w-4xl px-5 py-8 sm:px-8">
+  <h1 class="mb-6 text-2xl font-semibold tracking-tight">学習計画</h1>
 
-    <% if (plans.length === 0) { %>
-      <div class="rpg-window" style="text-align:center;">
-        <p style="color:#c0c6e0; font-family: var(--font-body);">学習計画がまだありません。</p>
+  <div class="card mb-6">
+    <h2 class="mb-3 text-base font-semibold tracking-tight">新しい計画を作成</h2>
+    <form method="POST" action="/plans" class="flex flex-wrap items-end gap-3">
+      <div>
+        <label class="mb-1 block text-xs text-ink-2">資格</label>
+        <select name="certificationId" required class="field w-auto">
+          <% if (allCerts.length === 0) { %><option value="">（利用可能な資格がありません）</option><% } %>
+          <% for (const c of allCerts) { %><option value="<%= c.id %>"><%= c.name %></option><% } %>
+        </select>
       </div>
-    <% } else { %>
+      <div>
+        <label class="mb-1 block text-xs text-ink-2">試験予定日</label>
+        <input name="examDate" type="date" required class="field w-auto">
+      </div>
+      <button class="btn btn-primary">作成</button>
+    </form>
+  </div>
+
+  <% if (plans.length === 0) { %>
+    <div class="card text-center text-ink-2"><p>学習計画がまだありません。</p></div>
+  <% } else { %>
+    <div class="grid gap-4">
       <% for (const p of plans) { %>
-        <div class="rpg-window" style="margin-bottom: 16px;">
-          <div style="display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:12px;">
+        <div class="card">
+          <div class="mb-3 flex items-start justify-between gap-3">
             <div>
-              <h2 class="rpg-title" style="font-size: 18px;"><%= p.cert && p.cert.name || p.certificationId %></h2>
-              <p style="color:#c0c6e0; font-family: var(--font-body); margin-top:4px; font-size: 12px;">
-                試験予定日: <%= p.examDate %> &nbsp;·&nbsp; 全 <%= p.schedule.length %> 週
-              </p>
+              <h2 class="font-semibold"><%= p.cert && p.cert.name || p.certificationId %></h2>
+              <p class="mt-1 text-xs text-ink-2">試験予定日: <span class="nums"><%= p.examDate %></span> · 全 <span class="nums"><%= p.schedule.length %></span> 週</p>
             </div>
-            <form method="POST" action="/plans/<%= p.certificationId %>/delete" style="margin:0;"
-                  onsubmit="return confirm('削除しますか？');">
-              <button class="rpg-btn">削除</button>
+            <form method="POST" action="/plans/<%= p.certificationId %>/delete" class="m-0" onsubmit="return confirm('削除しますか？');">
+              <button class="btn btn-ghost btn-sm text-danger">削除</button>
             </form>
           </div>
           <% if (p.currentWeek) { %>
-            <div style="background: var(--window); border:2px solid var(--gold); padding:8px 12px; margin-bottom:12px;">
-              <p style="font-family: var(--font-body); color: var(--ink); font-size:14px;">
-                <strong style="color: var(--gold); font-family: var(--font-display);">今週のタスク (Week <%= p.currentWeek.week %>)</strong>:
-                <%= p.currentWeek.domains.join(', ') %> を <%= p.currentWeek.targetQuestions %> 問
-              </p>
+            <div class="mb-3 rounded-lg border border-accent/40 bg-accent-soft px-3 py-2.5 text-sm">
+              <strong class="font-medium text-accent">今週のタスク (Week <%= p.currentWeek.week %>)</strong>:
+              <%= p.currentWeek.domains.join(', ') %> を <span class="nums"><%= p.currentWeek.targetQuestions %></span> 問
             </div>
           <% } %>
-          <details style="font-family: var(--font-body); font-size: 14px;">
-            <summary style="cursor:pointer; color:#c0c6e0;">全週スケジュール</summary>
-            <ul style="margin-top:8px; display:flex; flex-direction:column; gap:4px; color:#c0c6e0; font-family: var(--font-body);">
+          <details class="text-sm">
+            <summary class="cursor-pointer text-ink-2">全週スケジュール</summary>
+            <ul class="mt-2 flex flex-col gap-1 text-ink-2">
               <% for (const s of p.schedule) { %>
-                <li>Week <%= s.week %>: <%= s.domains.join(', ') %> (<%= s.targetQuestions %> 問)</li>
+                <li>Week <%= s.week %>: <%= s.domains.join(', ') %> (<span class="nums"><%= s.targetQuestions %></span> 問)</li>
               <% } %>
             </ul>
           </details>
         </div>
       <% } %>
-    <% } %>
-  </main>
-</body>
-</html>
+    </div>
+  <% } %>
+</main>
+<%- include('partials/foot') %>
