@@ -64,6 +64,8 @@ async function upsertGithubUser({ githubId, githubLogin, email, accessToken, dis
           masteryRanks: existing.stats.masteryRanks || {},
           unlockedAchievements: existing.stats.unlockedAchievements || [],
           equippedTitle: existing.stats.equippedTitle ?? null,
+          favoriteCertifications: existing.stats.favoriteCertifications ?? [],
+          passedCertifications: existing.stats.passedCertifications ?? [],
           dailyQuest: existing.stats.dailyQuest || { date: null, completed: [], xpClaimed: 0 },
         }
       : {
@@ -79,6 +81,8 @@ async function upsertGithubUser({ githubId, githubLogin, email, accessToken, dis
           masteryRanks: {},
           unlockedAchievements: [],
           equippedTitle: null,
+          favoriteCertifications: [],
+          passedCertifications: [],
           dailyQuest: { date: null, completed: [], xpClaimed: 0 },
         },
     createdAt: existing?.createdAt || now,
@@ -106,9 +110,45 @@ async function updateUserStats(id, updater) {
   return user;
 }
 
+async function addFavorite(userId, certId) {
+  return updateUserStats(userId, (s) => {
+    const favs = s.favoriteCertifications || [];
+    s.favoriteCertifications = favs.includes(certId) ? favs : [...favs, certId];
+    return s;
+  });
+}
+
+async function removeFavorite(userId, certId) {
+  return updateUserStats(userId, (s) => {
+    s.favoriteCertifications = (s.favoriteCertifications || []).filter((id) => id !== certId);
+    return s;
+  });
+}
+
+async function markPassed(userId, certId, passedAt) {
+  return updateUserStats(userId, (s) => {
+    const passed = s.passedCertifications || [];
+    s.passedCertifications = passed.some((p) => p.certId === certId)
+      ? passed
+      : [...passed, { certId, passedAt }];
+    return s;
+  });
+}
+
+async function unmarkPassed(userId, certId) {
+  return updateUserStats(userId, (s) => {
+    s.passedCertifications = (s.passedCertifications || []).filter((p) => p.certId !== certId);
+    return s;
+  });
+}
+
 module.exports = {
   upsertGithubUser,
   getUserById,
   getGithubAccessToken,
   updateUserStats,
+  addFavorite,
+  removeFavorite,
+  markPassed,
+  unmarkPassed,
 };

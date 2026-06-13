@@ -46,6 +46,8 @@ describe('upsertGithubUser stats initialization', () => {
     expect(user.stats.masteryRanks).toEqual({});
     expect(user.stats.unlockedAchievements).toEqual([]);
     expect(user.stats.equippedTitle).toBeNull();
+    expect(user.stats.favoriteCertifications).toEqual([]);
+    expect(user.stats.passedCertifications).toEqual([]);
     expect(user.stats.dailyQuest).toEqual({ date: null, completed: [], xpClaimed: 0 });
   });
 
@@ -79,6 +81,32 @@ describe('upsertGithubUser stats initialization', () => {
     expect(user.stats.totalCorrect).toBe(10);
     expect(user.stats.xp).toBe(0);
     expect(user.stats.dailyQuest).toEqual({ date: null, completed: [], xpClaimed: 0 });
+  });
+});
+
+describe('favorites と passed の操作', () => {
+  beforeEach(() => { store.clear(); });
+
+  it('addFavorite は重複せず追加し、removeFavorite は除去する', async () => {
+    await userService.upsertGithubUser({ githubId: 10, githubLogin: 'f', email: 'f@e.com', accessToken: 't', displayName: 'F', avatarUrl: null });
+    await userService.addFavorite('github-10', 'gh-100');
+    await userService.addFavorite('github-10', 'gh-100');
+    let u = await userService.getUserById('github-10');
+    expect(u.stats.favoriteCertifications).toEqual(['gh-100']);
+    await userService.removeFavorite('github-10', 'gh-100');
+    u = await userService.getUserById('github-10');
+    expect(u.stats.favoriteCertifications).toEqual([]);
+  });
+
+  it('markPassed は certId 重複を無視し、unmarkPassed は除去する', async () => {
+    await userService.upsertGithubUser({ githubId: 11, githubLogin: 'g', email: 'g@e.com', accessToken: 't', displayName: 'G', avatarUrl: null });
+    await userService.markPassed('github-11', 'ai-102', '2026-06-13T00:00:00.000Z');
+    await userService.markPassed('github-11', 'ai-102', '2026-06-14T00:00:00.000Z');
+    let u = await userService.getUserById('github-11');
+    expect(u.stats.passedCertifications).toEqual([{ certId: 'ai-102', passedAt: '2026-06-13T00:00:00.000Z' }]);
+    await userService.unmarkPassed('github-11', 'ai-102');
+    u = await userService.getUserById('github-11');
+    expect(u.stats.passedCertifications).toEqual([]);
   });
 });
 
