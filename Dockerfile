@@ -25,7 +25,8 @@ COPY routes ./routes
 COPY services ./services
 COPY middleware ./middleware
 COPY views ./views
-COPY public ./public
+# public/ の中身は Tailwind 生成物 app.css のみ（.gitignore 対象でリポジトリに無い）。
+# CI のチェックアウトには public/ が存在せず COPY が失敗するため、生成物だけを cssbuild から取り込む。
 COPY --from=cssbuild /app/public/app.css ./public/app.css
 COPY data ./data
 COPY scripts ./scripts
