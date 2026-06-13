@@ -1,232 +1,206 @@
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title><%= title %></title>
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=DotGothic16&family=M+PLUS+1+Code:wght@400;500;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/theme.css">
-  <script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body>
-  <%- include('partials/hud', { userEmail: typeof userEmail !== 'undefined' ? userEmail : null, heroHud: typeof heroHud !== 'undefined' ? heroHud : null, combo: null }) %>
+<%- include('partials/head', { title: title }) %>
+<%- include('partials/hud', { heroHud: typeof heroHud !== 'undefined' ? heroHud : null, combo: null }) %>
 
-  <main class="main">
+<main class="mx-auto max-w-4xl px-5 py-8 sm:px-8">
+  <nav class="mb-4 flex items-center gap-2 text-sm text-ink-3" aria-label="パンくず">
+    <a href="/home" class="text-ink-2 hover:text-ink">ホーム</a>
+    <span aria-hidden="true">/</span>
+    <a href="/certifications/<%= cert.id %>" class="text-ink-2 hover:text-ink"><%= cert.name %></a>
+    <span aria-hidden="true">/</span>
+    <span class="text-ink"><%= domain.name %></span>
+  </nav>
 
-    <div style="font-family: var(--font-body); font-size: 12px; color: #c0c6e0; margin-bottom: 8px;">
-      <a href="/" style="color: var(--gold); text-decoration:none;">🏰 ホーム</a>
-      <span style="opacity:.6; margin: 0 6px;">▸</span>
-      <a href="/certifications/<%= cert.id %>" style="color: var(--gold); text-decoration:none;"><%= cert.name %></a>
-      <span style="opacity:.6; margin: 0 6px;">▸</span>
-      <span><%= domain.name %></span>
+  <div class="mb-7 flex flex-wrap items-start justify-between gap-4">
+    <div class="min-w-[260px] flex-1">
+      <h1 class="mb-2 text-xl font-semibold tracking-tight"><%= domain.name %></h1>
+      <div class="flex flex-wrap gap-2">
+        <span class="badge"><span class="nums"><%= domain.questions.length %></span> 問</span>
+        <span class="badge">試験ウェイト <span class="nums"><%= domain.weight %></span>%</span>
+        <% if (domain.generatedAt) { %>
+          <span class="badge badge-success">最終生成: <%= new Date(domain.generatedAt).toLocaleString('ja-JP') %></span>
+        <% } else { %>
+          <span class="badge badge-accent">未生成 (シード)</span>
+        <% } %>
+      </div>
     </div>
+    <form method="POST" action="/quiz/start" class="m-0">
+      <input type="hidden" name="certId" value="<%= cert.id %>">
+      <input type="hidden" name="mode" value="domain">
+      <input type="hidden" name="domainId" value="<%= domain.id %>">
+      <button class="btn btn-primary" type="submit">このドメインで練習</button>
+    </form>
+  </div>
 
-    <div style="display:flex; flex-wrap:wrap; align-items:flex-start; justify-content:space-between; gap: 16px; margin-bottom: 24px;">
-      <div style="flex:1; min-width: 260px;">
-        <h1 class="rpg-title" style="font-size: 22px; margin-bottom: 6px;">🗡 <%= domain.name %></h1>
-        <div style="display:flex; flex-wrap:wrap; gap: 6px; font-size: 11px;">
-          <span class="pill"><%= domain.questions.length %> 問</span>
-          <span class="pill">試験ウェイト <%= domain.weight %>%</span>
-          <% if (domain.generatedAt) { %>
-            <span class="pill" style="color: var(--fern);">最終生成: <%= new Date(domain.generatedAt).toLocaleString('ja-JP') %></span>
-          <% } else { %>
-            <span class="pill" style="color: var(--gold);">未生成 (シード)</span>
-          <% } %>
+  <% if (stats.total > 0) { const pass = stats.rate >= 70; %>
+    <section class="card mb-7">
+      <div class="flex flex-wrap items-center gap-5">
+        <div class="nums text-4xl font-semibold <%= pass ? 'text-success' : 'text-danger' %>"><%= stats.rate %>%</div>
+        <div>
+          <div class="text-sm font-medium">累積正答率</div>
+          <div class="text-xs text-ink-2"><span class="nums"><%= stats.correct %> / <%= stats.total %></span> 問正解</div>
+        </div>
+        <div class="min-w-[180px] flex-1">
+          <span class="progress block <%= pass ? 'is-success' : 'is-danger' %>"><i style="width:<%= stats.rate %>%"></i></span>
         </div>
       </div>
-      <form method="POST" action="/quiz/start" style="margin:0;">
-        <input type="hidden" name="certId" value="<%= cert.id %>">
-        <input type="hidden" name="mode" value="domain">
-        <input type="hidden" name="domainId" value="<%= domain.id %>">
-        <button class="rpg-btn is-gold" type="submit">⚔ このドメインで練習</button>
-      </form>
-    </div>
-
-    <!-- 正答率 -->
-    <% if (stats.total > 0) { %>
-      <section class="rpg-window is-open" style="margin-bottom: 24px;">
-        <div style="display:flex; align-items:center; gap: 18px; flex-wrap:wrap;">
-          <div style="font-family: var(--font-display); font-size: 40px; color: <%= stats.rate >= 70 ? 'var(--fern)' : 'var(--crimson)' %>; text-shadow: 3px 3px 0 var(--shadow);">
-            <%= stats.rate %>%
-          </div>
-          <div style="font-family: var(--font-display);">
-            <div style="color: var(--gold); font-size: 13px;">累積正答率</div>
-            <div style="color: #c0c6e0; font-family: var(--font-body); font-size: 12px;"><%= stats.correct %> / <%= stats.total %> 問正解</div>
-          </div>
-          <div style="flex:1; min-width: 180px;">
-            <div style="height: 14px; background: #000; border: 2px solid var(--ink);">
-              <div style="height: 100%; background: <%= stats.rate >= 70
-                ? 'repeating-linear-gradient(90deg, var(--fern) 0 6px, #4e7f33 6px 8px)'
-                : 'repeating-linear-gradient(90deg, var(--crimson) 0 6px, #7a1320 6px 8px)' %>; width: <%= stats.rate %>%;"></div>
-            </div>
-          </div>
-        </div>
-      </section>
-    <% } %>
-
-    <!-- 問題追加生成 -->
-    <section class="rpg-window is-open" style="margin-bottom: 32px; border-color: var(--gold); box-shadow: inset 0 0 0 3px var(--window), inset 0 0 0 6px #b8891a, 4px 4px 0 var(--shadow);">
-      <h2 class="rpg-title" style="font-size: 16px; margin-bottom: 8px;">🔮 AI による問題追加生成</h2>
-      <p style="font-family: var(--font-body); color: #dadde6; font-size: 12px; line-height: 1.7; margin: 0 0 16px;">
-        学習ガイドのテキストを取得し、GitHub Copilot がこのドメインに特化した新しい問題を生成します。
-        既存の <strong style="color: var(--gold);"><%= domain.questions.length %></strong> 問に追加されます（既存の解答履歴は保持されます）。
-      </p>
-      <div style="margin-bottom: 12px;">
-        <label for="modelSelect" style="font-family: var(--font-display); color: var(--gold); font-size: 12px; display: block; margin-bottom: 6px;">生成モデル</label>
-        <select id="modelSelect"
-                style="font-family: var(--font-body); font-size: 13px; padding: 8px 12px; background: var(--window); color: var(--ink); border: 2px solid var(--gold); min-width: 240px;">
-          <option value="openai/gpt-4.1">openai/gpt-4.1</option>
-        </select>
-      </div>
-      <button id="generateBtn" class="rpg-btn is-gold"
-              onclick="startGeneration('<%= cert.id %>', '<%= domain.id %>')">
-        ✨ 問題を追加生成する
-      </button>
-      <div id="generateProgress" class="hidden" style="margin-top: 16px;">
-        <div style="display:flex; align-items:center; gap: 10px; font-family: var(--font-display); color: var(--gold); font-size: 13px;">
-          <span class="typewriter" id="progressMsg" style="animation: none; border-right: none; max-width: none;">処理中...</span>
-        </div>
-      </div>
-      <div id="generateResult" class="hidden" style="margin-top: 12px; padding: 10px 12px; font-family: var(--font-body); font-size: 13px;"></div>
     </section>
+  <% } %>
 
-    <!-- 現在の問題一覧 -->
-    <h2 class="rpg-title" style="font-size: 18px; margin-bottom: 12px;">📜 現在の問題一覧 (<%= domain.questions.length %> 問)</h2>
-    <div style="display:flex; flex-direction:column; gap: 10px;">
-      <% for (let i = 0; i < domain.questions.length; i++) { %>
-        <% const q = domain.questions[i]; %>
-        <details class="rpg-window" style="padding: 0;">
-          <summary style="padding: 12px 16px; cursor: pointer; font-family: var(--font-display); font-size: 13px; color: var(--ink); list-style: none;">
-            <span style="color: var(--gold); margin-right: 6px;">Q<%= i + 1 %>.</span>
-            <span style="font-family: var(--font-body); font-size: 13px;"><%= q.question.substring(0, 80) %><%= q.question.length > 80 ? '...' : '' %></span>
-          </summary>
-          <div style="padding: 0 16px 16px; display:flex; flex-direction:column; gap: 6px;">
-            <% for (const [key, val] of Object.entries(q.options)) { %>
-              <% const answerKeys = (Array.isArray(q.correctAnswers) && q.correctAnswers.length > 0) ? q.correctAnswers : [q.correctAnswer]; %>
-              <% const isAns = answerKeys.includes(key); %>
-              <div style="display:flex; gap:8px; font-family: var(--font-body); font-size: 13px; padding: 4px 8px; color: <%= isAns ? 'var(--fern)' : '#c0c6e0' %>;">
-                <span style="font-family: var(--font-display); color: <%= isAns ? 'var(--fern)' : 'var(--gold)' %>;"><%= key %>.</span>
-                <span><%= val %> <%= isAns ? '✓' : '' %></span>
-              </div>
-            <% } %>
-            <div style="margin-top: 10px; padding-top: 10px; border-top: 2px dashed var(--gold); font-family: var(--font-body); font-size: 12px; line-height: 1.6; color: #dadde6;">
-              <span style="font-family: var(--font-display); color: var(--gold); margin-right: 6px;">📖 解説:</span>
-              <%= q.explanation %>
-            </div>
-          </div>
-        </details>
-      <% } %>
+  <section class="card mb-9">
+    <h2 class="text-base font-semibold tracking-tight">AI による問題追加生成</h2>
+    <p class="mt-1.5 text-sm leading-relaxed text-ink-2">
+      学習ガイドのテキストを取得し、このドメインに特化した新しい問題を生成します。
+      既存の <strong class="font-medium text-ink nums"><%= domain.questions.length %></strong> 問に追加されます（解答履歴は保持されます）。
+    </p>
+    <div class="mt-4">
+      <label for="modelSelect" class="mb-1.5 block text-xs font-medium text-ink-2">生成モデル</label>
+      <select id="modelSelect" class="field max-w-xs">
+        <option value="openai/gpt-4.1">openai/gpt-4.1</option>
+      </select>
     </div>
+    <button id="generateBtn" class="btn btn-primary mt-4" onclick="startGeneration('<%= cert.id %>', '<%= domain.id %>')">問題を追加生成する</button>
+    <div id="generateProgress" class="mt-4 hidden">
+      <div class="flex items-center gap-2 text-sm text-accent">
+        <span class="inline-block h-2 w-2 animate-pulse rounded-full bg-accent"></span>
+        <span id="progressMsg">処理中...</span>
+      </div>
+    </div>
+    <div id="generateResult" class="mt-3 hidden rounded-lg border px-3 py-2.5 text-sm"></div>
+  </section>
 
-  </main>
+  <h2 class="mb-3 text-lg font-semibold tracking-tight">現在の問題一覧 (<span class="nums"><%= domain.questions.length %></span> 問)</h2>
+  <div class="grid gap-2.5">
+    <% for (let i = 0; i < domain.questions.length; i++) { %>
+      <% const q = domain.questions[i]; %>
+      <details class="card p-0">
+        <summary class="flex cursor-pointer list-none items-baseline gap-2 px-4 py-3 text-sm">
+          <span class="nums font-medium text-accent">Q<%= i + 1 %>.</span>
+          <span class="text-ink-2"><%= q.question.substring(0, 80) %><%= q.question.length > 80 ? '...' : '' %></span>
+        </summary>
+        <div class="flex flex-col gap-1.5 px-4 pb-4">
+          <% for (const [key, val] of Object.entries(q.options)) { %>
+            <% const answerKeys = (Array.isArray(q.correctAnswers) && q.correctAnswers.length > 0) ? q.correctAnswers : [q.correctAnswer]; %>
+            <% const isAns = answerKeys.includes(key); %>
+            <div class="flex gap-2 rounded-md px-2 py-1 text-sm <%= isAns ? 'bg-success-soft text-success' : 'text-ink-2' %>">
+              <span class="font-medium <%= isAns ? 'text-success' : 'text-ink-3' %>"><%= key %>.</span>
+              <span><%= val %> <%= isAns ? '✓' : '' %></span>
+            </div>
+          <% } %>
+          <div class="mt-2.5 border-t border-line pt-2.5 text-sm leading-relaxed text-ink-2">
+            <span class="font-medium text-ink">解説:</span>
+            <%= q.explanation %>
+          </div>
+        </div>
+      </details>
+    <% } %>
+  </div>
+</main>
 
-  <script>
-    async function loadModels() {
-      try {
-        const res = await fetch('/api/models');
-        if (!res.ok) return; // フォールバック表示（openai/gpt-4.1）のまま
-        const data = await res.json();
-        const select = document.getElementById('modelSelect');
-        select.innerHTML = '';
-        const addOption = (group, m) => {
-          const opt = document.createElement('option');
-          opt.value = m.id;
-          opt.textContent = m.id;
-          if (m.id === 'openai/gpt-4.1') opt.selected = true;
-          group.appendChild(opt);
-        };
-        const addGroup = (label, models) => {
-          if (!models.length) return;
-          const g = document.createElement('optgroup');
-          g.label = label;
-          models.forEach((m) => addOption(g, m));
-          select.appendChild(g);
-        };
-        // custom ティア（gpt-5系・o系・deepseek-r1 等）は有料プラン/プレビュー専用で
-        // 無料枠では unavailable_model になるため、別グループに分けて注意喚起する。
-        addGroup('標準（GitHub Models 無料枠で利用可）', data.models.filter((m) => m.tier !== 'custom'));
-        addGroup('有料プラン/プレビュー（利用不可の場合あり）', data.models.filter((m) => m.tier === 'custom'));
-      } catch { /* ネットワークエラー時はフォールバック表示のまま */ }
-    }
-    loadModels();
+<script>
+  async function loadModels() {
+    try {
+      const res = await fetch('/api/models');
+      if (!res.ok) return; // フォールバック表示（openai/gpt-4.1）のまま
+      const data = await res.json();
+      const select = document.getElementById('modelSelect');
+      select.innerHTML = '';
+      const addOption = (group, m) => {
+        const opt = document.createElement('option');
+        opt.value = m.id;
+        opt.textContent = m.id;
+        if (m.id === 'openai/gpt-4.1') opt.selected = true;
+        group.appendChild(opt);
+      };
+      const addGroup = (label, models) => {
+        if (!models.length) return;
+        const g = document.createElement('optgroup');
+        g.label = label;
+        models.forEach((m) => addOption(g, m));
+        select.appendChild(g);
+      };
+      // custom ティア（gpt-5系・o系・deepseek-r1 等）は有料プラン/プレビュー専用で
+      // 無料枠では unavailable_model になるため、別グループに分けて注意喚起する。
+      addGroup('標準（GitHub Models 無料枠で利用可）', data.models.filter((m) => m.tier !== 'custom'));
+      addGroup('有料プラン/プレビュー（利用不可の場合あり）', data.models.filter((m) => m.tier === 'custom'));
+    } catch { /* ネットワークエラー時はフォールバック表示のまま */ }
+  }
+  loadModels();
 
-    async function startGeneration(certId, domainId) {
-      const btn = document.getElementById('generateBtn');
-      const progress = document.getElementById('generateProgress');
-      const progressMsg = document.getElementById('progressMsg');
-      const result = document.getElementById('generateResult');
+  function setResult(el, kind, text) {
+    const color = kind === 'success' ? 'var(--success)' : 'var(--danger)';
+    const bg = kind === 'success' ? 'var(--success-soft)' : 'var(--danger-soft)';
+    el.classList.remove('hidden');
+    el.style.borderColor = color;
+    el.style.color = color;
+    el.style.background = bg;
+    el.textContent = text;
+  }
 
-      btn.disabled = true;
-      btn.textContent = '⏳ 生成中...';
-      progress.classList.remove('hidden');
-      result.classList.add('hidden');
+  async function startGeneration(certId, domainId) {
+    const btn = document.getElementById('generateBtn');
+    const progress = document.getElementById('generateProgress');
+    const progressMsg = document.getElementById('progressMsg');
+    const result = document.getElementById('generateResult');
 
-      try {
-        const res = await fetch(`/api/certifications/${certId}/domains/${domainId}/generate`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ model: document.getElementById('modelSelect').value }),
-        });
+    btn.disabled = true;
+    btn.textContent = '生成中...';
+    progress.classList.remove('hidden');
+    result.classList.add('hidden');
 
-        if (!res.ok || !res.body) throw new Error('リクエストに失敗しました');
+    try {
+      const res = await fetch(`/api/certifications/${certId}/domains/${domainId}/generate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ model: document.getElementById('modelSelect').value }),
+      });
 
-        const reader = res.body.getReader();
-        const decoder = new TextDecoder();
-        let buffer = '';
+      if (!res.ok || !res.body) throw new Error('リクエストに失敗しました');
 
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          buffer += decoder.decode(value, { stream: true });
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
 
-          const lines = buffer.split('\n');
-          buffer = lines.pop();
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
 
-          let eventType = null;
-          for (const line of lines) {
-            if (line.startsWith('event: ')) {
-              eventType = line.slice(7).trim();
-            } else if (line.startsWith('data: ')) {
-              // JSON パースの失敗（ストリーム途中の不完全な行）だけを無視する。
-              // イベント処理の throw をここで握り潰さないため、パースとハンドリングを分離する。
-              let data;
-              try {
-                data = JSON.parse(line.slice(6));
-              } catch (e) {
-                continue; // 不完全/不正な data 行はスキップ
-              }
-              if (eventType === 'progress') {
-                progressMsg.textContent = '▸ ' + data.message;
-              } else if (eventType === 'done') {
-                progress.classList.add('hidden');
-                result.classList.remove('hidden');
-                result.style.background = '#1f4a18';
-                result.style.border = '2px solid var(--fern)';
-                result.style.color = 'var(--fern)';
-                result.textContent = `✅ ${data.message} ページを再読み込みして確認してください。`;
-                btn.textContent = '🔄 再読み込み';
-                btn.disabled = false;
-                btn.onclick = () => location.reload();
-                return;
-              } else if (eventType === 'error') {
-                // 外側 catch(err) に届けてエラー表示する（握り潰さない）
-                throw new Error(data.message);
-              }
+        const lines = buffer.split('\n');
+        buffer = lines.pop();
+
+        let eventType = null;
+        for (const line of lines) {
+          if (line.startsWith('event: ')) {
+            eventType = line.slice(7).trim();
+          } else if (line.startsWith('data: ')) {
+            // JSON パースの失敗（ストリーム途中の不完全な行）だけを無視する。
+            let data;
+            try {
+              data = JSON.parse(line.slice(6));
+            } catch (e) {
+              continue; // 不完全/不正な data 行はスキップ
+            }
+            if (eventType === 'progress') {
+              progressMsg.textContent = '▸ ' + data.message;
+            } else if (eventType === 'done') {
+              progress.classList.add('hidden');
+              setResult(result, 'success', `✅ ${data.message} ページを再読み込みして確認してください。`);
+              btn.textContent = '再読み込み';
+              btn.disabled = false;
+              btn.onclick = () => location.reload();
+              return;
+            } else if (eventType === 'error') {
+              throw new Error(data.message);
             }
           }
         }
-      } catch (err) {
-        progress.classList.add('hidden');
-        result.classList.remove('hidden');
-        result.style.background = '#3a0a12';
-        result.style.border = '2px solid var(--crimson)';
-        result.style.color = 'var(--crimson)';
-        result.textContent = `❌ エラー: ${err.message}`;
-        btn.disabled = false;
-        btn.textContent = '✨ 問題を追加生成する';
       }
+    } catch (err) {
+      progress.classList.add('hidden');
+      setResult(result, 'error', `❌ エラー: ${err.message}`);
+      btn.disabled = false;
+      btn.textContent = '問題を追加生成する';
     }
-  </script>
-</body>
-</html>
+  }
+</script>
+<%- include('partials/foot') %>
