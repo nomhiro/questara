@@ -108,6 +108,19 @@ describe('favorites と passed の操作', () => {
     u = await userService.getUserById('github-11');
     expect(u.stats.passedCertifications).toEqual([]);
   });
+
+  it('initializeFavorites は自作IDを投入してフラグを立て、解除済みは復活させない', async () => {
+    await userService.upsertGithubUser({ githubId: 12, githubLogin: 'h', email: 'h@e.com', accessToken: 't', displayName: 'H', avatarUrl: null });
+    await userService.initializeFavorites('github-12', ['c1', 'c2']);
+    let u = await userService.getUserById('github-12');
+    expect(u.stats.favoriteCertifications).toEqual(['c1', 'c2']);
+    expect(u.stats.favoritesInitialized).toBe(true);
+
+    await userService.removeFavorite('github-12', 'c1');
+    await userService.initializeFavorites('github-12', ['c1', 'c2']);
+    u = await userService.getUserById('github-12');
+    expect(u.stats.favoriteCertifications).toEqual(['c2']);
+  });
 });
 
 describe('getGithubAccessToken round-trip', () => {

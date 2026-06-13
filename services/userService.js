@@ -142,6 +142,19 @@ async function unmarkPassed(userId, certId) {
   });
 }
 
+async function initializeFavorites(userId, ownCertIds) {
+  return updateUserStats(userId, (s) => {
+    if (s.favoritesInitialized) return s;
+    const merged = [...(s.favoriteCertifications || [])];
+    for (const id of ownCertIds) {
+      if (!merged.includes(id)) merged.push(id);
+    }
+    s.favoriteCertifications = merged;
+    s.favoritesInitialized = true;
+    return s;
+  });
+}
+
 module.exports = {
   upsertGithubUser,
   getUserById,
@@ -151,4 +164,5 @@ module.exports = {
   removeFavorite,
   markPassed,
   unmarkPassed,
+  initializeFavorites,
 };
