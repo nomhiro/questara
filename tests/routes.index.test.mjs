@@ -24,13 +24,13 @@ describe('routes/index — landing page', () => {
     expect(res.text).toMatch(/GitHub.*ログイン/);
   });
 
-  test('認証済み GET / は 200 と「学習を再開」CTA を返す', async () => {
+  test('認証済み GET / は 200 と「学習を再開」CTA（→/home）を返す', async () => {
     const user = await createTestUser();
     const agent = await authedAgent(user);
     const res = await agent.get('/');
     expect(res.status).toBe(200);
     expect(res.text).toContain('学習を再開');
-    expect(res.text).toContain('/my/certifications');
+    expect(res.text).toContain('/home');
   });
 
   test('GET /?error=auth_failed でエラーバナーが表示される', async () => {
@@ -98,12 +98,70 @@ describe('routes/index — landing page', () => {
     expect(res.text).toContain('🎓 合格を取り消す');
   });
 
-  test('資格一覧の各カードにお気に入りトグルのフォームがある', async () => {
+  test('旧URL /free-mode は /certifications にリダイレクト', async () => {
     const user = await createTestUser();
-    await createTestCertification({ id: 'list-cert', name: '一覧資格', isPublic: true });
     const agent = await authedAgent(user);
     const res = await agent.get('/free-mode');
+    expect(res.status).toBe(302);
+    expect(res.headers.location).toBe('/certifications');
+  });
+});
+
+describe('routes/index — 資格統合画面 /certifications', () => {
+  beforeAll(async () => { await setupTestDb(); });
+  beforeEach(async () => { await truncateAll(); });
+
+  test('GET /certifications は学習中/すべての両タブを描画する', async () => {
+    const user = await createTestUser();
+    const agent = await authedAgent(user);
+    const res = await agent.get('/certifications');
     expect(res.status).toBe(200);
-    expect(res.text).toContain('/my/certifications/list-cert/favorite');
+    expect(res.text).toContain('学習中');
+    expect(res.text).toContain('すべて');
+  });
+
+  test('すべてタブに公開資格とお気に入りトグル(returnTo=/certifications)が表示される', async () => {
+    const user = await createTestUser();
+    await createTestCertification({ id: 'all-cert', name: 'すべて資格', isPublic: true });
+    const agent = await authedAgent(user);
+    const res = await agent.get('/certifications');
+    expect(res.status).toBe(200);
+    expect(res.text).toContain('すべて資格');
+    expect(res.text).toContain('/my/certifications/all-cert/favorite');
+    expect(res.text).toContain('value="/certifications"');
+  });
+
+  test('学習中タブにお気に入り登録済みの資格が表示される', async () => {
+    const user = await createTestUser();
+    await createTestCertification({ id: 'fav-cert', name: '学習中資格', isPublic: true });
+    const agent = await authedAgent(user);
+    await agent.post('/my/certifications/fav-cert/favorite').type('form').send({ returnTo: '/certifications' });
+    const res = await agent.get('/certifications');
+    expect(res.status).toBe(200);
+    expect(res.text).toContain('学習中資格');
+  });
+
+  test('合格済みの資格には🎓バッジが付く', async () => {
+    const user = await createTestUser();
+    await createTestCertification({ id: 'pass-cert', name: '合格資格', isPublic: true });
+    const agent = await authedAgent(user);
+    await agent.post('/my/certifications/pass-cert/favorite').type('form').send({ returnTo: '/certifications' });
+    await agent.post('/my/certifications/pass-cert/pass').type('form').send({ returnTo: '/certifications' });
+    const res = await agent.get('/certifications');
+    expect(res.text).toContain('🎓');
+  });
+
+  test('＋新規追加リンクがある', async () => {
+    const user = await createTestUser();
+    const agent = await authedAgent(user);
+    const res = await agent.get('/certifications');
+    expect(res.text).toContain('/my/certifications/new');
+  });
+
+  test('未認証 GET /certifications は / にリダイレクト', async () => {
+    const agent = await anonAgent();
+    const res = await agent.get('/certifications');
+    expect(res.status).toBe(302);
+    expect(res.headers.location).toBe('/');
   });
 });

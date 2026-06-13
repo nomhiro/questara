@@ -3,7 +3,19 @@
 const userService = require('../services/userService');
 const gamificationService = require('../services/gamificationService');
 
+// リクエストパスから現在地（ナビのアクティブタブ）を判定する。
+// hud.ejs が res.locals.activeNav を参照して該当タブをハイライトする。
+function resolveActiveNav(p) {
+  if (p.startsWith('/home')) return 'home';
+  if (p.startsWith('/my/profile')) return 'status';
+  if (p.startsWith('/certifications') || p.startsWith('/my/certifications')) return 'certs';
+  if (p.startsWith('/ranking')) return 'ranking';
+  if (p.startsWith('/plans')) return 'plans';
+  return null;
+}
+
 async function heroHudMiddleware(req, res, next) {
+  res.locals.activeNav = resolveActiveNav(req.path || '');
   if (!req.user) return next();
   try {
     const user = await userService.getUserById(req.user.id);

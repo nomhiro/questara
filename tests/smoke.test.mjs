@@ -28,30 +28,30 @@ describe('smoke', () => {
     expect(res.text).toContain('学習を再開');
   });
 
-  test('認証済み GET /free-mode は 200 と資格一覧を返す', async () => {
+  test('認証済み GET /certifications は 200 と資格一覧を返す', async () => {
     const user = await createTestUser();
     await createTestCertification({ id: 'test-public-1', name: 'パブリック資格', isPublic: true });
 
     const agent = await authedAgent(user);
-    const res = await agent.get('/free-mode');
+    const res = await agent.get('/certifications');
     expect(res.status).toBe(200);
     expect(res.text).toContain('パブリック資格');
   });
 
-  test('GET /free-mode は publicCerts と myCerts 両方をレンダリング', async () => {
+  test('GET /certifications は公開資格と自作の非公開資格を両方レンダリング', async () => {
     const user = await createTestUser();
     await createTestCertification({ id: 'pub-1', name: 'パブリック資格A', isPublic: true });
     await createTestCertification({ id: 'priv-1', name: '自分の非公開資格', createdBy: user.id, creatorName: user.username, isPublic: false });
     await createTestCertification({ id: 'other-priv', name: '他人の非公開資格', createdBy: 'github-99999', creatorName: 'other', isPublic: false });
 
     const agent = await authedAgent(user);
-    const res = await agent.get('/free-mode');
+    const res = await agent.get('/certifications');
     expect(res.status).toBe(200);
     expect(res.text).toContain('パブリック資格A');
     expect(res.text).toContain('自分の非公開資格');
     expect(res.text).not.toContain('他人の非公開資格');
-    expect(res.text).toContain('公開資格 (1)');
-    expect(res.text).toContain('自分の非公開資格 (1)');
+    expect(res.text).toContain('公開資格');
+    expect(res.text).toContain('すべて');
   });
 
   test('認証済み GET /certifications/:id は 200 と詳細を返す', async () => {

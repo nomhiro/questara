@@ -23,6 +23,7 @@ function createApp() {
   validateEnv();
 
   const indexRouter = require('./routes/index');
+  const homeRouter = require('./routes/home');
   const quizRouter = require('./routes/quiz');
   const domainsRouter = require('./routes/domains');
   const apiRouter = require('./routes/api');
@@ -47,6 +48,7 @@ function createApp() {
   app.use(express.static(path.join(__dirname, 'public')));
 
   app.use('/auth', authRouter);
+  app.use('/home', homeRouter);
   app.use('/', indexRouter);
   app.use('/quiz', quizRouter);
   app.use('/certifications', domainsRouter);

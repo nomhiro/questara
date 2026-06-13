@@ -16,14 +16,6 @@ describe('views render without 500', () => {
     await truncateAll();
   });
 
-  test('views/index.ejs（自由モード）', async () => {
-    const user = await createTestUser();
-    await createTestCertification({ id: 'v-index-1' });
-    const agent = await authedAgent(user);
-    const res = await agent.get('/free-mode');
-    expect(res.status).toBe(200);
-  });
-
   test('views/certification.ejs（統計なし）', async () => {
     const user = await createTestUser();
     const cert = await createTestCertification({ id: 'v-cert-1' });
@@ -33,14 +25,17 @@ describe('views render without 500', () => {
     expect(res.text).toContain(cert.name);
   });
 
-  test('グローバルナビに「マイ資格」リンクがある', async () => {
+  test('グローバルナビに主要タブ（ホーム・資格・ランキング・学習計画・ステータス）がある', async () => {
     const user = await createTestUser();
     const cert = await createTestCertification({ id: 'v-nav-1' });
     const agent = await authedAgent(user);
     const res = await agent.get(`/certifications/${cert.id}`);
     expect(res.status).toBe(200);
-    expect(res.text).toContain('href="/my/certifications"');
-    expect(res.text).toContain('マイ資格');
+    expect(res.text).toContain('href="/home"');
+    expect(res.text).toContain('href="/certifications"');
+    expect(res.text).toContain('href="/ranking"');
+    expect(res.text).toContain('href="/plans"');
+    expect(res.text).toContain('href="/my/profile"');
   });
 
   test('資格フォームに合計%表示と正規化ボタンがある', async () => {

@@ -8,29 +8,8 @@ const userService = require('../services/userService');
 const { requireAuth } = require('../middleware/auth');
 const { asyncHandler } = require('../middleware/asyncHandler');
 
-router.get('/', requireAuth, asyncHandler(async (req, res) => {
-  const userId = req.user.id;
-  const user = await userService.getUserById(userId);
-  let stats = user?.stats || {};
-
-  if (!stats.favoritesInitialized) {
-    const all = await questionService.listCertifications({ includePrivate: true, userId });
-    const ownIds = all.filter((c) => c.createdBy === userId).map((c) => c.id);
-    const updated = await userService.initializeFavorites(userId, ownIds);
-    stats = updated?.stats || stats;
-  }
-
-  const favorites = await questionService.listCertificationsByIds(stats.favoriteCertifications || [], userId);
-  const passedIds = new Set((stats.passedCertifications || []).map((p) => p.certId));
-
-  res.render('my-certifications', {
-    title: 'マイ資格',
-    favorites,
-    passedIds,
-    currentUserId: userId,
-    userEmail: res.locals.userEmail,
-  });
-}));
+// 旧URL互換: マイ資格＋資格一覧は /certifications に統合済み。
+router.get('/', requireAuth, (req, res) => res.redirect('/certifications'));
 
 router.get('/new', requireAuth, (req, res) => {
   res.render('certification-form', {
@@ -80,7 +59,7 @@ router.post('/new', requireAuth, asyncHandler(async (req, res) => {
   });
   await questionService.writeCertification(cert);
   await userService.addFavorite(req.user.id, cert.id);
-  res.redirect('/my/certifications');
+  res.redirect('/certifications');
 }));
 
 router.post('/:certId/publish', requireAuth, asyncHandler(async (req, res) => {
@@ -90,7 +69,7 @@ router.post('/:certId/publish', requireAuth, asyncHandler(async (req, res) => {
   cert.isPublic = true;
   cert.publishedAt = new Date().toISOString();
   await questionService.writeCertification(cert);
-  res.redirect('/my/certifications');
+  res.redirect('/certifications');
 }));
 
 router.post('/:certId/unpublish', requireAuth, asyncHandler(async (req, res) => {
@@ -99,7 +78,7 @@ router.post('/:certId/unpublish', requireAuth, asyncHandler(async (req, res) => 
   if (cert.createdBy !== req.user.id) return res.status(403).send('作成者のみ操作できます');
   cert.isPublic = false;
   await questionService.writeCertification(cert);
-  res.redirect('/my/certifications');
+  res.redirect('/certifications');
 }));
 
 router.post('/:certId/delete', requireAuth, asyncHandler(async (req, res) => {
@@ -109,12 +88,12 @@ router.post('/:certId/delete', requireAuth, asyncHandler(async (req, res) => {
   await questionService.deleteCertification(cert.id);
   await userService.removeFavorite(req.user.id, cert.id);
   await userService.unmarkPassed(req.user.id, cert.id);
-  res.redirect('/my/certifications');
+  res.redirect('/certifications');
 }));
 
 function safeReturnTo(value) {
   if (typeof value === 'string' && value.startsWith('/') && !value.startsWith('//')) return value;
-  return '/my/certifications';
+  return '/certifications';
 }
 
 router.post('/:certId/favorite', requireAuth, asyncHandler(async (req, res) => {

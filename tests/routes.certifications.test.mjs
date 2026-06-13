@@ -13,7 +13,7 @@ describe('routes/certifications', () => {
   test('GET /my/certifications → 空状態メッセージ', async () => {
     const user = await createTestUser();
     const agent = await authedAgent(user);
-    const res = await agent.get('/my/certifications');
+    const res = await agent.get('/certifications');
     expect(res.status).toBe(200);
     expect(res.text).toContain('まだお気に入りの資格がありません');
   });
@@ -27,9 +27,9 @@ describe('routes/certifications', () => {
       domainsJson: JSON.stringify([{ id: 'domain-1', name: 'D1', weight: 100 }]),
     });
     expect(res.status).toBe(302);
-    expect(res.headers.location).toBe('/my/certifications');
+    expect(res.headers.location).toBe('/certifications');
 
-    const list = await agent.get('/my/certifications');
+    const list = await agent.get('/certifications');
     expect(list.text).toContain('テスト資格');
     expect(list.text).toContain('非公開');
   });
@@ -41,7 +41,7 @@ describe('routes/certifications', () => {
     const res = await agent.post('/my/certifications/user-cert-2/publish');
     expect(res.status).toBe(302);
 
-    const list = await agent.get('/my/certifications');
+    const list = await agent.get('/certifications');
     expect(list.text).toContain('公開中');
   });
 
@@ -61,7 +61,7 @@ describe('routes/certifications', () => {
     const res = await agent.post('/my/certifications/user-cert-4/delete');
     expect(res.status).toBe(302);
 
-    const list = await agent.get('/my/certifications');
+    const list = await agent.get('/certifications');
     expect(list.text).not.toContain('user-cert-4');
   });
 
@@ -101,7 +101,7 @@ describe('routes/certifications', () => {
     await createTestCertification({ id: 'pub-rt', isPublic: true });
     const agent = await authedAgent(user);
     const res = await agent.post('/my/certifications/pub-rt/favorite').type('form').send({ returnTo: 'https://evil.com' });
-    expect(res.headers.location).toBe('/my/certifications');
+    expect(res.headers.location).toBe('/certifications');
   });
 
   test('資格作成時に作成者のお気に入りへ自動追加される', async () => {
@@ -132,7 +132,7 @@ describe('routes/certifications', () => {
     await createTestCertification({ id: 'gh-seed', name: 'GHシード資格', createdBy: 'system', isPublic: true });
     const agent = await authedAgent(user);
     await agent.post('/my/certifications/gh-seed/favorite').type('form').send({ returnTo: '/my/certifications' });
-    const res = await agent.get('/my/certifications');
+    const res = await agent.get('/certifications');
     expect(res.text).toContain('GHシード資格');
   });
 
@@ -140,7 +140,7 @@ describe('routes/certifications', () => {
     const user = await createTestUser();
     await createTestCertification({ id: 'own-bf', name: '自作バックフィル資格', createdBy: user.id, creatorName: user.username, isPublic: false });
     const agent = await authedAgent(user);
-    const res = await agent.get('/my/certifications');
+    const res = await agent.get('/certifications');
     expect(res.text).toContain('自作バックフィル資格');
   });
 
@@ -150,7 +150,15 @@ describe('routes/certifications', () => {
     const agent = await authedAgent(user);
     await agent.post('/my/certifications/pass-badge/favorite').type('form').send({ returnTo: '/my/certifications' });
     await agent.post('/my/certifications/pass-badge/pass').type('form').send({ returnTo: '/my/certifications' });
-    const res = await agent.get('/my/certifications');
+    const res = await agent.get('/certifications');
     expect(res.text).toContain('🎓');
+  });
+
+  test('旧URL GET /my/certifications は /certifications にリダイレクト', async () => {
+    const user = await createTestUser();
+    const agent = await authedAgent(user);
+    const res = await agent.get('/my/certifications');
+    expect(res.status).toBe(302);
+    expect(res.headers.location).toBe('/certifications');
   });
 });

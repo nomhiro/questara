@@ -27,19 +27,36 @@ function mapAuthError(key) {
   }
 }
 
-// 公開資格＋自作資格の一覧（マイ資格からの導線先）
-router.get('/free-mode', requireAuth, asyncHandler(async (req, res) => {
+// 旧URL互換: 資格一覧は /certifications に統合済み。
+router.get('/free-mode', requireAuth, (req, res) => res.redirect('/certifications'));
+
+// マイ資格＋資格一覧を統合した「資格」画面（学習中 / すべて タブ）
+router.get('/certifications', requireAuth, asyncHandler(async (req, res) => {
+  const userId = req.user.id;
+  const user = await userService.getUserById(userId);
+  let stats = user?.stats || {};
+
+  // 自作資格の初回バックフィル（旧 /my/certifications と同じ挙動を踏襲）
+  if (!stats.favoritesInitialized) {
+    const all = await questionService.listCertifications({ includePrivate: true, userId });
+    const ownIds = all.filter((c) => c.createdBy === userId).map((c) => c.id);
+    const updated = await userService.initializeFavorites(userId, ownIds);
+    stats = updated?.stats || stats;
+  }
+
   const publicCerts = await questionService.listCertifications({ includePrivate: false });
-  const allForUser = await questionService.listCertifications({ includePrivate: true, userId: req.user.id });
-  const myCerts = allForUser.filter((c) => c.createdBy === req.user.id && !c.isPublic);
-  const user = await userService.getUserById(req.user.id);
-  const stats = user?.stats || {};
-  res.render('index', {
-    title: '資格一覧',
+  const allForUser = await questionService.listCertifications({ includePrivate: true, userId });
+  const myCerts = allForUser.filter((c) => c.createdBy === userId && !c.isPublic);
+  const favorites = await questionService.listCertificationsByIds(stats.favoriteCertifications || [], userId);
+
+  res.render('certifications', {
+    title: '資格',
     publicCerts,
     myCerts,
+    favorites,
     favoriteIds: new Set(stats.favoriteCertifications || []),
     passedIds: new Set((stats.passedCertifications || []).map((p) => p.certId)),
+    currentUserId: userId,
     userEmail: res.locals.userEmail,
   });
 }));

@@ -1,29 +1,37 @@
 <% const hud = (typeof heroHud !== 'undefined' && heroHud) ? heroHud : null; %>
 <% const comboVal = (typeof combo !== 'undefined') ? combo : null; %>
-<nav class="hud">
-  <a class="rpg-btn is-gold" href="/my/certifications" style="font-size:11px;padding:6px 12px;">📚 マイ資格</a>
-  <a class="rpg-btn" href="/free-mode" style="font-size:11px;padding:6px 12px;">🗺️ 資格一覧</a>
-  <a class="rpg-btn" href="/my/profile" style="font-size:11px;padding:6px 12px;">🧙 ステータス</a>
-  <% if (hud) { %>
-    <div class="hud-cell">🛡️ <span class="value"><%= hud.userName %></span></div>
-    <div class="hud-cell"><span class="label">Lv.</span><span class="value"><%= hud.level %></span></div>
-    <%
-      const xpPct = hud.xpForLevel > 0
-        ? Math.min(100, Math.round((hud.xpIntoLevel / hud.xpForLevel) * 100))
-        : 0;
-      const remaining = Math.max(0, hud.xpForLevel - hud.xpIntoLevel);
-    %>
-    <div class="hud-cell" title="残り <%= remaining %> EXP で Lv.<%= hud.level + 1 %>">
-      <span class="label">EXP</span>
-      <span class="xp-bar" aria-label="EXP <%= hud.xpIntoLevel %>/<%= hud.xpForLevel %>"><i style="width: <%= xpPct %>%"></i></span>
-      <span class="value"><%= hud.xpIntoLevel %>/<%= hud.xpForLevel %></span>
-    </div>
-    <div class="hud-cell crimson"><span class="label">🔥</span><span class="value"><%= hud.streakCurrent %>日</span></div>
-    <div class="hud-cell fern"><span class="label">🏅</span><span class="value"><%= hud.achievementsCount %></span></div>
-  <% } %>
-  <% if (comboVal !== null) { %>
-    <div class="hud-cell"><span class="label">COMBO</span><span class="value"><%= comboVal > 1 ? '×' + comboVal : '-' %></span></div>
-  <% } %>
-  <div class="hud-spacer"></div>
-  <form method="POST" action="/auth/logout" style="margin:0;"><button type="submit" class="rpg-btn" style="font-size:11px;padding:6px 12px;">ログアウト</button></form>
+<% const active = (locals.activeNav || null); %>
+<nav class="hud-wrap">
+  <div class="hud-status">
+    <a class="hud-brand" href="/home" style="color:var(--gold); text-decoration:none;">⚔ Questara</a>
+    <% if (hud) { %>
+      <div class="hud-cell">🛡️ <span class="value"><%= hud.userName %></span></div>
+      <div class="hud-cell"><span class="label">Lv.</span><span class="value"><%= hud.level %></span></div>
+      <%
+        const xpPct = hud.xpForLevel > 0
+          ? Math.min(100, Math.round((hud.xpIntoLevel / hud.xpForLevel) * 100))
+          : 0;
+        const remaining = Math.max(0, hud.xpForLevel - hud.xpIntoLevel);
+      %>
+      <div class="hud-cell" title="残り <%= remaining %> EXP で Lv.<%= hud.level + 1 %>">
+        <span class="label">EXP</span>
+        <span class="xp-bar" aria-label="EXP <%= hud.xpIntoLevel %>/<%= hud.xpForLevel %>"><i style="width: <%= xpPct %>%"></i></span>
+        <span class="value"><%= hud.xpIntoLevel %>/<%= hud.xpForLevel %></span>
+      </div>
+      <div class="hud-cell crimson"><span class="label">🔥</span><span class="value"><%= hud.streakCurrent %>日</span></div>
+      <div class="hud-cell fern"><span class="label">🏅</span><span class="value"><%= hud.achievementsCount %></span></div>
+    <% } %>
+    <% if (comboVal !== null) { %>
+      <div class="hud-cell"><span class="label">COMBO</span><span class="value"><%= comboVal > 1 ? '×' + comboVal : '-' %></span></div>
+    <% } %>
+    <div class="hud-spacer"></div>
+    <form method="POST" action="/auth/logout" style="margin:0;"><button type="submit" class="rpg-btn" style="font-size:11px;padding:6px 12px;">ログアウト</button></form>
+  </div>
+  <div class="hud-tabs">
+    <a href="/home" class="hud-tab<%= active === 'home' ? ' is-active' : '' %>"<% if (active === 'home') { %> aria-current="page"<% } %>>🏠 ホーム</a>
+    <a href="/certifications" class="hud-tab<%= active === 'certs' ? ' is-active' : '' %>"<% if (active === 'certs') { %> aria-current="page"<% } %>>📖 資格</a>
+    <a href="/ranking" class="hud-tab<%= active === 'ranking' ? ' is-active' : '' %>"<% if (active === 'ranking') { %> aria-current="page"<% } %>>🏆 ランキング</a>
+    <a href="/plans" class="hud-tab<%= active === 'plans' ? ' is-active' : '' %>"<% if (active === 'plans') { %> aria-current="page"<% } %>>📅 学習計画</a>
+    <a href="/my/profile" class="hud-tab<%= active === 'status' ? ' is-active' : '' %>"<% if (active === 'status') { %> aria-current="page"<% } %>>🧙 ステータス</a>
+  </div>
 </nav>
