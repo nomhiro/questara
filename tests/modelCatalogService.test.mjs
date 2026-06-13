@@ -48,24 +48,27 @@ describe('modelCatalogService.listModels', () => {
     vi.unstubAllGlobals();
   });
 
-  test('推論可能(high/low)なチャットモデルのみ返し、custom と embeddings を除外する', async () => {
+  test('全チャットモデル（custom 含む）を tier 付きで返し、embeddings のみ除外する', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => ({ ok: true, json: async () => CATALOG_RESPONSE })));
     const models = await modelCatalogService.listModels('token');
     const ids = models.map((m) => m.id);
-    expect(ids).not.toContain('openai/gpt-5');           // custom → 除外
-    expect(ids).not.toContain('deepseek/deepseek-r1');   // custom → 除外
-    expect(ids).not.toContain('openai/text-embedding-3-small'); // embeddings → 除外
+    expect(ids).toContain('openai/gpt-5');               // custom も含む
+    expect(ids).toContain('deepseek/deepseek-r1');       // custom も含む
     expect(ids).toContain('openai/gpt-4.1');
-    expect(ids).toContain('openai/gpt-4o-mini');
-    expect(ids).toContain('meta/llama-3.3-70b-instruct');
+    expect(ids).not.toContain('openai/text-embedding-3-small'); // embeddings → 除外
+    // tier 情報を UI のグルーピング用に付与する
+    expect(models.find((m) => m.id === 'openai/gpt-5').tier).toBe('custom');
+    expect(models.find((m) => m.id === 'openai/gpt-4.1').tier).toBe('high');
   });
 
-  test('ソート順: gpt-4.1 系 → openai 系 → その他', async () => {
+  test('ソート順: gpt-4.1 系 → openai 系 → その他（同順位は id 昇順）', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => ({ ok: true, json: async () => CATALOG_RESPONSE })));
     const models = await modelCatalogService.listModels('token');
     expect(models.map((m) => m.id)).toEqual([
       'openai/gpt-4.1',
       'openai/gpt-4o-mini',
+      'openai/gpt-5',
+      'deepseek/deepseek-r1',
       'meta/llama-3.3-70b-instruct',
     ]);
   });
