@@ -33,6 +33,16 @@ describe('views render without 500', () => {
     expect(res.text).toContain(cert.name);
   });
 
+  test('グローバルナビに「マイ資格」リンクがある', async () => {
+    const user = await createTestUser();
+    const cert = await createTestCertification({ id: 'v-nav-1' });
+    const agent = await authedAgent(user);
+    const res = await agent.get(`/certifications/${cert.id}`);
+    expect(res.status).toBe(200);
+    expect(res.text).toContain('href="/my/certifications"');
+    expect(res.text).toContain('マイ資格');
+  });
+
   test('views/domain.ejs', async () => {
     const user = await createTestUser();
     const cert = await createTestCertification({ id: 'v-domain-1' });
