@@ -2,6 +2,9 @@ import { describe, test, expect, beforeAll, beforeEach } from 'vitest';
 import { setupTestDb, truncateAll } from './_setup/db.mjs';
 import { createTestUser, createTestCertification } from './_setup/fixtures.mjs';
 import { authedAgent } from './_setup/http.mjs';
+import { createRequire } from 'node:module';
+const require = createRequire(import.meta.url);
+const userService = require('../services/userService');
 
 describe('routes/certifications', () => {
   beforeAll(async () => { await setupTestDb(); });
@@ -60,5 +63,67 @@ describe('routes/certifications', () => {
 
     const list = await agent.get('/my/certifications');
     expect(list.text).not.toContain('user-cert-4');
+  });
+
+  test('favorite/unfavorite が stats を更新し returnTo にリダイレクト', async () => {
+    const user = await createTestUser();
+    await createTestCertification({ id: 'pub-fav', isPublic: true });
+    const agent = await authedAgent(user);
+
+    let res = await agent.post('/my/certifications/pub-fav/favorite').type('form').send({ returnTo: '/free-mode' });
+    expect(res.status).toBe(302);
+    expect(res.headers.location).toBe('/free-mode');
+    let u = await userService.getUserById(user.id);
+    expect(u.stats.favoriteCertifications).toContain('pub-fav');
+
+    res = await agent.post('/my/certifications/pub-fav/unfavorite').type('form').send({ returnTo: '/free-mode' });
+    expect(res.status).toBe(302);
+    u = await userService.getUserById(user.id);
+    expect(u.stats.favoriteCertifications).not.toContain('pub-fav');
+  });
+
+  test('pass/unpass が stats を更新する', async () => {
+    const user = await createTestUser();
+    await createTestCertification({ id: 'pub-pass', isPublic: true });
+    const agent = await authedAgent(user);
+
+    await agent.post('/my/certifications/pub-pass/pass').type('form').send({ returnTo: '/certifications/pub-pass' });
+    let u = await userService.getUserById(user.id);
+    expect(u.stats.passedCertifications.map((p) => p.certId)).toContain('pub-pass');
+
+    await agent.post('/my/certifications/pub-pass/unpass').type('form').send({});
+    u = await userService.getUserById(user.id);
+    expect(u.stats.passedCertifications.map((p) => p.certId)).not.toContain('pub-pass');
+  });
+
+  test('不正な returnTo は /my/certifications にフォールバック', async () => {
+    const user = await createTestUser();
+    await createTestCertification({ id: 'pub-rt', isPublic: true });
+    const agent = await authedAgent(user);
+    const res = await agent.post('/my/certifications/pub-rt/favorite').type('form').send({ returnTo: 'https://evil.com' });
+    expect(res.headers.location).toBe('/my/certifications');
+  });
+
+  test('資格作成時に作成者のお気に入りへ自動追加される', async () => {
+    const user = await createTestUser();
+    const agent = await authedAgent(user);
+    await agent.post('/my/certifications/new').type('form').send({
+      id: 'auto-fav', name: '自動お気に入り', studyGuideUrl: '', courseUrl: '',
+      domainsJson: JSON.stringify([{ id: 'domain-1', name: 'D1', weight: 100 }]),
+    });
+    const u = await userService.getUserById(user.id);
+    expect(u.stats.favoriteCertifications).toContain('auto-fav');
+  });
+
+  test('資格削除時にお気に入り/合格から除去される', async () => {
+    const user = await createTestUser();
+    await createTestCertification({ id: 'del-fav', createdBy: user.id, creatorName: user.username, isPublic: false });
+    const agent = await authedAgent(user);
+    await agent.post('/my/certifications/del-fav/favorite').type('form').send({ returnTo: '/my/certifications' });
+    await agent.post('/my/certifications/del-fav/pass').type('form').send({ returnTo: '/my/certifications' });
+    await agent.post('/my/certifications/del-fav/delete');
+    const u = await userService.getUserById(user.id);
+    expect(u.stats.favoriteCertifications).not.toContain('del-fav');
+    expect(u.stats.passedCertifications.map((p) => p.certId)).not.toContain('del-fav');
   });
 });

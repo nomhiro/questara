@@ -65,6 +65,7 @@ router.post('/new', requireAuth, asyncHandler(async (req, res) => {
     domains,
   });
   await questionService.writeCertification(cert);
+  await userService.addFavorite(req.user.id, cert.id);
   res.redirect('/my/certifications');
 }));
 
@@ -92,7 +93,34 @@ router.post('/:certId/delete', requireAuth, asyncHandler(async (req, res) => {
   if (!cert) return res.status(404).send('資格が見つかりません');
   if (cert.createdBy !== req.user.id) return res.status(403).send('作成者のみ削除できます');
   await questionService.deleteCertification(cert.id);
+  await userService.removeFavorite(req.user.id, cert.id);
+  await userService.unmarkPassed(req.user.id, cert.id);
   res.redirect('/my/certifications');
+}));
+
+function safeReturnTo(value) {
+  if (typeof value === 'string' && value.startsWith('/') && !value.startsWith('//')) return value;
+  return '/my/certifications';
+}
+
+router.post('/:certId/favorite', requireAuth, asyncHandler(async (req, res) => {
+  await userService.addFavorite(req.user.id, req.params.certId);
+  res.redirect(safeReturnTo(req.body.returnTo));
+}));
+
+router.post('/:certId/unfavorite', requireAuth, asyncHandler(async (req, res) => {
+  await userService.removeFavorite(req.user.id, req.params.certId);
+  res.redirect(safeReturnTo(req.body.returnTo));
+}));
+
+router.post('/:certId/pass', requireAuth, asyncHandler(async (req, res) => {
+  await userService.markPassed(req.user.id, req.params.certId, new Date().toISOString());
+  res.redirect(safeReturnTo(req.body.returnTo));
+}));
+
+router.post('/:certId/unpass', requireAuth, asyncHandler(async (req, res) => {
+  await userService.unmarkPassed(req.user.id, req.params.certId);
+  res.redirect(safeReturnTo(req.body.returnTo));
 }));
 
 module.exports = router;
