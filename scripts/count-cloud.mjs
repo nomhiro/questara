@@ -23,7 +23,7 @@ const key = execSync(
 const client = new CosmosClient({ endpoint, key });
 const database = client.database(DB);
 
-const containers = ['users', 'certifications', 'sessions', 'studyPlans', 'adventures'];
+const containers = ['users', 'certifications', 'sessions', 'studyPlans'];
 const rows = [];
 for (const name of containers) {
   try {

@@ -1,9 +1,9 @@
 <% const hud = (typeof heroHud !== 'undefined' && heroHud) ? heroHud : null; %>
 <% const comboVal = (typeof combo !== 'undefined') ? combo : null; %>
 <nav class="hud">
-  <a class="rpg-btn is-gold" href="/adventure" style="font-size:11px;padding:6px 12px;">🗺️ ホーム</a>
+  <a class="rpg-btn is-gold" href="/my/certifications" style="font-size:11px;padding:6px 12px;">📚 マイ資格</a>
+  <a class="rpg-btn" href="/free-mode" style="font-size:11px;padding:6px 12px;">🗺️ 資格一覧</a>
   <a class="rpg-btn" href="/my/profile" style="font-size:11px;padding:6px 12px;">🧙 ステータス</a>
-  <a class="rpg-btn" href="/my/certifications" style="font-size:11px;padding:6px 12px;">📚 マイ資格</a>
   <% if (hud) { %>
     <div class="hud-cell">🛡️ <span class="value"><%= hud.userName %></span></div>
     <div class="hud-cell"><span class="label">Lv.</span><span class="value"><%= hud.level %></span></div>

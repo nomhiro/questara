@@ -23,7 +23,7 @@ tests/
 
 **規則:**
 - `.test.mjs` は ESM、`.test.js` は vitest の ESM/CJS 相互運用で書く（source は CJS、test は ESM 可）。
-- テストファイル名は対象ファイルと **一致する語幹** を含めること（例: `services/adventureService.js` → `tests/adventureService.test.js`）。
+- テストファイル名は対象ファイルと **一致する語幹** を含めること（例: `services/planService.js` → `tests/planService.test.mjs`）。
   - 一致しない場合、`tests/` 内のどこかの test で対象の relative path を `require`/`import` していれば網羅性ハーネスには通る。
 - テスト内の `describe` は対象のクラス / 関数 / エンドポイントを示す。
 
@@ -94,6 +94,6 @@ tests/
 ```bash
 npm test                        # 全テスト
 npm test -- spec-coverage       # 網羅性ハーネスだけ
-npm test -- routes.adventures   # 特定ファイル
+npm test -- routes.certifications   # 特定ファイル
 npm run test:watch              # watch モード
 ```

@@ -20,12 +20,12 @@ describe('smoke', () => {
     expect(res.text).toContain('Questara');
   });
 
-  test('認証済み GET / は 200 とランディング(冒険を再開CTA)を返す', async () => {
+  test('認証済み GET / は 200 とランディング(学習を再開CTA)を返す', async () => {
     const user = await createTestUser();
     const agent = await authedAgent(user);
     const res = await agent.get('/');
     expect(res.status).toBe(200);
-    expect(res.text).toContain('冒険を再開');
+    expect(res.text).toContain('学習を再開');
   });
 
   test('認証済み GET /free-mode は 200 と資格一覧を返す', async () => {
@@ -52,21 +52,6 @@ describe('smoke', () => {
     expect(res.text).not.toContain('他人の非公開資格');
     expect(res.text).toContain('公開資格 (1)');
     expect(res.text).toContain('自分の非公開資格 (1)');
-  });
-
-  test('認証済み GET /adventure は アクティブ冒険なしなら /adventures/new へリダイレクト', async () => {
-    const user = await createTestUser();
-    const agent = await authedAgent(user);
-    const res = await agent.get('/adventure');
-    expect(res.status).toBe(302);
-    expect(res.headers.location).toBe('/adventures/new');
-  });
-
-  test('未認証 GET /adventure は / にリダイレクト', async () => {
-    const agent = await anonAgent();
-    const res = await agent.get('/adventure');
-    expect(res.status).toBe(302);
-    expect(res.headers.location).toBe('/');
   });
 
   test('認証済み GET /certifications/:id は 200 と詳細を返す', async () => {

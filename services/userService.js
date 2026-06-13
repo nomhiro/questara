@@ -64,7 +64,6 @@ async function upsertGithubUser({ githubId, githubLogin, email, accessToken, dis
           masteryRanks: existing.stats.masteryRanks || {},
           unlockedAchievements: existing.stats.unlockedAchievements || [],
           equippedTitle: existing.stats.equippedTitle ?? null,
-          activeAdventureId: existing.stats.activeAdventureId ?? null,
           dailyQuest: existing.stats.dailyQuest || { date: null, completed: [], xpClaimed: 0 },
         }
       : {
@@ -80,7 +79,6 @@ async function upsertGithubUser({ githubId, githubLogin, email, accessToken, dis
           masteryRanks: {},
           unlockedAchievements: [],
           equippedTitle: null,
-          activeAdventureId: null,
           dailyQuest: { date: null, completed: [], xpClaimed: 0 },
         },
     createdAt: existing?.createdAt || now,

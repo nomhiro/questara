@@ -24,13 +24,13 @@ describe('routes/index — landing page', () => {
     expect(res.text).toMatch(/GitHub.*ログイン/);
   });
 
-  test('認証済み GET / は 200 と「冒険を再開」CTA を返す', async () => {
+  test('認証済み GET / は 200 と「学習を再開」CTA を返す', async () => {
     const user = await createTestUser();
     const agent = await authedAgent(user);
     const res = await agent.get('/');
     expect(res.status).toBe(200);
-    expect(res.text).toContain('冒険を再開');
-    expect(res.text).toContain('/adventure');
+    expect(res.text).toContain('学習を再開');
+    expect(res.text).toContain('/my/certifications');
   });
 
   test('GET /?error=auth_failed でエラーバナーが表示される', async () => {

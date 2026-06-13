@@ -9,7 +9,6 @@ const CONTAINERS = {
   certifications: { id: 'certifications', partitionKey: '/id' },
   sessions: { id: 'sessions', partitionKey: '/userId' },
   studyPlans: { id: 'studyPlans', partitionKey: '/userId' },
-  adventures: { id: 'adventures', partitionKey: '/userId' },
 };
 
 let client;

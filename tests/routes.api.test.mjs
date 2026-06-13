@@ -94,7 +94,7 @@ describe('routes/api 問題再生成 SSE', () => {
     expect(res.status).toBe(200);
     expect(res.text).toContain('event: error');
     expect(res.text).toContain('LLM 失敗');
-    // 現状の error フィールド名は `message`（api-adventure.js の `error` と不一致 = D-14 の対象）
+    // error フレームのフィールド名は `message`
     const errFrame = res.text.split('\n\n').find((f) => f.includes('event: error'));
     expect(errFrame).toContain('"message"');
   });
