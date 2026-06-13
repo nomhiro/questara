@@ -72,6 +72,13 @@
         学習ガイドのテキストを取得し、GitHub Copilot がこのドメインに特化した新しい問題を生成します。
         既存の <strong style="color: var(--gold);"><%= domain.questions.length %></strong> 問に追加されます（既存の解答履歴は保持されます）。
       </p>
+      <div style="margin-bottom: 12px;">
+        <label for="modelSelect" style="font-family: var(--font-display); color: var(--gold); font-size: 12px; display: block; margin-bottom: 6px;">生成モデル</label>
+        <select id="modelSelect"
+                style="font-family: var(--font-body); font-size: 13px; padding: 8px 12px; background: var(--window); color: var(--ink); border: 2px solid var(--gold); min-width: 240px;">
+          <option value="openai/gpt-5">openai/gpt-5</option>
+        </select>
+      </div>
       <button id="generateBtn" class="rpg-btn is-gold"
               onclick="startGeneration('<%= cert.id %>', '<%= domain.id %>')">
         ✨ 問題を追加生成する
@@ -96,7 +103,8 @@
           </summary>
           <div style="padding: 0 16px 16px; display:flex; flex-direction:column; gap: 6px;">
             <% for (const [key, val] of Object.entries(q.options)) { %>
-              <% const isAns = key === q.correctAnswer; %>
+              <% const answerKeys = (Array.isArray(q.correctAnswers) && q.correctAnswers.length > 0) ? q.correctAnswers : [q.correctAnswer]; %>
+              <% const isAns = answerKeys.includes(key); %>
               <div style="display:flex; gap:8px; font-family: var(--font-body); font-size: 13px; padding: 4px 8px; color: <%= isAns ? 'var(--fern)' : '#c0c6e0' %>;">
                 <span style="font-family: var(--font-display); color: <%= isAns ? 'var(--fern)' : 'var(--gold)' %>;"><%= key %>.</span>
                 <span><%= val %> <%= isAns ? '✓' : '' %></span>
@@ -114,6 +122,24 @@
   </main>
 
   <script>
+    async function loadModels() {
+      try {
+        const res = await fetch('/api/models');
+        if (!res.ok) return; // フォールバック表示（openai/gpt-5）のまま
+        const data = await res.json();
+        const select = document.getElementById('modelSelect');
+        select.innerHTML = '';
+        for (const m of data.models) {
+          const opt = document.createElement('option');
+          opt.value = m.id;
+          opt.textContent = m.id;
+          if (m.id === 'openai/gpt-5') opt.selected = true;
+          select.appendChild(opt);
+        }
+      } catch { /* ネットワークエラー時はフォールバック表示のまま */ }
+    }
+    loadModels();
+
     async function startGeneration(certId, domainId) {
       const btn = document.getElementById('generateBtn');
       const progress = document.getElementById('generateProgress');
@@ -129,6 +155,7 @@
         const res = await fetch(`/api/certifications/${certId}/domains/${domainId}/generate`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ model: document.getElementById('modelSelect').value }),
         });
 
         if (!res.ok || !res.body) throw new Error('リクエストに失敗しました');

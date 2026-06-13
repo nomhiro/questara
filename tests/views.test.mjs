@@ -33,6 +33,25 @@ describe('views render without 500', () => {
     expect(res.text).toContain(cert.name);
   });
 
+  test('グローバルナビに「マイ資格」リンクがある', async () => {
+    const user = await createTestUser();
+    const cert = await createTestCertification({ id: 'v-nav-1' });
+    const agent = await authedAgent(user);
+    const res = await agent.get(`/certifications/${cert.id}`);
+    expect(res.status).toBe(200);
+    expect(res.text).toContain('href="/my/certifications"');
+    expect(res.text).toContain('マイ資格');
+  });
+
+  test('資格フォームに合計%表示と正規化ボタンがある', async () => {
+    const user = await createTestUser();
+    const agent = await authedAgent(user);
+    const res = await agent.get('/my/certifications/new');
+    expect(res.status).toBe(200);
+    expect(res.text).toContain('id="weightTotal"');
+    expect(res.text).toContain('id="normalizeBtn"');
+  });
+
   test('views/domain.ejs', async () => {
     const user = await createTestUser();
     const cert = await createTestCertification({ id: 'v-domain-1' });
@@ -50,6 +69,33 @@ describe('views render without 500', () => {
     const quizRes = await agent.get(startRes.headers.location);
     expect(quizRes.status).toBe(200);
     expect(quizRes.text).toContain('問題 1');
+  });
+
+  test('views/quiz.ejs（複数選択問題は回答ボタンと正解配列を埋め込む）', async () => {
+    const user = await createTestUser();
+    const cert = await createTestCertification({
+      id: 'v-quiz-multi',
+      domains: [
+        {
+          id: 'domain-1', name: 'D1', weight: 100, generatedAt: null,
+          questions: [{
+            id: 'qm1',
+            question: '複数選択のテスト問題です（該当するものをすべて選択してください）',
+            options: { A: 'a', B: 'b', C: 'c', D: 'd' },
+            type: 'multiple',
+            correctAnswers: ['A', 'C'],
+            correctAnswer: 'A',
+            explanation: 'テスト解説',
+          }],
+        },
+      ],
+    });
+    const agent = await authedAgent(user);
+    const startRes = await agent.post('/quiz/start').type('form').send({ certId: cert.id, mode: 'all' });
+    const quizRes = await agent.get(startRes.headers.location);
+    expect(quizRes.status).toBe(200);
+    expect(quizRes.text).toContain('回答する');
+    expect(quizRes.text).toContain('["A","C"]');
   });
 
   test('views/result.ejs', async () => {

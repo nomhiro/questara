@@ -6,8 +6,9 @@ const questionService = require('../services/questionService');
 const certificationParser = require('../services/certificationParser');
 const userService = require('../services/userService');
 const { requireAuth } = require('../middleware/auth');
+const { asyncHandler } = require('../middleware/asyncHandler');
 
-router.get('/', requireAuth, async (req, res) => {
+router.get('/', requireAuth, asyncHandler(async (req, res) => {
   const all = await questionService.listCertifications({ includePrivate: true, userId: req.user.id });
   const myCerts = all.filter((c) => c.createdBy === req.user.id);
   res.render('my-certifications', {
@@ -15,7 +16,7 @@ router.get('/', requireAuth, async (req, res) => {
     certs: myCerts,
     userEmail: res.locals.userEmail,
   });
-});
+}));
 
 router.get('/new', requireAuth, (req, res) => {
   res.render('certification-form', {
@@ -27,7 +28,7 @@ router.get('/new', requireAuth, (req, res) => {
   });
 });
 
-router.post('/extract', requireAuth, async (req, res) => {
+router.post('/extract', requireAuth, asyncHandler(async (req, res) => {
   try {
     const { studyGuideUrl } = req.body;
     const accessToken = await userService.getGithubAccessToken(req.user.id);
@@ -36,9 +37,9 @@ router.post('/extract', requireAuth, async (req, res) => {
   } catch (err) {
     res.status(400).json({ error: err.message });
   }
-});
+}));
 
-router.post('/new', requireAuth, async (req, res) => {
+router.post('/new', requireAuth, asyncHandler(async (req, res) => {
   const { id, name, studyGuideUrl, courseUrl, domainsJson } = req.body;
   if (!id || !name) {
     return res.status(400).render('certification-form', {
@@ -57,26 +58,17 @@ router.post('/new', requireAuth, async (req, res) => {
   }
   let domains = [];
   try { domains = JSON.parse(domainsJson || '[]'); } catch { domains = []; }
-  const cert = {
-    id, name, studyGuideUrl: studyGuideUrl || '', courseUrl: courseUrl || '',
+  const cert = questionService.buildCertification({
+    id, name, studyGuideUrl, courseUrl,
     createdBy: req.user.id,
     creatorName: req.user.username,
-    isPublic: false,
-    publishedAt: null,
-    usedByCount: 0,
-    domains: domains.map((d, i) => ({
-      id: d.id || `domain-${i + 1}`,
-      name: d.name || `Domain ${i + 1}`,
-      weight: Math.round(Number(d.weight) || 0),
-      generatedAt: null,
-      questions: [],
-    })),
-  };
+    domains,
+  });
   await questionService.writeCertification(cert);
   res.redirect('/my/certifications');
-});
+}));
 
-router.post('/:certId/publish', requireAuth, async (req, res) => {
+router.post('/:certId/publish', requireAuth, asyncHandler(async (req, res) => {
   const cert = await questionService.readCertification(req.params.certId);
   if (!cert) return res.status(404).send('資格が見つかりません');
   if (cert.createdBy !== req.user.id) return res.status(403).send('作成者のみ公開できます');
@@ -84,23 +76,23 @@ router.post('/:certId/publish', requireAuth, async (req, res) => {
   cert.publishedAt = new Date().toISOString();
   await questionService.writeCertification(cert);
   res.redirect('/my/certifications');
-});
+}));
 
-router.post('/:certId/unpublish', requireAuth, async (req, res) => {
+router.post('/:certId/unpublish', requireAuth, asyncHandler(async (req, res) => {
   const cert = await questionService.readCertification(req.params.certId);
   if (!cert) return res.status(404).send('資格が見つかりません');
   if (cert.createdBy !== req.user.id) return res.status(403).send('作成者のみ操作できます');
   cert.isPublic = false;
   await questionService.writeCertification(cert);
   res.redirect('/my/certifications');
-});
+}));
 
-router.post('/:certId/delete', requireAuth, async (req, res) => {
+router.post('/:certId/delete', requireAuth, asyncHandler(async (req, res) => {
   const cert = await questionService.readCertification(req.params.certId);
   if (!cert) return res.status(404).send('資格が見つかりません');
   if (cert.createdBy !== req.user.id) return res.status(403).send('作成者のみ削除できます');
   await questionService.deleteCertification(cert.id);
   res.redirect('/my/certifications');
-});
+}));
 
 module.exports = router;

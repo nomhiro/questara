@@ -6,8 +6,70 @@ async function readCertification(certId) {
   return cosmosService.read('certifications', certId, certId);
 }
 
+/**
+ * 資格にアクセスしてよいか判定する (D-17)。
+ * 公開資格は全員、非公開資格は作成者のみ。cert が null の場合は false。
+ * @param {object|null} cert - readCertification の戻り値
+ * @param {string} userId
+ * @returns {boolean}
+ */
+function canAccessCertification(cert, userId) {
+  if (!cert) return false;
+  return cert.isPublic === true || cert.createdBy === userId;
+}
+
 async function writeCertification(certData) {
   await cosmosService.upsert('certifications', certData);
+}
+
+/**
+ * フォーム入力から非公開の資格ドキュメントを組み立てる (D-09)。
+ * domains は id/name/weight を正規化し、generatedAt=null・空 questions で初期化する。
+ */
+function buildCertification({ id, name, studyGuideUrl = '', courseUrl = '', createdBy, creatorName, domains = [] }) {
+  return {
+    id,
+    name,
+    studyGuideUrl: studyGuideUrl || '',
+    courseUrl: courseUrl || '',
+    createdBy,
+    creatorName,
+    isPublic: false,
+    publishedAt: null,
+    usedByCount: 0,
+    domains: domains.map((d, i) => ({
+      id: d.id || `domain-${i + 1}`,
+      name: d.name || `Domain ${i + 1}`,
+      weight: Math.round(Number(d.weight) || 0),
+      generatedAt: null,
+      questions: [],
+    })),
+  };
+}
+
+/**
+ * 配列を Fisher–Yates でシャッフルした新しい配列を返す（非破壊）(D-09)。
+ * 旧実装 `arr.sort(() => Math.random() - 0.5)` は分布が偏るため置き換え。
+ */
+function shuffle(array) {
+  const a = [...array];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+/**
+ * 問題の正解キー配列を返す（複数選択対応の正規化ヘルパー）。
+ * correctAnswers 配列があればそれを、なければ既存データ互換で
+ * correctAnswer 単一キーを配列化して返す。
+ */
+function getCorrectAnswers(question) {
+  if (Array.isArray(question?.correctAnswers) && question.correctAnswers.length > 0) {
+    return question.correctAnswers;
+  }
+  return question?.correctAnswer ? [question.correctAnswer] : [];
 }
 
 async function listCertifications({ includePrivate = false, userId = null } = {}) {
@@ -90,6 +152,10 @@ async function getCertDomainCounts() {
 
 module.exports = {
   readCertification,
+  canAccessCertification,
+  buildCertification,
+  shuffle,
+  getCorrectAnswers,
   writeCertification,
   listCertifications,
   getDomain,

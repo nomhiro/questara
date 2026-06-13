@@ -7,12 +7,15 @@ const progressService = require('../services/progressService');
 const { requireAuth } = require('../middleware/auth');
 const userService = require('../services/userService');
 const gamificationService = require('../services/gamificationService');
+const { asyncHandler } = require('../middleware/asyncHandler');
 
-router.post('/start', requireAuth, async (req, res) => {
+router.post('/start', requireAuth, asyncHandler(async (req, res) => {
   const { certId, mode, domainId } = req.body;
   const userId = req.user.id;
   const cert = await questionService.readCertification(certId);
-  if (!cert) return res.status(404).render('error', { title: '404', message: '資格が見つかりません' });
+  if (!cert || !questionService.canAccessCertification(cert, userId)) {
+    return res.status(404).render('error', { title: '404', message: '資格が見つかりません' });
+  }
 
   let questions;
   let domainFilter = null;
@@ -30,13 +33,14 @@ router.post('/start', requireAuth, async (req, res) => {
 
   if (questions.length === 0) return res.redirect(`/certifications/${certId}?info=no-questions`);
 
-  questions.sort(() => Math.random() - 0.5);
-  const session = await progressService.createSession({ userId, certificationId: certId, domainFilter, mode });
-  const questionIds = questions.map((q) => q.id).join(',');
-  res.redirect(`/quiz/${session.id}?questions=${encodeURIComponent(questionIds)}&certId=${certId}&idx=0`);
-});
+  questions = questionService.shuffle(questions);
+  const orderedIds = questions.map((q) => q.id);
+  const session = await progressService.createSession({ userId, certificationId: certId, domainFilter, mode, questionIds: orderedIds });
+  // ?questions= は旧セッション互換のため当面残すが、出題順の正典はセッション側 (D-19)
+  res.redirect(`/quiz/${session.id}?questions=${encodeURIComponent(orderedIds.join(','))}&certId=${certId}&idx=0`);
+}));
 
-router.get('/:sessionId', requireAuth, async (req, res) => {
+router.get('/:sessionId', requireAuth, asyncHandler(async (req, res) => {
   const { sessionId } = req.params;
   const { questions: questionIdsStr, certId, idx } = req.query;
   if (!questionIdsStr || !certId) return res.redirect('/');
@@ -44,7 +48,17 @@ router.get('/:sessionId', requireAuth, async (req, res) => {
   const session = await progressService.getSession(sessionId, req.user.id);
   if (!session) return res.status(404).render('error', { title: '404', message: 'セッションが見つかりません' });
 
-  const questionIds = questionIdsStr.split(',');
+  // D-17: クエリの certId が非公開資格に差し替えられていないか確認（IDOR 防止）
+  const accessCert = await questionService.readCertification(certId);
+  if (!accessCert || !questionService.canAccessCertification(accessCert, req.user.id)) {
+    return res.status(404).render('error', { title: '404', message: '資格が見つかりません' });
+  }
+
+  // 出題順はセッションを正典とし、URL の ?questions= は session に無い旧データのみ参照 (D-19)。
+  // これにより URL の ?questions= を改ざんしても出題順・問題は変えられない。
+  const questionIds = (Array.isArray(session.questionIds) && session.questionIds.length)
+    ? session.questionIds
+    : (questionIdsStr ? questionIdsStr.split(',') : []);
   const currentIdx = parseInt(idx, 10) || 0;
   if (currentIdx >= questionIds.length) {
     await progressService.completeSession(sessionId, req.user.id);
@@ -57,27 +71,29 @@ router.get('/:sessionId', requireAuth, async (req, res) => {
 
   const user = await userService.getUserById(req.user.id);
   const rawStats = user?.stats || {};
-  const xpBreak = gamificationService.xpBreakdown(rawStats.xp || 0);
   const currentCombo = gamificationService.calcCombo(session);
   const hudUserName = user?.displayName || user?.username || 'NoName';
-  const hudStats = { ...rawStats, ...xpBreak };
+  const hudStats = gamificationService.buildHudStats(rawStats);
 
   res.render('quiz', {
     title: `問題 ${currentIdx + 1} / ${questionIds.length}`,
     session, question, currentIdx,
     total: questionIds.length,
-    questionIds: questionIdsStr, certId, answered: null,
+    questionIds: questionIds.join(','), certId, answered: null,
     userName: hudUserName,
     stats: hudStats,
     currentCombo,
   });
-});
+}));
 
-router.post('/:sessionId/answer', requireAuth, async (req, res) => {
+router.post('/:sessionId/answer', requireAuth, asyncHandler(async (req, res) => {
   const { sessionId } = req.params;
   const { questionId, domainId, selectedAnswer, isCorrect, questionIds, certId, currentIdx } = req.body;
   const cert = await questionService.readCertification(certId);
-  const domain = cert?.domains?.find((d) => d.id === domainId);
+  if (!cert || !questionService.canAccessCertification(cert, req.user.id)) {
+    return res.status(404).render('error', { title: '404', message: '資格が見つかりません' });
+  }
+  const domain = cert.domains.find((d) => d.id === domainId);
   await progressService.recordAnswer({
     sessionId, userId: req.user.id, questionId, domainId, selectedAnswer,
     domainWeight: domain?.weight || 0,
@@ -87,15 +103,18 @@ router.post('/:sessionId/answer', requireAuth, async (req, res) => {
   res.redirect(
     `/quiz/${sessionId}?questions=${encodeURIComponent(questionIds)}&certId=${certId}&idx=${nextIdx}&lastAnswer=${selectedAnswer}&lastCorrect=${isCorrect}&lastQuestionId=${questionId}`
   );
-});
+}));
 
-router.get('/:sessionId/result', requireAuth, async (req, res) => {
+router.get('/:sessionId/result', requireAuth, asyncHandler(async (req, res) => {
   const { sessionId } = req.params;
   const { certId } = req.query;
   const session = await progressService.getSession(sessionId, req.user.id);
   if (!session) return res.status(404).render('error', { title: '404', message: 'セッションが見つかりません' });
 
   const cert = await questionService.readCertification(certId);
+  if (!cert || !questionService.canAccessCertification(cert, req.user.id)) {
+    return res.status(404).render('error', { title: '404', message: '資格が見つかりません' });
+  }
   const domainScores = progressService.calcSessionDomainScores(session);
   const total = session.answers.length;
   const correct = session.answers.filter((a) => a.isCorrect).length;
@@ -111,14 +130,18 @@ router.get('/:sessionId/result', requireAuth, async (req, res) => {
     domainsWithScores, weakDomains, certId,
     gamification: session.gamification || null,
   });
-});
+}));
 
-router.get('/:sessionId/review', requireAuth, async (req, res) => {
+router.get('/:sessionId/review', requireAuth, asyncHandler(async (req, res) => {
   const { sessionId } = req.params;
   const { certId } = req.query;
   const session = await progressService.getSession(sessionId, req.user.id);
   if (!session) return res.status(404).render('error', { title: '404', message: 'セッションが見つかりません' });
 
+  const cert = await questionService.readCertification(certId);
+  if (!cert || !questionService.canAccessCertification(cert, req.user.id)) {
+    return res.status(404).render('error', { title: '404', message: '資格が見つかりません' });
+  }
   const wrongAnswers = session.answers.filter((a) => !a.isCorrect);
   const allQuestions = await questionService.getAllQuestions(certId);
   const wrongQuestions = wrongAnswers.map((a) => {
@@ -127,6 +150,6 @@ router.get('/:sessionId/review', requireAuth, async (req, res) => {
   }).filter(Boolean);
 
   res.render('review', { title: '間違い復習', session, wrongQuestions, certId });
-});
+}));
 
 module.exports = router;

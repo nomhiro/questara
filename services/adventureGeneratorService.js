@@ -1,25 +1,17 @@
 'use strict';
 
-const OpenAI = require('openai');
 const mcpClient = require('./mcpClient');
 const questionService = require('./questionService');
+const { createLlmClient, GITHUB_MODELS_DEFAULT_MODEL, extractJsonObject } = require('./llmClient');
 
 const MAX_USER_PROMPT_LEN = 500;
-const GITHUB_MODELS_ENDPOINT = 'https://models.inference.ai.azure.com';
-const GITHUB_MODELS_DEFAULT_MODEL = 'gpt-4o-mini';
-const LLM_TIMEOUT_MS = 120000;
 
 function sanitizePrompt(s) {
   return String(s || '').replace(/[\r\n]+/g, ' ').slice(0, MAX_USER_PROMPT_LEN).trim();
 }
 
-function extractJson(text) {
-  const match = text.match(/\{[\s\S]*\}/);
-  return match ? match[0] : null;
-}
-
 function parseAndValidate({ raw, knownCertIds }) {
-  const json = extractJson(raw);
+  const json = extractJsonObject(raw);
   if (!json) return null;
   let data;
   try { data = JSON.parse(json); } catch { return null; }
@@ -92,7 +84,7 @@ async function generateFromPrompt({ userPrompt, accessToken, onProgress = () => 
     '{"name":"","description":"","rationale":"","dungeons":[],"citations":[{"url":"","title":""}]}',
   ].join('\n');
 
-  const openai = new OpenAI({ baseURL: GITHUB_MODELS_ENDPOINT, apiKey: accessToken, timeout: LLM_TIMEOUT_MS });
+  const openai = createLlmClient(accessToken);
   let response;
   try {
     response = await openai.chat.completions.create({
@@ -101,7 +93,6 @@ async function generateFromPrompt({ userPrompt, accessToken, onProgress = () => 
         { role: 'system', content: systemPrompt },
         { role: 'user', content: prompt },
       ],
-      temperature: 0.4,
     });
   } catch (err) {
     throw new Error(`LLM 呼び出しに失敗: ${err.message}`);

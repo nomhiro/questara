@@ -6,14 +6,17 @@ const userService = require('./userService');
 const gamificationService = require('./gamificationService');
 const achievementService = require('./achievementService');
 const questionService = require('./questionService');
+const { percentRate } = require('./scoreUtil');
 
-async function createSession({ userId, certificationId, domainFilter = null, mode = 'all' }) {
+async function createSession({ userId, certificationId, domainFilter = null, mode = 'all', questionIds = [] }) {
   const session = {
     id: crypto.randomUUID(),
     userId,
     certificationId,
     mode,
     domainFilter,
+    // 出題順をセッションに保存し、URL の ?questions= に依存しない正典にする (D-19)。
+    questionIds,
     startedAt: new Date().toISOString(),
     completedAt: null,
     answers: [],
@@ -52,10 +55,14 @@ async function recordAnswer({ sessionId, userId, questionId, domainId, domainWei
 async function completeSession(sessionId, userId) {
   const session = await getSession(sessionId, userId);
   if (!session) throw new Error(`Session not found: ${sessionId}`);
+  // 冪等性ガード(D-18): 既に完了済みのセッションは再集計・再加算しない。
+  // 結果ページ直前 URL のリロード/戻るで completeSession が再呼び出しされても
+  // XP・セッション数を二重計上しないよう、保存済みの結果をそのまま返す。
+  if (session.completedAt) return session;
   session.completedAt = new Date().toISOString();
   const total = session.answers.length;
   const correct = session.answers.filter((a) => a.isCorrect).length;
-  session.score = total > 0 ? Math.round((correct / total) * 100) : 0;
+  session.score = percentRate(correct, total);
 
   const xpEarned = session.answers.reduce((sum, a) => sum + (a.xpEarned || 0), 0);
   const maxCombo = session.answers.reduce((m, a) => Math.max(m, a.combo || 1), 1);
@@ -71,6 +78,7 @@ async function completeSession(sessionId, userId) {
   let previousLevel = 1;
   let newLevel = 1;
   let rankUpgrades = [];
+  let questResult = { newlyCompleted: [], bonus: 0 };
 
   const updatedUser = await userService.updateUserStats(userId, (stats) => {
     stats.totalSessions = (stats.totalSessions || 0) + 1;
@@ -82,13 +90,11 @@ async function completeSession(sessionId, userId) {
     cur.correct += correct;
     cur.answered += total;
     cur.sessionsCount += 1;
-    cur.correctRate = cur.answered > 0 ? Math.round((cur.correct / cur.answered) * 100) : 0;
+    cur.correctRate = percentRate(cur.correct, cur.answered);
     cs[session.certificationId] = cur;
     stats.certStats = cs;
 
-    const overall = stats.totalAnswered > 0
-      ? Math.round((stats.totalCorrect / stats.totalAnswered) * 100)
-      : 0;
+    const overall = percentRate(stats.totalCorrect, stats.totalAnswered);
     stats.weeklyCorrectRate = overall;
     stats.monthlyCorrectRate = overall;
 
@@ -114,7 +120,10 @@ async function completeSession(sessionId, userId) {
     const todayISO = new Date().toISOString().slice(0, 10);
     stats.streak = gamificationService.updateStreak(stats.streak, todayISO);
 
-    const questResult = gamificationService.evaluateDailyQuest({
+    // 外部スコープの questResult に代入し、updater 後で参照する。
+    // （以前は session.__questResult に退避していたが、session は DB に upsert される
+    //   オブジェクトなので一時値の混入リスクがあった・D-11）
+    questResult = gamificationService.evaluateDailyQuest({
       daily: stats.dailyQuest,
       session,
       todayISODate: todayISO,
@@ -126,7 +135,6 @@ async function completeSession(sessionId, userId) {
     };
     stats.xp = (stats.xp || 0) + (questResult.bonus || 0);
     stats.level = gamificationService.recomputeLevel(stats.xp);
-    session.__questResult = questResult; // used outside updater
 
     return stats;
   });
@@ -166,9 +174,6 @@ async function completeSession(sessionId, userId) {
     newLevel = gamificationService.recomputeLevel((updatedUser?.stats?.xp || 0) + achievementXp);
   }
 
-  const questResult = session.__questResult || { newlyCompleted: [], bonus: 0 };
-  delete session.__questResult;
-
   session.gamification = {
     xpEarned: xpEarned + (questResult.bonus || 0) + achievementXp,
     xpBase: xpEarned,
@@ -192,7 +197,7 @@ async function completeSession(sessionId, userId) {
       const next = adventureService.checkDungeonUnlocks(activeAdv, masteryRanks, certDomainCounts);
       const changed = JSON.stringify(next.dungeons) !== JSON.stringify(activeAdv.dungeons);
       if (changed) {
-        await cosmosService.upsert('adventures', next);
+        await adventureService.saveAdventure(next);
         session.gamification.adventureDungeonChanges = next.dungeons
           .map((d, i) => (d.status !== activeAdv.dungeons[i]?.status ? { certificationId: d.certificationId, from: activeAdv.dungeons[i]?.status, to: d.status } : null))
           .filter(Boolean);
@@ -226,7 +231,7 @@ async function calcDomainStats(certificationId, userId) {
   }
   for (const d of Object.keys(stats)) {
     const { correct, total } = stats[d];
-    stats[d].rate = total > 0 ? Math.round((correct / total) * 100) : null;
+    stats[d].rate = percentRate(correct, total, null);
   }
   return stats;
 }
@@ -261,7 +266,7 @@ function calcSessionDomainScores(session) {
   }
   for (const d of Object.keys(scores)) {
     const { correct, total } = scores[d];
-    scores[d].rate = total > 0 ? Math.round((correct / total) * 100) : null;
+    scores[d].rate = percentRate(correct, total, null);
   }
   return scores;
 }

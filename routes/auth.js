@@ -74,6 +74,8 @@ router.get('/github/callback', async (req, res) => {
   }
 });
 
+// 遺物: かつてのログインページ。現在はランディング(/)に集約済み。
+// 外部リンク/ブックマーク互換のため 301 リダイレクトのみ残す。
 router.get('/login', (req, res) => {
   res.redirect(301, '/');
 });

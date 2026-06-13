@@ -7,6 +7,7 @@ const userService = require('../services/userService');
 const adventureService = require('../services/adventureService');
 const adventureGenerator = require('../services/adventureGeneratorService');
 const { requireAuth } = require('../middleware/auth');
+const { initSse } = require('../middleware/sse');
 
 router.post('/generate', requireAuth, async (req, res) => {
   const accessToken = await userService.getGithubAccessToken(req.user.id);
@@ -14,16 +15,7 @@ router.post('/generate', requireAuth, async (req, res) => {
     return res.status(400).json({ error: 'GitHub のアクセストークンが見つかりません。再ログインしてください。' });
   }
 
-  res.setHeader('Content-Type', 'text/event-stream');
-  res.setHeader('Cache-Control', 'no-cache');
-  res.setHeader('Connection', 'keep-alive');
-  res.flushHeaders?.();
-
-  const send = (event, data) => {
-    try {
-      res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
-    } catch { /* client disconnected */ }
-  };
+  const { send } = initSse(res);
 
   let finished = false;
 

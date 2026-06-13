@@ -49,8 +49,10 @@
 
           <div style="display:flex; flex-direction:column; gap: 8px; margin-bottom: 16px;">
             <% for (const [key, val] of Object.entries(q.options)) { %>
-              <% const isCorrect = key === q.correctAnswer; %>
-              <% const isPicked = key === q.selectedAnswer; %>
+              <% const answerKeys = (Array.isArray(q.correctAnswers) && q.correctAnswers.length > 0) ? q.correctAnswers : [q.correctAnswer]; %>
+              <% const pickedKeys = String(q.selectedAnswer || '').split(','); %>
+              <% const isCorrect = answerKeys.includes(key); %>
+              <% const isPicked = pickedKeys.includes(key); %>
               <% const bg = isCorrect ? '#1f4a18' : (isPicked ? '#3a0a12' : '#000a'); %>
               <% const border = isCorrect ? 'var(--fern)' : (isPicked ? 'var(--crimson)' : 'var(--ink)'); %>
               <% const color = isCorrect ? 'var(--fern)' : (isPicked ? 'var(--crimson)' : 'var(--ink)'); %>

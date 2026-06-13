@@ -5,6 +5,8 @@ const questionService = require('./questionService');
 const progressService = require('./progressService');
 
 const MS_PER_WEEK = 7 * 24 * 60 * 60 * 1000;
+// 学習プランで 1 週あたりに割り当てる最低問題数。
+// （rankingService.MIN_QUESTIONS は「ランキング掲載の最低回答数」で別概念。統合しないこと）
 const MIN_QUESTIONS_PER_WEEK = 10;
 
 async function generateSchedule({ certificationId, examDate, userId }) {

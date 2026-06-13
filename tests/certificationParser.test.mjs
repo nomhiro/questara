@@ -90,6 +90,31 @@ describe('parseDomainsFromMarkdown', () => {
     const domains = parseDomainsFromMarkdown(md);
     expect(domains).toHaveLength(2);
   });
+
+  test('gh-500 形式: 全角チルダ ～(U+FF5E) と見出し途中の別名括弧を含む6ドメインを抽出し100%に正規化', () => {
+    const md = `
+## 2026年7月時点で測定されたスキル
+### スキルの概要
+- 概要の箇条書きは無視される
+### GitHub のセキュリティ スイート、機能、エコシステムについて説明する (15～20%)
+#### サブスキル見出し（ウェイト無し・無視される）
+### シークレット保護の構成と使用 (以前のシークレット スキャン) (15 ~ 20%)
+### サプライ チェーン セキュリティの構成と使用 (旧称 Dependabot) (15 ~ 20%)
+### コード セキュリティの構成と使用 (以前の CodeQL) (10 ~ 15%)
+### セキュリティ操作: ベスト プラクティス、優先順位付け、修復 (15 ~ 20%)
+### GitHub セキュリティ スイートの管理 (10 ~ 15%)
+## 学習リソース
+### ノイズ (10%)
+`;
+    const domains = parseDomainsFromMarkdown(md);
+    expect(domains).toHaveLength(6);
+    // 全角チルダの見出し（ドメイン1）が取りこぼされない
+    expect(domains[0].name).toBe('Domain 1: GitHub のセキュリティ スイート、機能、エコシステムについて説明する');
+    // 見出し途中の別名括弧は名前に保持され、末尾の割合が拾われる
+    expect(domains[1].name).toBe('Domain 2: シークレット保護の構成と使用 (以前のシークレット スキャン)');
+    const sum = domains.reduce((a, d) => a + d.weight, 0);
+    expect(sum).toBe(100);
+  });
 });
 
 describe('normalizeWeightsToSum100', () => {

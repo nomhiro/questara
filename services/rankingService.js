@@ -1,6 +1,7 @@
 'use strict';
 
 const cosmosService = require('./cosmosService');
+const { percentRate } = require('./scoreUtil');
 
 function weekStart(date = new Date()) {
   const d = new Date(date);
@@ -16,6 +17,8 @@ function monthStart(date = new Date()) {
   return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), 1)).toISOString();
 }
 
+// ランキング掲載の最低回答数。これ未満のユーザーは集計から除外する。
+// （planService.MIN_QUESTIONS_PER_WEEK は「週あたりの最低出題数」で別概念。統合しないこと）
 const MIN_QUESTIONS = 10;
 
 async function getRanking({ certificationId, since }) {
@@ -54,7 +57,7 @@ async function getRanking({ certificationId, since }) {
     .filter((a) => a.total >= MIN_QUESTIONS)
     .map((a) => ({
       ...a,
-      rate: Math.round((a.correct / a.total) * 100),
+      rate: percentRate(a.correct, a.total),
       user: users[a.userId],
     }))
     .sort((a, b) => b.rate - a.rate || b.total - a.total);

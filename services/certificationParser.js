@@ -1,24 +1,7 @@
 'use strict';
 
-const { Client } = require('@modelcontextprotocol/sdk/client/index.js');
-const { StreamableHTTPClientTransport } = require('@modelcontextprotocol/sdk/client/streamableHttp.js');
-const OpenAI = require('openai');
-
-const LEARN_MCP_URL = 'https://learn.microsoft.com/api/mcp';
-const GITHUB_MODELS_ENDPOINT = 'https://models.inference.ai.azure.com';
-const GITHUB_MODELS_DEFAULT_MODEL = 'gpt-4o-mini';
-
-async function fetchMarkdown(url) {
-  const client = new Client({ name: 'questara', version: '1.0.0' });
-  const transport = new StreamableHTTPClientTransport(new URL(LEARN_MCP_URL));
-  try {
-    await client.connect(transport);
-    const result = await client.callTool({ name: 'microsoft_docs_fetch', arguments: { url } });
-    return result?.content?.map((c) => c.text).join('\n') || '';
-  } finally {
-    await client.close().catch(() => {});
-  }
-}
+const mcpClient = require('./mcpClient');
+const { createLlmClient, GITHUB_MODELS_DEFAULT_MODEL, extractJsonArray } = require('./llmClient');
 
 /**
  * 現行スキル範囲より後ろのセクション（学習リソース / 変更履歴 / 以前の評価されるスキル）を落とす。
@@ -71,7 +54,7 @@ function parseDomainsFromMarkdown(md) {
 
   // 2) 現代的な Microsoft Learn 形式（H3 + 末尾ウェイト。範囲区切りに「から」「to」も含む）
   const modern = [];
-  const modernRe = /^###\s+(.+?)\s*[（(]\s*(\d+)\s*(?:(?:[-–—~〜]|から|to)\s*(\d+))?\s*%?\s*[）)]\s*$/i;
+  const modernRe = /^###\s+(.+?)\s*[（(]\s*(\d+)\s*(?:(?:[-–—~〜～－−]|から|to)\s*(\d+))?\s*%?\s*[）)]\s*$/i;
   for (const line of lines) {
     const m = line.match(modernRe);
     if (m) {
@@ -94,10 +77,7 @@ function parseDomainsFromMarkdown(md) {
  * LLM（GitHub Models）でドメイン構造を抽出する（regex が失敗した場合のフォールバック）
  */
 async function parseDomainsWithLlm(md, accessToken) {
-  const openai = new OpenAI({
-    baseURL: GITHUB_MODELS_ENDPOINT,
-    apiKey: accessToken,
-  });
+  const openai = createLlmClient(accessToken);
 
   const truncated = md.length > 12000 ? md.slice(0, 12000) : md;
   const prompt = `あなたは Microsoft/GitHub 認定資格の学習ガイドを解析する専門家です。
@@ -126,14 +106,13 @@ ${truncated}`;
   const response = await openai.chat.completions.create({
     model: GITHUB_MODELS_DEFAULT_MODEL,
     messages: [{ role: 'user', content: prompt }],
-    temperature: 0.1,
   });
 
   const text = response.choices[0]?.message?.content || '';
-  const jsonMatch = text.match(/\[[\s\S]*\]/);
-  if (!jsonMatch) throw new Error('LLM のレスポンスから JSON を抽出できませんでした');
+  const json = extractJsonArray(text);
+  if (!json) throw new Error('LLM のレスポンスから JSON を抽出できませんでした');
 
-  const parsed = JSON.parse(jsonMatch[0]);
+  const parsed = JSON.parse(json);
   if (!Array.isArray(parsed) || parsed.length === 0) {
     throw new Error('LLM が有効なドメイン一覧を返しませんでした');
   }
@@ -186,7 +165,7 @@ function normalizeWeightsToSum100(domains) {
  */
 async function extractDomains(studyGuideUrl, { accessToken } = {}) {
   if (!studyGuideUrl) return [];
-  const md = await fetchMarkdown(studyGuideUrl);
+  const md = await mcpClient.callLearnFetch(studyGuideUrl);
   if (!md) throw new Error('学習ガイドのコンテンツを取得できませんでした');
 
   const regexDomains = parseDomainsFromMarkdown(md);
