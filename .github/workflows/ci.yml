@@ -38,6 +38,9 @@ jobs:
       - name: Lint
         run: npm run lint
 
+      - name: Build CSS (sanity)
+        run: npm run build:css
+
       - name: Wait for Cosmos DB Emulator
         run: |
           for i in $(seq 1 60); do

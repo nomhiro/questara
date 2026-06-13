@@ -1,0 +1,213 @@
+@import "tailwindcss";
+
+/* EJS テンプレートをクラス走査対象にする（v4 の content 検出） */
+@source "../views";
+
+/* クラス方式のダークモード。.dark を <html> に付けると dark: が有効になる */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* =========================================================================
+   デザイントークン（ライト基調 / .dark でダークへ反転）
+   無彩色ベース + 単一アクセント(indigo)。RPG 配色は廃止。
+   ========================================================================= */
+:root {
+  --surface:      #fbfbfa;   /* ページ背景 */
+  --surface-2:    #ffffff;   /* カード面 */
+  --surface-3:    #f3f3f1;   /* hover / inset */
+  --ink:          #18181b;   /* 主テキスト */
+  --ink-2:        #52525b;   /* 副次テキスト */
+  --ink-3:        #9b9ba3;   /* 補助テキスト */
+  --line:         #e8e8e4;   /* ヘアライン境界 */
+  --line-strong:  #d6d6d1;   /* 強めの境界 / hover */
+  --accent:       #4f46e5;   /* 単一アクセント */
+  --accent-ink:   #ffffff;   /* アクセント上のテキスト */
+  --accent-soft:  #eef0fe;   /* アクセントの淡い面 */
+  --success:      #15803d;   /* 合格 / 正解 (>=70%) */
+  --success-soft: #e8f6ec;
+  --danger:       #dc2626;   /* 不合格 / 不正解 */
+  --danger-soft:  #fdeaea;
+  --warn:         #b45309;
+}
+
+.dark {
+  --surface:      #0a0a0b;
+  --surface-2:    #141417;
+  --surface-3:    #1d1d21;
+  --ink:          #fafafa;
+  --ink-2:        #a1a1aa;
+  --ink-3:        #6b6b73;
+  --line:         #262629;
+  --line-strong:  #3a3a40;
+  --accent:       #8b8cf5;
+  --accent-ink:   #0a0a0b;
+  --accent-soft:  #1b1b2e;
+  --success:      #4ade80;
+  --success-soft: #11241a;
+  --danger:       #f87171;
+  --danger-soft:  #2a1416;
+  --warn:         #fbbf24;
+}
+
+/* Tailwind ユーティリティへトークンを公開（inline = .dark の値を実行時に反映） */
+@theme inline {
+  --font-sans: "Geist", "Noto Sans JP", ui-sans-serif, system-ui, -apple-system, "Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif;
+  --font-mono: "Geist Mono", ui-monospace, "SF Mono", "Cascadia Code", monospace;
+
+  --color-surface:     var(--surface);
+  --color-surface-2:   var(--surface-2);
+  --color-surface-3:   var(--surface-3);
+  --color-ink:         var(--ink);
+  --color-ink-2:       var(--ink-2);
+  --color-ink-3:       var(--ink-3);
+  --color-line:        var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-accent:      var(--accent);
+  --color-accent-ink:  var(--accent-ink);
+  --color-accent-soft: var(--accent-soft);
+  --color-success:     var(--success);
+  --color-success-soft:var(--success-soft);
+  --color-danger:      var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --color-warn:        var(--warn);
+
+  --radius-card: 0.75rem;
+}
+
+/* =========================================================================
+   ベース
+   ========================================================================= */
+@layer base {
+  html {
+    background: var(--surface);
+    color: var(--ink);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  body { margin: 0; min-height: 100vh; }
+
+  /* 数値・統計は等幅で桁を揃える */
+  .nums { font-family: var(--font-mono); font-feature-settings: "tnum"; }
+
+  a { color: inherit; }
+
+  /* アクセシブルなフォーカスリング */
+  :where(a, button, input, select, textarea, [tabindex]):focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  ::selection { background: color-mix(in oklab, var(--accent) 28%, transparent); }
+}
+
+/* =========================================================================
+   コンポーネント（再利用プリミティブ）
+   ========================================================================= */
+@layer components {
+  /* --- カード --- */
+  .card {
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-card);
+    padding: 1.25rem 1.5rem;
+  }
+  .card-hover { transition: border-color .15s ease, background-color .15s ease, transform .15s ease; }
+  .card-hover:hover { border-color: var(--line-strong); }
+
+  /* --- ボタン --- */
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 0.45rem;
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem; font-weight: 500; line-height: 1.2;
+    border-radius: 0.5rem; border: 1px solid transparent;
+    cursor: pointer; text-decoration: none; white-space: nowrap;
+    transition: background-color .15s ease, border-color .15s ease, color .15s ease, opacity .15s ease;
+  }
+  .btn:disabled { opacity: .5; cursor: default; }
+  .btn-primary { background: var(--accent); color: var(--accent-ink); }
+  .btn-primary:hover:not(:disabled) { opacity: .9; }
+  .btn-subtle { background: var(--surface-3); color: var(--ink); border-color: var(--line); }
+  .btn-subtle:hover:not(:disabled) { border-color: var(--line-strong); }
+  .btn-ghost { background: transparent; color: var(--ink-2); }
+  .btn-ghost:hover:not(:disabled) { color: var(--ink); background: var(--surface-3); }
+  .btn-sm { padding: 0.3rem 0.7rem; font-size: 0.8125rem; }
+
+  /* --- バッジ / ピル --- */
+  .badge {
+    display: inline-flex; align-items: center; gap: 0.3rem;
+    padding: 0.15rem 0.6rem; font-size: 0.75rem; font-weight: 500;
+    border-radius: 999px; background: var(--surface-3); color: var(--ink-2);
+    border: 1px solid var(--line); white-space: nowrap;
+  }
+  .badge-success { background: var(--success-soft); color: var(--success); border-color: color-mix(in oklab, var(--success) 30%, transparent); }
+  .badge-danger  { background: var(--danger-soft);  color: var(--danger);  border-color: color-mix(in oklab, var(--danger) 30%, transparent); }
+  .badge-accent  { background: var(--accent-soft);  color: var(--accent);  border-color: color-mix(in oklab, var(--accent) 30%, transparent); }
+
+  /* --- プログレス（XP / 進捗 / スコア） --- */
+  .progress { height: 6px; border-radius: 999px; background: var(--surface-3); overflow: hidden; }
+  .progress > i { display: block; height: 100%; background: var(--accent); border-radius: inherit; transition: width .5s cubic-bezier(.2,.8,.2,1); }
+  .progress.is-success > i { background: var(--success); }
+  .progress.is-danger  > i { background: var(--danger); }
+
+  /* --- ランクバッジ SS〜D（無彩色ベース + ティアごとの淡いアクセント） --- */
+  .rank-badge {
+    display: inline-flex; align-items: center; justify-content: center;
+    min-width: 2.25rem; padding: 0.15rem 0.55rem;
+    font-family: var(--font-mono); font-size: 0.8125rem; font-weight: 600;
+    letter-spacing: 0.02em; border-radius: 0.5rem; border: 1px solid var(--line);
+    background: var(--surface-3); color: var(--ink-2);
+  }
+  .rank-SS { background: color-mix(in oklab, #f5b301 16%, var(--surface-2)); color: #b8860b; border-color: color-mix(in oklab, #f5b301 45%, transparent); }
+  .rank-S  { background: var(--accent-soft); color: var(--accent); border-color: color-mix(in oklab, var(--accent) 40%, transparent); }
+  .rank-A  { background: var(--success-soft); color: var(--success); border-color: color-mix(in oklab, var(--success) 35%, transparent); }
+  .rank-B  { background: color-mix(in oklab, #0ea5e9 12%, var(--surface-2)); color: #0369a1; border-color: color-mix(in oklab, #0ea5e9 35%, transparent); }
+  .dark .rank-B { color: #7dd3fc; }
+  .rank-C  { background: var(--surface-3); color: var(--ink-2); }
+  .rank-D  { background: var(--surface-3); color: var(--ink-3); }
+
+  /* --- ナビタブ --- */
+  .tab {
+    display: inline-flex; align-items: center; gap: 0.4rem;
+    padding: 0.6rem 0.15rem; font-size: 0.875rem; font-weight: 500;
+    color: var(--ink-3); text-decoration: none;
+    border-bottom: 2px solid transparent; margin-bottom: -1px;
+    transition: color .15s ease, border-color .15s ease;
+  }
+  .tab:hover { color: var(--ink); }
+  .tab.is-active { color: var(--ink); border-bottom-color: var(--accent); }
+
+  /* --- フォーム要素 --- */
+  .field {
+    width: 100%; padding: 0.55rem 0.75rem;
+    font-size: 0.875rem; color: var(--ink);
+    background: var(--surface-2); border: 1px solid var(--line); border-radius: 0.5rem;
+    transition: border-color .15s ease;
+  }
+  .field:focus { outline: none; border-color: var(--accent); }
+  .field::placeholder { color: var(--ink-3); }
+
+  /* --- レベルアップトースト（RPGの全画面フラッシュを置換） --- */
+  .toast {
+    position: fixed; top: 1.25rem; left: 50%; z-index: 100;
+    display: flex; align-items: center; gap: 0.6rem;
+    padding: 0.75rem 1.25rem;
+    background: var(--surface-2); color: var(--ink);
+    border: 1px solid var(--line-strong); border-radius: 999px;
+    box-shadow: 0 12px 40px -12px rgb(0 0 0 / 0.35);
+    animation: toast-in .45s cubic-bezier(.2,.9,.2,1) both, toast-out .4s ease 3.2s both;
+  }
+}
+
+/* =========================================================================
+   モーション
+   ========================================================================= */
+@keyframes rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+.rise { animation: rise .5s cubic-bezier(.2,.8,.2,1) both; }
+
+@keyframes toast-in  { from { opacity: 0; transform: translate(-50%, -12px) scale(.96); } to { opacity: 1; transform: translateX(-50%) scale(1); } }
+@keyframes toast-out { to { opacity: 0; transform: translate(-50%, -12px); } }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; }
+}
