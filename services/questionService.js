@@ -94,6 +94,24 @@ async function listCertifications({ includePrivate = false, userId = null } = {}
   }));
 }
 
+async function listCertificationsByIds(ids, userId) {
+  const out = [];
+  for (const id of ids) {
+    const cert = await readCertification(id);
+    if (!canAccessCertification(cert, userId)) continue;
+    out.push({
+      id: cert.id,
+      name: cert.name,
+      domainCount: cert.domains.length,
+      questionCount: cert.domains.reduce((acc, d) => acc + d.questions.length, 0),
+      createdBy: cert.createdBy,
+      creatorName: cert.creatorName,
+      isPublic: cert.isPublic,
+    });
+  }
+  return out;
+}
+
 async function getDomain(certId, domainId) {
   const cert = await readCertification(certId);
   if (!cert) return null;
@@ -158,6 +176,7 @@ module.exports = {
   getCorrectAnswers,
   writeCertification,
   listCertifications,
+  listCertificationsByIds,
   getDomain,
   getAllQuestions,
   getQuestionsByDomain,

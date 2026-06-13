@@ -1,7 +1,7 @@
 // @covers: routes/index.js
 import { describe, test, expect, beforeAll, beforeEach } from 'vitest';
 import { setupTestDb, truncateAll } from './_setup/db.mjs';
-import { createTestUser } from './_setup/fixtures.mjs';
+import { createTestUser, createTestCertification } from './_setup/fixtures.mjs';
 import { authedAgent, anonAgent } from './_setup/http.mjs';
 
 describe('routes/index — landing page', () => {
@@ -75,5 +75,35 @@ describe('routes/index — landing page', () => {
     const res = await agent.get('/?error=unknown_key');
     expect(res.status).toBe(200);
     expect(res.text).not.toMatch(/⚠/);
+  });
+
+  test('資格詳細にお気に入り・合格トグルが表示される', async () => {
+    const user = await createTestUser();
+    await createTestCertification({ id: 'detail-cert', name: '詳細資格', isPublic: true });
+    const agent = await authedAgent(user);
+    const res = await agent.get('/certifications/detail-cert');
+    expect(res.status).toBe(200);
+    expect(res.text).toContain('☆ お気に入り登録');
+    expect(res.text).toContain('🎓 合格した');
+  });
+
+  test('お気に入り/合格済みならトグルが解除表示になる', async () => {
+    const user = await createTestUser();
+    await createTestCertification({ id: 'detail-cert2', name: '詳細資格2', isPublic: true });
+    const agent = await authedAgent(user);
+    await agent.post('/my/certifications/detail-cert2/favorite').type('form').send({ returnTo: '/certifications/detail-cert2' });
+    await agent.post('/my/certifications/detail-cert2/pass').type('form').send({ returnTo: '/certifications/detail-cert2' });
+    const res = await agent.get('/certifications/detail-cert2');
+    expect(res.text).toContain('★ お気に入り解除');
+    expect(res.text).toContain('🎓 合格を取り消す');
+  });
+
+  test('資格一覧の各カードにお気に入りトグルのフォームがある', async () => {
+    const user = await createTestUser();
+    await createTestCertification({ id: 'list-cert', name: '一覧資格', isPublic: true });
+    const agent = await authedAgent(user);
+    const res = await agent.get('/free-mode');
+    expect(res.status).toBe(200);
+    expect(res.text).toContain('/my/certifications/list-cert/favorite');
   });
 });
