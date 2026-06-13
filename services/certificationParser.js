@@ -54,7 +54,7 @@ function parseDomainsFromMarkdown(md) {
 
   // 2) 現代的な Microsoft Learn 形式（H3 + 末尾ウェイト。範囲区切りに「から」「to」も含む）
   const modern = [];
-  const modernRe = /^###\s+(.+?)\s*[（(]\s*(\d+)\s*(?:(?:[-–—~〜]|から|to)\s*(\d+))?\s*%?\s*[）)]\s*$/i;
+  const modernRe = /^###\s+(.+?)\s*[（(]\s*(\d+)\s*(?:(?:[-–—~〜～－−]|から|to)\s*(\d+))?\s*%?\s*[）)]\s*$/i;
   for (const line of lines) {
     const m = line.match(modernRe);
     if (m) {
