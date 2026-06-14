@@ -201,18 +201,25 @@ async function calcDomainStats(certificationId, userId) {
     ],
   }, { partitionKey: userId });
 
-  const stats = {};
+  // ユニーク問題ベースで集計する（延べ回答数ではない）。同じ問題を複数セッションで
+  // 解き直しても二重に数えないため、total はドメインの問題数を超えない。
+  // - total   = そのドメインで回答したことのあるユニーク問題数
+  // - correct = そのドメインで一度でも正解した問題数（getWrongQuestionIds と同じ ever-correct）
+  // これにより各ドメインの (total - correct) は getWrongQuestionIds のそのドメイン分と一致する。
+  const byDomain = {};
   for (const sess of sessions) {
     for (const a of sess.answers) {
       const d = a.domainId;
-      if (!stats[d]) stats[d] = { correct: 0, total: 0 };
-      stats[d].total += 1;
-      if (a.isCorrect) stats[d].correct += 1;
+      if (!byDomain[d]) byDomain[d] = { attempted: new Set(), correct: new Set() };
+      byDomain[d].attempted.add(a.questionId);
+      if (a.isCorrect) byDomain[d].correct.add(a.questionId);
     }
   }
-  for (const d of Object.keys(stats)) {
-    const { correct, total } = stats[d];
-    stats[d].rate = percentRate(correct, total, null);
+  const stats = {};
+  for (const [d, s] of Object.entries(byDomain)) {
+    const total = s.attempted.size;
+    const correct = s.correct.size;
+    stats[d] = { correct, total, rate: percentRate(correct, total, null) };
   }
   return stats;
 }
