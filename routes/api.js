@@ -3,6 +3,7 @@
 const express = require('express');
 const router = express.Router();
 const generationService = require('../services/generationService');
+const explainService = require('../services/explainService');
 const questionService = require('../services/questionService');
 const userService = require('../services/userService');
 const modelCatalogService = require('../services/modelCatalogService');
@@ -78,5 +79,54 @@ router.post('/certifications/:certId/domains/:domainId/generate', requireAuth, a
     res.end();
   }
 });
+
+// SSE: 1 問の深掘り解説（公式ドキュメントにグラウンディング）。既定モデル固定・モデル指定なし。
+router.post(
+  '/certifications/:certId/domains/:domainId/questions/:questionId/explain',
+  requireAuth,
+  async (req, res) => {
+    const { certId, domainId, questionId } = req.params;
+
+    const cert = await questionService.readCertification(certId);
+    if (!cert || !questionService.canAccessCertification(cert, req.user.id)) {
+      return res.status(404).json({ error: '資格が見つかりません' });
+    }
+
+    const domain = cert.domains.find((d) => d.id === domainId);
+    if (!domain) return res.status(404).json({ error: 'ドメインが見つかりません' });
+
+    const question = (domain.questions || []).find((q) => q.id === questionId);
+    if (!question) return res.status(404).json({ error: '問題が見つかりません' });
+
+    const accessToken = await userService.getGithubAccessToken(req.user.id);
+    if (!accessToken) {
+      return res.status(400).json({ error: 'GitHubトークンが見つかりません。再ログインしてください。' });
+    }
+
+    const llmConfig = {
+      endpointUrl: GITHUB_MODELS_ENDPOINT,
+      apiKey: accessToken,
+      modelName: GENERATION_DEFAULT_MODEL,
+    };
+
+    const { send } = initSse(res);
+    try {
+      send('progress', { message: '関連する公式ドキュメントを検索中...' });
+      const explanation = await explainService.explainQuestion({
+        cert,
+        domain,
+        question,
+        llmConfig,
+        onProgress: (msg) => send('progress', { message: msg }),
+      });
+      send('done', { explanation });
+    } catch (err) {
+      console.error('Explain error:', err);
+      send('error', { message: err.message });
+    } finally {
+      res.end();
+    }
+  }
+);
 
 module.exports = router;

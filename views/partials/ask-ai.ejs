@@ -1,0 +1,139 @@
+<script>
+  // 「AIに詳しく聞く」ボタンの共通処理。quiz.ejs / review.ejs から include される。
+  // 公式ドキュメントにグラウンディングした深掘り解説を SSE で取得し、安全に DOM 描画する。
+  // 取得済みなら再フェッチせず表示トグルのみ（DOM 保持）。
+
+  function askAiContainer(btn) {
+    return btn.closest('.ask-ai').querySelector('.ask-ai-result');
+  }
+
+  // textContent で要素を生成する（innerHTML を使わず XSS を防ぐ）
+  function aiEl(tag, className, text) {
+    const e = document.createElement(tag);
+    if (className) e.className = className;
+    if (text != null && text !== '') e.textContent = text;
+    return e;
+  }
+
+  function aiSection(container, label, text) {
+    if (!text) return;
+    const wrap = aiEl('div', 'mt-3');
+    wrap.appendChild(aiEl('div', 'font-medium text-ink', label));
+    wrap.appendChild(aiEl('p', 'mt-0.5 text-ink-2', text));
+    container.appendChild(wrap);
+  }
+
+  function renderExplanation(container, exp) {
+    container.replaceChildren();
+    if (!exp || typeof exp !== 'object') {
+      container.appendChild(aiEl('p', 'text-ink-2', '解説を取得できませんでした。'));
+      return;
+    }
+    if (exp.summary) container.appendChild(aiEl('p', 'font-medium leading-relaxed', exp.summary));
+    aiSection(container, '✅ なぜ正解か', exp.whyCorrect);
+
+    const wrongKeys = exp.whyIncorrect && typeof exp.whyIncorrect === 'object'
+      ? Object.keys(exp.whyIncorrect) : [];
+    if (wrongKeys.length) {
+      const wrap = aiEl('div', 'mt-3');
+      wrap.appendChild(aiEl('div', 'font-medium text-ink', '❌ なぜ他は誤りか'));
+      const ul = aiEl('ul', 'mt-0.5 flex flex-col gap-1');
+      for (const k of wrongKeys) {
+        const li = aiEl('li', 'text-ink-2');
+        li.appendChild(aiEl('span', 'font-mono font-semibold', k + '. '));
+        li.appendChild(document.createTextNode(String(exp.whyIncorrect[k])));
+        ul.appendChild(li);
+      }
+      wrap.appendChild(ul);
+      container.appendChild(wrap);
+    }
+
+    aiSection(container, '📚 補足', exp.deepDive);
+
+    const refs = Array.isArray(exp.references) ? exp.references : [];
+    const safeRefs = refs.filter((r) => r && typeof r.url === 'string' && /^https:\/\//i.test(r.url));
+    if (safeRefs.length) {
+      const wrap = aiEl('div', 'mt-3');
+      wrap.appendChild(aiEl('div', 'font-medium text-ink', '🔗 公式ドキュメント'));
+      const ul = aiEl('ul', 'mt-0.5 flex flex-col gap-1');
+      for (const r of safeRefs) {
+        const a = aiEl('a', 'text-accent hover:underline', r.title || r.url);
+        a.href = r.url;
+        a.target = '_blank';
+        a.rel = 'noopener noreferrer';
+        const li = aiEl('li');
+        li.appendChild(a);
+        ul.appendChild(li);
+      }
+      wrap.appendChild(ul);
+      container.appendChild(wrap);
+    }
+  }
+
+  function aiShowStatus(container, message, isError) {
+    container.replaceChildren();
+    const row = aiEl('div', 'flex items-center gap-2 text-sm ' + (isError ? 'text-danger' : 'text-accent'));
+    if (!isError) row.appendChild(aiEl('span', 'inline-block h-2 w-2 animate-pulse rounded-full bg-accent'));
+    row.appendChild(aiEl('span', null, message));
+    container.appendChild(row);
+  }
+
+  async function askAi(btn, certId, domainId, questionId) {
+    const container = askAiContainer(btn);
+
+    // 取得済みなら表示トグルのみ（再フェッチしない）
+    if (container.dataset.loaded === 'true') {
+      container.classList.toggle('hidden');
+      return;
+    }
+    if (container.dataset.loading === 'true') return;
+
+    container.dataset.loading = 'true';
+    container.classList.remove('hidden');
+    btn.disabled = true;
+    aiShowStatus(container, '処理中...', false);
+
+    try {
+      const url = `/api/certifications/${certId}/domains/${domainId}/questions/${questionId}/explain`;
+      const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' } });
+      if (!res.ok || !res.body) throw new Error('リクエストに失敗しました');
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+      let eventType = null;
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop();
+        for (const line of lines) {
+          if (line.startsWith('event: ')) {
+            eventType = line.slice(7).trim();
+          } else if (line.startsWith('data: ')) {
+            let data;
+            try { data = JSON.parse(line.slice(6)); } catch (e) { continue; }
+            if (eventType === 'progress') {
+              aiShowStatus(container, '▸ ' + data.message, false);
+            } else if (eventType === 'done') {
+              renderExplanation(container, data.explanation);
+              container.dataset.loaded = 'true';
+              container.dataset.loading = 'false';
+              btn.disabled = false;
+              btn.textContent = '🔍 AI解説を隠す/表示';
+              return;
+            } else if (eventType === 'error') {
+              throw new Error(data.message);
+            }
+          }
+        }
+      }
+    } catch (err) {
+      aiShowStatus(container, '❌ ' + err.message, true);
+      container.dataset.loading = 'false';
+      btn.disabled = false;
+    }
+  }
+</script>

@@ -66,6 +66,9 @@ describe('views render without 500', () => {
     expect(quizRes.text).toContain('問題 1');
     // 単一選択でも「選択 → 回答する」のワンクッションを挟むため、回答ボタンを常時描画する
     expect(quizRes.text).toContain('回答する');
+    // 回答後フィードバックに「AIに詳しく聞く」ボタンと、対象問題を渡す askAi 呼び出しがある
+    expect(quizRes.text).toContain('AIに詳しく聞く');
+    expect(quizRes.text).toContain('askAi(');
   });
 
   test('views/quiz.ejs（複数選択問題は回答ボタンと正解配列を埋め込む）', async () => {
@@ -147,6 +150,9 @@ describe('views render without 500', () => {
 
     const res = await agent.get(`/quiz/${sessionId}/review?certId=${cert.id}`);
     expect(res.status).toBe(200);
+    // 各復習カードに「AIに詳しく聞く」ボタンがある
+    expect(res.text).toContain('AIに詳しく聞く');
+    expect(res.text).toContain('askAi(');
   });
 
   test('views/login.ejs (廃止: /auth/login は / に 301)', async () => {
