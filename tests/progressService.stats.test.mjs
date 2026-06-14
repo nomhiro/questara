@@ -137,3 +137,76 @@ describe('progressService.completeSession stats update', () => {
     expect(second.completedAt).toBe(first.completedAt); // 完了時刻も保持
   });
 });
+
+describe('progressService.calcDomainStats（ユニーク問題ベース）', () => {
+  beforeAll(async () => { await setupTestDb(); });
+  beforeEach(async () => { await truncateAll(); });
+
+  async function runSession(user, cert, answers, { mode = 'all', domainFilter = null } = {}) {
+    const session = await progressService.createSession({
+      userId: user.id, certificationId: cert.id, mode, domainFilter,
+    });
+    for (const a of answers) {
+      await progressService.recordAnswer({
+        sessionId: session.id, userId: user.id,
+        questionId: a.questionId, domainId: a.domainId, domainWeight: 0,
+        selectedAnswer: 'A', isCorrect: a.isCorrect,
+      });
+    }
+    await progressService.completeSession(session.id, user.id);
+    return session;
+  }
+
+  function twoQuestionCert(id) {
+    return createTestCertification({
+      id,
+      domains: [
+        {
+          id: 'domain-1', name: 'D1', weight: 100, generatedAt: null,
+          questions: [
+            { id: 'q1', question: 'Q1', options: { A: 'a', B: 'b', C: 'c', D: 'd' }, correctAnswer: 'A', explanation: '' },
+            { id: 'q2', question: 'Q2', options: { A: 'a', B: 'b', C: 'c', D: 'd' }, correctAnswer: 'B', explanation: '' },
+          ],
+        },
+      ],
+    });
+  }
+
+  test('同一問題を複数セッションで解き直しても分母がユニーク問題数を超えない（ever-correct）', async () => {
+    const user = await createTestUser();
+    const cert = await twoQuestionCert('domstats-unique');
+
+    // q1 のみを 3 回（不正解 → 正解 → 不正解）解き直す。q2 は未挑戦。
+    await runSession(user, cert, [{ questionId: 'q1', domainId: 'domain-1', isCorrect: false }]);
+    await runSession(user, cert, [{ questionId: 'q1', domainId: 'domain-1', isCorrect: true }]);
+    await runSession(user, cert, [{ questionId: 'q1', domainId: 'domain-1', isCorrect: false }]);
+
+    const stats = await progressService.calcDomainStats(cert.id, user.id);
+    // 延べ集計なら total=3 になるが、ユニーク問題ベースでは挑戦したのは q1 のみ → 1。
+    expect(stats['domain-1'].total).toBe(1);
+    // 一度でも正解しているので correct=1。
+    expect(stats['domain-1'].correct).toBe(1);
+    expect(stats['domain-1'].rate).toBe(100);
+  });
+
+  test('total − correct がそのドメインの未正解問題数（getWrongQuestionIds のドメイン分）と一致', async () => {
+    const user = await createTestUser();
+    const cert = await twoQuestionCert('domstats-wrong');
+
+    // q1 正解・q2 不正解 → さらに別セッションで q2 を再度不正解。
+    await runSession(user, cert, [
+      { questionId: 'q1', domainId: 'domain-1', isCorrect: true },
+      { questionId: 'q2', domainId: 'domain-1', isCorrect: false },
+    ]);
+    await runSession(user, cert, [{ questionId: 'q2', domainId: 'domain-1', isCorrect: false }]);
+
+    const stats = await progressService.calcDomainStats(cert.id, user.id);
+    expect(stats['domain-1'].total).toBe(2); // q1, q2
+    expect(stats['domain-1'].correct).toBe(1); // q1 のみ一度でも正解
+
+    const wrongIds = await progressService.getWrongQuestionIds(cert.id, user.id);
+    const wrongInDomain1 = wrongIds.filter((id) => id === 'q1' || id === 'q2');
+    expect(stats['domain-1'].total - stats['domain-1'].correct).toBe(wrongInDomain1.length);
+    expect(wrongInDomain1).toEqual(['q2']);
+  });
+});
