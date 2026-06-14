@@ -10,17 +10,24 @@ import { authedAgent, anonAgent } from './_setup/http.mjs';
 // error フィールド名 = message・各 404/400 分岐）を固定する。
 const _require = createRequire(import.meta.url);
 const generationService = _require('../services/generationService');
+const explainService = _require('../services/explainService');
 const userService = _require('../services/userService');
 const modelCatalogService = _require('../services/modelCatalogService');
 const _orig = {
   generateQuestions: generationService.generateQuestions,
+  explainQuestion: explainService.explainQuestion,
   getGithubAccessToken: userService.getGithubAccessToken,
   listModels: modelCatalogService.listModels,
+};
+
+const fakeExplanation = {
+  summary: 'AI解説の要点', whyCorrect: '正解の根拠', whyIncorrect: {}, deepDive: '', references: [],
 };
 
 beforeAll(async () => {
   await setupTestDb();
   generationService.generateQuestions = vi.fn(async () => []);
+  explainService.explainQuestion = vi.fn(async () => fakeExplanation);
   userService.getGithubAccessToken = vi.fn(async () => 'fake-token');
   modelCatalogService.listModels = vi.fn(async () => [
     { id: 'openai/gpt-5', name: 'OpenAI GPT-5', publisher: 'OpenAI' },
@@ -28,12 +35,14 @@ beforeAll(async () => {
 });
 afterAll(() => {
   generationService.generateQuestions = _orig.generateQuestions;
+  explainService.explainQuestion = _orig.explainQuestion;
   userService.getGithubAccessToken = _orig.getGithubAccessToken;
   modelCatalogService.listModels = _orig.listModels;
 });
 beforeEach(async () => {
   await truncateAll();
   generationService.generateQuestions.mockImplementation(async () => []);
+  explainService.explainQuestion.mockImplementation(async () => fakeExplanation);
   userService.getGithubAccessToken.mockImplementation(async () => 'fake-token');
   modelCatalogService.listModels.mockImplementation(async () => [
     { id: 'openai/gpt-5', name: 'OpenAI GPT-5', publisher: 'OpenAI' },
@@ -95,6 +104,82 @@ describe('routes/api 問題再生成 SSE', () => {
     expect(res.text).toContain('event: error');
     expect(res.text).toContain('LLM 失敗');
     // error フレームのフィールド名は `message`
+    const errFrame = res.text.split('\n\n').find((f) => f.includes('event: error'));
+    expect(errFrame).toContain('"message"');
+  });
+});
+
+describe('routes/api 問題の深掘り解説 SSE', () => {
+  const explainUrl = (certId, domainId, qId) =>
+    `/api/certifications/${certId}/domains/${domainId}/questions/${qId}/explain`;
+
+  test('未認証は / にリダイレクト', async () => {
+    const res = await (await anonAgent()).post(explainUrl('c1', 'domain-1', 'q1'));
+    expect(res.status).toBe(302);
+    expect(res.headers.location).toBe('/');
+  });
+
+  test('存在しない資格は 404 + JSON', async () => {
+    const user = await createTestUser();
+    const agent = await authedAgent(user);
+    const res = await agent.post(explainUrl('nope', 'domain-1', 'q1'));
+    expect(res.status).toBe(404);
+    expect(res.body.error).toBe('資格が見つかりません');
+  });
+
+  test('存在しないドメインは 404 + JSON', async () => {
+    const user = await createTestUser();
+    const cert = await createTestCertification({ id: 'cert-explain-1' });
+    const agent = await authedAgent(user);
+    const res = await agent.post(explainUrl(cert.id, 'nope', `${cert.id}-d1-001`));
+    expect(res.status).toBe(404);
+    expect(res.body.error).toBe('ドメインが見つかりません');
+  });
+
+  test('存在しない問題は 404 + JSON', async () => {
+    const user = await createTestUser();
+    const cert = await createTestCertification({ id: 'cert-explain-2' });
+    const agent = await authedAgent(user);
+    const res = await agent.post(explainUrl(cert.id, 'domain-1', 'no-such-question'));
+    expect(res.status).toBe(404);
+    expect(res.body.error).toBe('問題が見つかりません');
+  });
+
+  test('GitHub トークンが無ければ 400 + JSON', async () => {
+    const user = await createTestUser();
+    const cert = await createTestCertification({ id: 'cert-explain-3' });
+    userService.getGithubAccessToken.mockResolvedValueOnce(null);
+    const agent = await authedAgent(user);
+    const res = await agent.post(explainUrl(cert.id, 'domain-1', `${cert.id}-d1-001`));
+    expect(res.status).toBe(400);
+    expect(res.body.error).toContain('GitHubトークン');
+  });
+
+  test('成功時は SSE で progress→done(explanation) を流す', async () => {
+    const user = await createTestUser();
+    const cert = await createTestCertification({ id: 'cert-explain-4' });
+    const agent = await authedAgent(user);
+    const res = await agent.post(explainUrl(cert.id, 'domain-1', `${cert.id}-d1-001`));
+    expect(res.status).toBe(200);
+    expect(res.headers['content-type']).toContain('text/event-stream');
+    expect(res.text).toContain('event: progress');
+    expect(res.text).toContain('event: done');
+    expect(res.text).toContain('AI解説の要点');
+    // explainQuestion に対象の問題が渡る
+    const callArg = explainService.explainQuestion.mock.calls.at(-1)[0];
+    expect(callArg.question.id).toBe(`${cert.id}-d1-001`);
+    expect(callArg.llmConfig.modelName).toBe('openai/gpt-4.1');
+  });
+
+  test('生成失敗時は event: error を流す（フィールド名は message）', async () => {
+    const user = await createTestUser();
+    const cert = await createTestCertification({ id: 'cert-explain-5' });
+    explainService.explainQuestion.mockRejectedValueOnce(new Error('解説生成に失敗'));
+    const agent = await authedAgent(user);
+    const res = await agent.post(explainUrl(cert.id, 'domain-1', `${cert.id}-d1-001`));
+    expect(res.status).toBe(200);
+    expect(res.text).toContain('event: error');
+    expect(res.text).toContain('解説生成に失敗');
     const errFrame = res.text.split('\n\n').find((f) => f.includes('event: error'));
     expect(errFrame).toContain('"message"');
   });

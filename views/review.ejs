@@ -44,6 +44,14 @@
         <div class="border-t border-line pt-3 text-sm leading-relaxed text-ink-2">
           <span class="font-medium text-ink">解説:</span> <%= q.explanation %>
         </div>
+
+        <div class="ask-ai mt-3">
+          <button type="button" class="btn btn-subtle"
+            onclick="askAi(this, '<%= certId %>', '<%= q.domainId %>', '<%= q.id %>')">
+            🔍 AIに詳しく聞く
+          </button>
+          <div class="ask-ai-result mt-3 hidden rounded-lg border border-line p-4 text-sm leading-relaxed"></div>
+        </div>
       </section>
     <% } %>
   </div>
@@ -57,4 +65,5 @@
     <a href="/certifications/<%= certId %>" class="btn btn-primary">← 資格ページへ</a>
   </div>
 </main>
+<%- include('partials/ask-ai') %>
 <%- include('partials/foot') %>

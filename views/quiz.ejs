@@ -44,6 +44,15 @@
     <div id="explanationBox" class="mt-6 hidden border-t border-line pt-5">
       <div id="resultBadge" class="mb-2 font-semibold"></div>
       <p class="leading-relaxed text-ink-2"><%= question.explanation %></p>
+
+      <div class="ask-ai mt-4">
+        <button type="button" class="btn btn-subtle"
+          onclick="askAi(this, '<%= certId %>', '<%= question.domainId %>', '<%= question.id %>')">
+          🔍 AIに詳しく聞く
+        </button>
+        <div class="ask-ai-result mt-3 hidden rounded-lg border border-line p-4 text-sm leading-relaxed"></div>
+      </div>
+
       <div class="mt-4">
         <button onclick="document.getElementById('answerForm').submit()" class="btn btn-primary">次の問題 →</button>
       </div>
@@ -108,4 +117,5 @@
     document.getElementById('explanationBox').classList.remove('hidden');
   }
 </script>
+<%- include('partials/ask-ai') %>
 <%- include('partials/foot') %>
